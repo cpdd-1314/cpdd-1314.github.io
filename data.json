@@ -5,6 +5,34 @@
   },
   "profiles": [
     {
+      "id": 1787338091534,
+      "姓名": "测试嘉宾档案",
+      "性别": "男",
+      "性取向": "",
+      "国家/城市": "",
+      "生日": "",
+      "年龄": "",
+      "身高": "",
+      "体重": "",
+      "星座": "",
+      "职业/学生": "",
+      "性格": "",
+      "兴趣爱好": "",
+      "生活习惯": "",
+      "要求": "",
+      "一句话介绍": "",
+      "uploadDate": "2026-08-22",
+      "createdAt": 1787338091534,
+      "isPinned": false,
+      "uploaderType": "guest",
+      "uploaderName": "小红",
+      "uploaderCode": "VYBUQV43",
+      "fromGuest": true,
+      "uploaderPass": "VYBUQV43",
+      "profileNo": "A005",
+      "mediaList": []
+    },
+    {
       "id": 1787335033486,
       "姓名": "ff",
       "性别": "男",
@@ -161,11 +189,10 @@
   "passes": [
     {
       "code": "VYBUQV43",
-      "expiresAt": 1787341686667,
-      "note": "",
-      "name": "小红"
+      "name": "小红",
+      "expiresAt": 1787341688674
     }
   ],
   "staffs": [],
-  "nextProfileNo": 5
+  "nextProfileNo": 6
 }
