@@ -150,7 +150,8 @@
       "uploadDate": "2025-06-12",
       "createdAt": 1700000000001,
       "isPinned": false,
-      "mediaList": []
+      "mediaList": [],
+      "isHidden": true
     },
     {
       "id": 1700000000002,
