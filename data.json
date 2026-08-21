@@ -30,15 +30,11 @@
       "profileNo": "A006",
       "mediaList": [
         {
-          "url": "./media/1787341774391_mmexport1787341688339.mp4",
-          "type": "video/mp4"
-        },
-        {
           "url": "./media/1787341985708_Screenshot_20260821_215252.jpg",
           "type": "image/jpeg"
         }
       ],
-      "updatedAt": 1787341985483
+      "updatedAt": 1787342006042
     },
     {
       "id": 1787341261811,
