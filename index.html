@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🌍 全球找对象 - 快速找到心目中的伴侣</title>
+  <style>
+    :root {
+      --primary: #4f46e5;
+      --primary-hover: #4338ca;
+      --wechat-green: #07c160;
+      --wechat-hover: #06ad56;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #1e293b;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --danger: #ef4444;
+      --pin-gold: #f59e0b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 24px 16px;
+      line-height: 1.5;
+    }
+    .container { max-width: 1100px; margin: 0 auto; }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .title-group h1 { font-size: 24px; font-weight: 700; cursor: pointer; user-select: none; }
+    .title-group p { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+    .btn-group { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .btn {
+      border: none;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-wechat { background: var(--wechat-green); color: white; }
+    .btn-wechat:hover { background: var(--wechat-hover); }
+    .wechat-icon { width: 18px; height: 18px; fill: currentColor; }
+
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+    .btn-outline:hover { background: #e2e8f0; }
+
+    .admin-only { display: none !important; }
+    body.is-admin .admin-only { display: inline-flex !important; }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      background: var(--card-bg);
+      padding: 12px 16px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+    .toolbar-left { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .toolbar-right { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+    .filters { display: flex; gap: 8px; }
+    .filter-btn {
+      border: none;
+      background: var(--bg);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+    .filter-btn.active { background: var(--primary); color: #fff; }
+
+    .select-control {
+      padding: 6px 12px;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      font-size: 13px;
+      outline: none;
+      background: var(--bg);
+      color: var(--text);
+      cursor: pointer;
+    }
+
+    .search-input {
+      padding: 6px 14px;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      font-size: 13px;
+      outline: none;
+      width: 200px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 20px;
+    }
+    .card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    .card.is-pinned { border: 2px solid var(--pin-gold); }
+    .card:hover { transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0,0,0,0.06); }
+    .card-media-wrap { width: 100%; height: 260px; background: #000; position: relative; }
+    .card-media-wrap img, .card-media-wrap video {
+      width: 100%; height: 100%; object-fit: cover;
+    }
+
+    .pin-badge {
+      position: absolute; top: 8px; left: 8px; background: var(--pin-gold);
+      color: white; font-size: 11px; padding: 3px 8px; border-radius: 6px; font-weight: 700;
+    }
+    .media-badge {
+      position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.65);
+      color: white; font-size: 11px; padding: 3px 8px; border-radius: 6px;
+    }
+    .date-badge {
+      position: absolute; bottom: 8px; left: 8px; background: rgba(0,0,0,0.6);
+      color: #e2e8f0; font-size: 11px; padding: 2px 6px; border-radius: 4px;
+    }
+    .card-body { padding: 14px; flex: 1; display: flex; flex-direction: column; }
+    .card-title { font-size: 17px; font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
+    .card-loc { font-size: 12px; color: var(--text-muted); font-weight: normal; }
+    .card-meta { font-size: 13px; color: var(--text-muted); margin: 6px 0 8px; }
+    .card-quote { font-size: 13px; color: var(--text); background: var(--bg); padding: 8px 10px; border-radius: 8px; margin-top: auto; }
+
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+      display: none; align-items: center; justify-content: center; padding: 16px; z-index: 100;
+    }
+    .modal {
+      background: var(--card-bg);
+      max-width: 620px;
+      width: 100%;
+      max-height: 90vh;
+      border-radius: 16px;
+      overflow-y: auto;
+      padding: 24px;
+      position: relative;
+    }
+    .close-btn {
+      position: absolute; top: 14px; right: 14px; font-size: 22px; cursor: pointer; border: none; background: none; color: var(--text-muted); z-index: 10;
+    }
+
+    .media-gallery { margin-bottom: 16px; }
+    .media-viewer {
+      width: 100%; height: 320px; border-radius: 12px; overflow: hidden; background: #000;
+      display: flex; align-items: center; justify-content: center; margin-bottom: 8px;
+    }
+    .media-viewer img, .media-viewer video { width: 100%; height: 100%; object-fit: contain; }
+    .thumbnail-bar { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+    .thumb-item {
+      width: 60px; height: 60px; border-radius: 8px; overflow: hidden; flex-shrink: 0;
+      cursor: pointer; border: 2px solid transparent; background: #000; position: relative;
+    }
+    .thumb-item.active { border-color: var(--primary); }
+    .thumb-item img, .thumb-item video { width: 100%; height: 100%; object-fit: cover; }
+    .thumb-video-icon {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      background: rgba(0,0,0,0.3); color: #fff; font-size: 14px;
+    }
+
+    .modal-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px 12px;
+      background: var(--bg); padding: 12px; border-radius: 10px; margin-bottom: 14px; font-size: 13px;
+    }
+    .modal-row { margin-bottom: 10px; font-size: 13px; }
+    .modal-label { font-weight: 700; color: var(--primary); margin-bottom: 2px; }
+    .modal-box { background: var(--bg); padding: 8px 12px; border-radius: 8px; }
+
+    .admin-action-row { display: flex; gap: 10px; margin-top: 16px; }
+
+    .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 12px; }
+    .form-group { display: flex; flex-direction: column; gap: 4px; }
+    .form-group.full { grid-column: span 2; }
+    .form-group label { font-size: 12px; font-weight: 600; color: var(--text-muted); }
+    .form-group input, .form-group textarea, .form-group select {
+      padding: 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; outline: none; font-family: inherit;
+    }
+    .form-group textarea { height: 45px; resize: vertical; }
+    .file-hint { font-size: 11px; color: var(--text-muted); }
+
+    .wechat-modal-content { text-align: center; padding: 4px 0; }
+    .original-qr-img {
+      width: 100%; max-width: 280px; border-radius: 14px; margin: 10px auto 14px;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.06); display: block; border: 1px solid var(--border); background: #fff;
+    }
+    .wechat-id-box {
+      display: inline-flex; align-items: center; gap: 6px; background: var(--bg);
+      padding: 6px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 14px; border: 1px dashed var(--border);
+    }
+    .notice {
+      background: #fff7ed; border: 1px solid #fed7aa; color: #9a3412;
+      font-size: 12px; padding: 8px 12px; border-radius: 8px; margin-bottom: 12px; line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="title-group">
+      <h1 id="secretTitle" onclick="handleSecretClick()">🌍 全球找对象</h1>
+      <p>快速找到心目中的伴侣</p>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-wechat" onclick="toggleModal('wechatModal', true)">
+        <svg class="wechat-icon" viewBox="0 0 24 24">
+          <path d="M9.5 4C4.8 4 1 7.4 1 11.5c0 2.4 1.3 4.5 3.4 5.9l-.9 2.6 3.1-1.6c.9.3 2 .5 2.9.5.3 0 .7 0 1-.1-.3-.7-.4-1.5-.4-2.3 0-4.1 3.8-7.5 8.5-7.5.3 0 .7 0 1 .1C19.1 6.8 14.8 4 9.5 4zm-2.2 4.2c.7 0 1.2.6 1.2 1.2s-.6 1.2-1.2 1.2c-.7 0-1.2-.6-1.2-1.2s.5-1.2 1.2-1.2zm4.8 0c.7 0 1.2.6 1.2 1.2s-.6 1.2-1.2 1.2c-.7 0-1.2-.6-1.2-1.2s.5-1.2 1.2-1.2zm6.9 3.8c-3.9 0-7 2.7-7 6 0 3.3 3.1 6 7 6 .8 0 1.6-.1 2.4-.4l2.5 1.3-.7-2.1c1.7-1.1 2.8-2.8 2.8-4.8 0-3.3-3.1-6-7-6zm-2.5 3.5c.5 0 .9.4.9.9s-.4.9-.9.9-.9-.4-.9-.9.4-.9.9-.9zm4.2 0c.5 0 .9.4.9.9s-.4.9-.9.9-.9-.4-.9-.9.4-.9.9-.9z"/>
+        </svg>
+        <span>加微信上传资料</span>
+      </button>
+
+      <button class="btn btn-outline admin-only" onclick="toggleModal('wechatConfigModal', true)">⚙️ 修改微信名片</button>
+      <button class="btn btn-outline admin-only" onclick="logoutAdmin()">🚪 退出管理</button>
+      <button class="btn btn-primary admin-only" onclick="toggleModal('formModal', true)">➕ 添加新嘉宾</button>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <div class="filters">
+        <button class="filter-btn active" onclick="filterGender('全部', this)">全部</button>
+        <button class="filter-btn" onclick="filterGender('男', this)">男</button>
+        <button class="filter-btn" onclick="filterGender('女', this)">女</button>
+      </div>
+
+      <select id="sortSelect" class="select-control" onchange="renderCards()">
+        <option value="newest">最新上传</option>
+        <option value="oldest">最早上传</option>
+        <option value="age_asc">年龄：从小到大</option>
+        <option value="age_desc">年龄：从大到小</option>
+      </select>
+    </div>
+
+    <div class="toolbar-right">
+      <input type="text" id="searchInput" class="search-input" placeholder="搜索姓名/城市/职业/日期..." oninput="renderCards()">
+    </div>
+  </div>
+
+  <div class="grid" id="cardsContainer"></div>
+</div>
+
+<!-- 微信名片弹窗 -->
+<div class="modal-overlay" id="wechatModal" onclick="handleOverlayClick(event, 'wechatModal')">
+  <div class="modal" style="max-width:340px; padding: 20px;">
+    <button class="close-btn" onclick="toggleModal('wechatModal', false)">×</button>
+    <div class="wechat-modal-content">
+      <h2 style="font-size:17px; margin-bottom:2px;">添加微信提交资料</h2>
+      <p style="font-size:12px; color:var(--text-muted);">长按扫码或复制微信号发资料</p>
+      <img id="wechatQrDisplay" src="" alt="微信名片" class="original-qr-img">
+      <div class="wechat-id-box">
+        <span>微信号：<strong id="wechatIdText"></strong></span>
+      </div>
+      <button class="btn btn-primary" style="width:100%; justify-content:center; padding:10px;" onclick="copyWechatId()">一键复制微信号</button>
+    </div>
+  </div>
+</div>
+
+<!-- 管理员修改微信配置弹窗 -->
+<div class="modal-overlay" id="wechatConfigModal" onclick="handleOverlayClick(event, 'wechatConfigModal')">
+  <div class="modal" style="max-width:400px;">
+    <button class="close-btn" onclick="toggleModal('wechatConfigModal', false)">×</button>
+    <h2 style="font-size:18px; margin-bottom:12px;">修改微信名片 (Admin)</h2>
+    <form id="wechatConfigForm" onsubmit="handleWechatConfigSubmit(event)">
+      <div class="form-group" style="margin-bottom:12px;">
+        <label>微信号</label>
+        <input type="text" id="cfgWechatId" required placeholder="如：xiaomaomiii777">
+      </div>
+      <div class="form-group" style="margin-bottom:16px;">
+        <label>更换微信名片截图/二维码</label>
+        <input type="file" id="cfgWechatQrFile" accept="image/*">
+        <div class="file-hint">留空则保持原二维码不变；图片会随资料一起提交到仓库</div>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%; padding:10px;" id="saveWechatBtn">保存并同步</button>
+    </form>
+  </div>
+</div>
+
+<!-- 详情弹窗 -->
+<div class="modal-overlay" id="detailModal" onclick="handleOverlayClick(event, 'detailModal')">
+  <div class="modal">
+    <button class="close-btn" onclick="toggleModal('detailModal', false)">×</button>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<!-- 隐藏管理登录弹窗 -->
+<div class="modal-overlay" id="loginModal" onclick="handleOverlayClick(event, 'loginModal')">
+  <div class="modal" style="max-width:380px;">
+    <button class="close-btn" onclick="toggleModal('loginModal', false)">×</button>
+    <h2 style="font-size:18px; margin-bottom:12px;">管理员登录</h2>
+    <div class="notice">
+      口令用于身份门槛；<b>GitHub 令牌</b>用于把改动提交到仓库、让所有人看到。<br>
+      令牌请用 <b>fine-grained PAT</b>，权限仅限本仓库的 <b>Contents 读写</b>，仅保存在当前浏览器会话，关闭标签页即清除。
+    </div>
+    <form onsubmit="handleLogin(event)">
+      <div class="form-group" style="margin-bottom:10px;">
+        <label>管理员口令</label>
+        <input type="password" id="adminPwdInput" placeholder="输入口令解锁管理权限" required autofocus>
+      </div>
+      <div class="form-group" style="margin-bottom:14px;">
+        <label>GitHub 令牌 (PAT)</label>
+        <input type="password" id="adminTokenInput" placeholder="github_pat_xxx" required>
+        <div class="file-hint">在 GitHub → Settings → Developer settings → Fine-grained tokens 生成</div>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%;">解锁</button>
+    </form>
+  </div>
+</div>
+
+<!-- 添加表单弹窗 -->
+<div class="modal-overlay" id="formModal" onclick="handleOverlayClick(event, 'formModal')">
+  <div class="modal">
+    <button class="close-btn" onclick="toggleModal('formModal', false)">×</button>
+    <h2 style="font-size:18px; margin-bottom:14px;">添加新嘉宾档案</h2>
+    <form id="addProfileForm" onsubmit="handleFormSubmit(event)">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>姓名 *</label>
+          <input type="text" name="姓名" required placeholder="如：林辰">
+        </div>
+        <div class="form-group">
+          <label>性别 *</label>
+          <select name="性别">
+            <option value="男">男</option>
+            <option value="女">女</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>性取向</label>
+          <input type="text" name="性取向" placeholder="如：异性恋">
+        </div>
+        <div class="form-group">
+          <label>国家/城市</label>
+          <input type="text" name="国家/城市" placeholder="如：中国 / 天津">
+        </div>
+        <div class="form-group">
+          <label>生日</label>
+          <input type="text" name="生日" placeholder="如：1998-05">
+        </div>
+        <div class="form-group">
+          <label>年龄</label>
+          <input type="text" name="年龄" placeholder="如：28">
+        </div>
+        <div class="form-group">
+          <label>身高</label>
+          <input type="text" name="身高" placeholder="如：180cm">
+        </div>
+        <div class="form-group">
+          <label>体重</label>
+          <input type="text" name="体重" placeholder="如：72kg">
+        </div>
+        <div class="form-group">
+          <label>星座</label>
+          <input type="text" name="星座" placeholder="如：金牛座">
+        </div>
+        <div class="form-group">
+          <label>职业/学生</label>
+          <input type="text" name="职业/学生" placeholder="如：软件工程师">
+        </div>
+        <div class="form-group full">
+          <label>上传照片与视频（按住 Ctrl/Cmd 多选，提交到仓库 media/ 目录）</label>
+          <input type="file" id="mediaInput" accept="image/*,video/*" multiple>
+          <div class="file-hint">建议单文件 ≤ 25MB；超大视频请改用 Cloudinary（代码已预留）</div>
+        </div>
+        <div class="form-group full">
+          <label>性格</label>
+          <textarea name="性格" placeholder="如：情绪稳定、温和、做事有条理"></textarea>
+        </div>
+        <div class="form-group full">
+          <label>兴趣爱好</label>
+          <textarea name="兴趣爱好" placeholder="如：数码硬件、自驾、摄影、做饭"></textarea>
+        </div>
+        <div class="form-group full">
+          <label>生活习惯</label>
+          <textarea name="生活习惯" placeholder="如：作息规律，不抽烟"></textarea>
+        </div>
+        <div class="form-group full">
+          <label>要求</label>
+          <textarea name="要求" placeholder="如：性格开朗好沟通，三观契合"></textarea>
+        </div>
+        <div class="form-group full">
+          <label>一句话介绍</label>
+          <input type="text" name="一句话介绍" placeholder="如：生活需要务实的脚步，也需要偶尔的浪漫冒险。">
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%; padding:10px;" id="submitBtn">确认保存并同步到全网</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  // ===== 基础配置 =====
+  const ADMIN_PASSWORD = "admin123";
+
+  // GitHub 仓库识别：默认从 *.github.io 子域与路径自动推断。
+  // 若你用的是 <用户名>.github.io 这种“用户/组织页”，把 GITHUB_REPO 设为仓库名（即你的用户名.github.io）。
+  const GITHUB_OWNER = "";
+  const GITHUB_REPO = "";
+  function getRepo() {
+    const owner = GITHUB_OWNER || location.hostname.split('.')[0];
+    const repo = GITHUB_REPO || (location.pathname.split('/')[1] || '');
+    return { owner, repo };
+  }
+  const _repo = getRepo();
+  const API = `https://api.github.com/repos/${_repo.owner}/${_repo.repo}/contents`;
+
+  let appState = {
+    wechat: { id: "xiaomaomiii777", qr: "" },
+    profiles: []
+  };
+
+  // 内置示例兜底：当取不到仓库 data.json（本地预览 / 分享链接 / 直接双击打开）时，
+  // 用这份示例渲染，避免白屏。部署到 GitHub Pages 后会自动用仓库里的真实数据覆盖它。
+  const DEFAULT_SAMPLE_DATA = {
+    wechat: { id: "xiaomaomiii777", qr: "" },
+    profiles: [
+      {
+        id: 1700000000001,
+        "姓名": "林辰", "性别": "男", "性取向": "异性恋",
+        "国家/城市": "中国 / 天津", "生日": "1998-05", "年龄": "28",
+        "身高": "180cm", "体重": "72kg", "星座": "金牛座", "职业/学生": "软件工程师",
+        "性格": "情绪稳定、温和、做事有条理",
+        "兴趣爱好": "数码硬件、自驾、摄影、做饭",
+        "生活习惯": "作息规律，不抽烟，偶尔小酌",
+        "要求": "性格开朗好沟通，三观契合，能一起规划未来",
+        "一句话介绍": "生活需要务实的脚步，也需要偶尔的浪漫冒险。",
+        uploadDate: "2025-06-12", createdAt: 1700000000001, isPinned: true, mediaList: []
+      },
+      {
+        id: 1700000000002,
+        "姓名": "苏晚", "性别": "女", "性取向": "异性恋",
+        "国家/城市": "中国 / 上海", "生日": "1999-11", "年龄": "26",
+        "身高": "168cm", "体重": "52kg", "星座": "天蝎座", "职业/学生": "UI 设计师",
+        "性格": "细腻、有共情力、喜欢仪式感",
+        "兴趣爱好": "插画、手账、看展、咖啡探店",
+        "生活习惯": "早睡早起，注重饮食健康",
+        "要求": "真诚、有上进心，愿意好好沟通",
+        "一句话介绍": "把平凡的日子过成想要的样子，也想有人一起。",
+        uploadDate: "2025-06-10", createdAt: 1700000000002, isPinned: false, mediaList: []
+      },
+      {
+        id: 1700000000003,
+        "姓名": "陈屿", "性别": "男", "性取向": "异性恋",
+        "国家/城市": "新加坡", "生日": "1995-03", "年龄": "31",
+        "身高": "178cm", "体重": "70kg", "星座": "双鱼座", "职业/学生": "金融分析师",
+        "性格": "理性克制、有耐心、顾家",
+        "兴趣爱好": "潜水、健身、读书、旅行",
+        "生活习惯": "不抽烟不喝酒，周末爱做饭",
+        "要求": "温柔独立，能聊到一起，看重长期关系",
+        "一句话介绍": "在外面闯荡久了，想找个能一起回家的人。",
+        uploadDate: "2025-06-08", createdAt: 1700000000003, isPinned: false, mediaList: []
+      }
+    ]
+  };
+
+  // 内联 SVG 占位图（离线可用、国内友好，替代 via.placeholder.com）
+  function placeholderDataURI(text) {
+    const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='300' height='400'>` +
+      `<rect width='100%' height='100%' fill='#e2e8f0'/>` +
+      `<text x='50%' y='50%' font-size='16' fill='#94a3b8' text-anchor='middle' dominant-baseline='middle' font-family='sans-serif'>${text}</text>` +
+      `</svg>`;
+    return 'data:image/svg+xml,' + encodeURIComponent(svg);
+  }
+
+  // ===== GitHub 读写 =====
+  function getToken() { return sessionStorage.getItem('gh_token') || ''; }
+
+  async function uploadToRepo(file) {
+    const token = getToken();
+    if (!token) throw new Error('请先登录并粘贴 GitHub 令牌');
+    const safeName = Date.now() + '_' + file.name.replace(/[^\w.\-]/g, '_');
+    const path = 'media/' + safeName;
+    const buf = await file.arrayBuffer();
+    const content = base64FromArrayBuffer(buf);
+    const res = await fetch(`${API}/${path}`, {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: 'upload media ' + safeName, content })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || ('上传失败 HTTP ' + res.status));
+    }
+    const dataType = file.type || (file.name.toLowerCase().endsWith('.mp4') ? 'video/mp4' : 'image/jpeg');
+    return { url: './media/' + safeName, type: dataType };
+  }
+
+  async function saveToGitHub() {
+    const token = getToken();
+    if (!token) throw new Error('请先登录并粘贴 GitHub 令牌');
+    // 先取当前 sha
+    let sha;
+    const getRes = await fetch(`${API}/data.json`, { headers: { Authorization: `Bearer ${token}` } });
+    if (getRes.ok) {
+      const j = await getRes.json();
+      sha = j.sha;
+    } else if (getRes.status !== 404) {
+      throw new Error('读取 data.json 失败 HTTP ' + getRes.status);
+    }
+    const content = btoa(unescape(encodeURIComponent(JSON.stringify(appState, null, 2))));
+    const putRes = await fetch(`${API}/data.json`, {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: 'update data.json', content, sha })
+    });
+    if (!putRes.ok) {
+      const err = await putRes.json().catch(() => ({}));
+      throw new Error(err.message || ('提交失败 HTTP ' + putRes.status));
+    }
+  }
+
+  function base64FromArrayBuffer(buf) {
+    let binary = '';
+    const bytes = new Uint8Array(buf);
+    const chunk = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunk) {
+      binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+    }
+    return btoa(binary);
+  }
+
+  // ===== UI 与交互 =====
+  function updateWechatUI() {
+    document.getElementById('wechatIdText').textContent = appState.wechat.id || '';
+    const qrImg = document.getElementById('wechatQrDisplay');
+    qrImg.src = appState.wechat.qr || placeholderDataURI('微信二维码待设置');
+    document.getElementById('cfgWechatId').value = appState.wechat.id || '';
+  }
+
+  function copyWechatId() {
+    const id = appState.wechat.id || '';
+    if (!id) { alert('尚未设置微信号'); return; }
+    navigator.clipboard.writeText(id).then(() => {
+      alert("微信号已成功复制到剪贴板：" + id);
+    }).catch(() => {
+      prompt("请长按/全选复制微信号：", id);
+    });
+  }
+
+  async function handleFormSubmit(e) {
+    e.preventDefault();
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+
+    try {
+      const formData = new FormData(e.target);
+      const newProfile = { id: Date.now() };
+      formData.forEach((val, key) => { if (typeof val === 'string') newProfile[key] = val.trim(); });
+
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      newProfile.uploadDate = `${year}-${month}-${day}`;
+      newProfile.createdAt = now.getTime();
+      newProfile.isPinned = false;
+
+      const fileInput = document.getElementById('mediaInput');
+      const mediaList = [];
+      for (let i = 0; i < fileInput.files.length; i++) {
+        btn.textContent = `正在上传第 (${i + 1}/${fileInput.files.length}) 个文件...`;
+        mediaList.push(await uploadToRepo(fileInput.files[i]));
+      }
+
+      newProfile.mediaList = mediaList;
+      appState.profiles.unshift(newProfile);
+
+      btn.textContent = '正在同步到仓库...';
+      await saveToGitHub();
+
+      renderCards();
+      toggleModal('formModal', false);
+      e.target.reset();
+      alert("🎉 资料已保存到仓库，所有人刷新即可看到！");
+    } catch (err) {
+      alert("❌ 保存出错：" + err.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '确认保存并同步到全网';
+    }
+  }
+
+  async function handleWechatConfigSubmit(e) {
+    e.preventDefault();
+    const btn = document.getElementById('saveWechatBtn');
+    btn.disabled = true;
+
+    try {
+      const newId = document.getElementById('cfgWechatId').value.trim();
+      if (newId) appState.wechat.id = newId;
+
+      const fileInput = document.getElementById('cfgWechatQrFile');
+      if (fileInput.files.length > 0) {
+        const uploaded = await uploadToRepo(fileInput.files[0]);
+        appState.wechat.qr = uploaded.url;
+      }
+
+      await saveToGitHub();
+      updateWechatUI();
+      toggleModal('wechatConfigModal', false);
+      alert("微信名片已更新并同步！");
+    } catch (err) {
+      alert("❌ 更新微信名片失败：" + err.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '保存并同步';
+    }
+  }
+
+  let clickCount = 0;
+  let clickTimer = null;
+  function handleSecretClick() {
+    clickCount++;
+    clearTimeout(clickTimer);
+    clickTimer = setTimeout(() => { clickCount = 0; }, 1500);
+    if (clickCount >= 5) {
+      clickCount = 0;
+      toggleModal('loginModal', true);
+    }
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
+      e.preventDefault();
+      toggleModal('loginModal', true);
+    }
+  });
+
+  let currentGender = '全部';
+  let currentDetailMediaList = [];
+
+  async function loadData() {
+    let loaded = false;
+    try {
+      const res = await fetch('./data.json?t=' + Date.now(), { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.wechat) appState.wechat = data.wechat;
+        appState.profiles = Array.isArray(data.profiles) ? data.profiles : [];
+        loaded = true;
+      }
+    } catch (err) {
+      console.warn('加载 data.json 出错：', err);
+    }
+    if (!loaded) {
+      // 取不到仓库数据时（本地预览 / 分享链接 / 直接双击打开）用内置示例兜底，避免白屏
+      appState.wechat = DEFAULT_SAMPLE_DATA.wechat;
+      appState.profiles = DEFAULT_SAMPLE_DATA.profiles.map(p => ({ ...p }));
+    }
+    updateWechatUI();
+    renderCards();
+  }
+
+  function checkAdminState() {
+    const isAdmin = sessionStorage.getItem('is_match_admin') === 'true';
+    document.body.classList.toggle('is-admin', isAdmin);
+  }
+
+  async function handleLogin(e) {
+    e.preventDefault();
+    const pwd = document.getElementById('adminPwdInput').value;
+    const token = document.getElementById('adminTokenInput').value.trim();
+    if (pwd !== ADMIN_PASSWORD) { alert("口令错误！"); return; }
+    if (!token) { alert("请粘贴 GitHub 令牌！"); return; }
+
+    // 先校验令牌是否有效（尝试读取 data.json 的 sha）
+    try {
+      const test = await fetch(`${API}/data.json`, { headers: { Authorization: `Bearer ${token}` } });
+      if (test.status === 401 || test.status === 403) {
+        alert("GitHub 令牌无效或无权限（需要本仓库 Contents 读写）。");
+        return;
+      }
+    } catch (err) {
+      alert("无法连接 GitHub，请检查网络：" + err.message);
+      return;
+    }
+
+    sessionStorage.setItem('is_match_admin', 'true');
+    sessionStorage.setItem('gh_token', token);
+    checkAdminState();
+    toggleModal('loginModal', false);
+    document.getElementById('adminPwdInput').value = '';
+    document.getElementById('adminTokenInput').value = '';
+    alert("已解锁管理权限，现在可以添加/修改资料。");
+  }
+
+  function logoutAdmin() {
+    sessionStorage.removeItem('is_match_admin');
+    sessionStorage.removeItem('gh_token');
+    checkAdminState();
+    renderCards();
+  }
+
+  function filterGender(gender, btn) {
+    currentGender = gender;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderCards();
+  }
+
+  function renderCards() {
+    const keyword = document.getElementById('searchInput').value.toLowerCase().trim();
+    const sortBy = document.getElementById('sortSelect').value;
+    const container = document.getElementById('cardsContainer');
+
+    let filtered = (appState.profiles || []).filter(item => {
+      const matchGender = currentGender === '全部' || item['性别'] === currentGender;
+      const fullStr = Object.values(item).filter(v => typeof v === 'string').join(' ').toLowerCase();
+      return matchGender && (!keyword || fullStr.includes(keyword));
+    });
+
+    filtered.sort((a, b) => {
+      const isPinnedA = a.isPinned ? 1 : 0;
+      const isPinnedB = b.isPinned ? 1 : 0;
+      if (isPinnedA !== isPinnedB) return isPinnedB - isPinnedA;
+
+      if (sortBy === 'newest') return (b.createdAt || 0) - (a.createdAt || 0);
+      if (sortBy === 'oldest') return (a.createdAt || 0) - (b.createdAt || 0);
+      if (sortBy === 'age_asc') return (parseFloat(a['年龄']) || 999) - (parseFloat(b['年龄']) || 999);
+      if (sortBy === 'age_desc') return (parseFloat(b['年龄']) || 0) - (parseFloat(a['年龄']) || 0);
+      return 0;
+    });
+
+    if (filtered.length === 0) {
+      container.innerHTML = `<p style="grid-column: 1/-1; text-align:center; color: var(--text-muted); padding: 40px;">暂无匹配的嘉宾档案</p>`;
+      return;
+    }
+
+    container.innerHTML = filtered.map(item => {
+      const mediaList = item.mediaList || [];
+      const firstMedia = mediaList[0];
+      const imgCount = mediaList.filter(m => m.type && m.type.startsWith('image')).length;
+      const vidCount = mediaList.filter(m => m.type && m.type.startsWith('video')).length;
+
+      let badgeText = '';
+      if (imgCount > 0) badgeText += `📷 ${imgCount} `;
+      if (vidCount > 0) badgeText += `🎬 ${vidCount}`;
+
+      let coverHtml = `<img src="${placeholderDataURI('暂无照片')}" alt="封面">`;
+      if (firstMedia) {
+        if (firstMedia.type && firstMedia.type.startsWith('video')) {
+          coverHtml = `<video src="${firstMedia.url}" muted playsinline loop onmouseover="this.play()" onmouseout="this.pause()"></video>`;
+        } else {
+          coverHtml = `<img src="${firstMedia.url}" alt="${item['姓名']}">`;
+        }
+      }
+
+      const displayDate = item.uploadDate ? item.uploadDate.split(' ')[0] : '近期上传';
+
+      return `
+        <div class="card ${item.isPinned ? 'is-pinned' : ''}" onclick="openDetail(${item.id})">
+          <div class="card-media-wrap">
+            ${coverHtml}
+            ${item.isPinned ? `<span class="pin-badge">📌 置顶</span>` : ''}
+            ${badgeText ? `<span class="media-badge">${badgeText}</span>` : ''}
+            <span class="date-badge">📅 ${displayDate}</span>
+          </div>
+          <div class="card-body">
+            <div class="card-title">
+              <span>${item['姓名'] || '未填'} <small style="font-weight:normal; font-size:13px; color:var(--text-muted);">(${item['性别'] || '-'})</small></span>
+              <span class="card-loc">${item['国家/城市'] || ''}</span>
+            </div>
+            <div class="card-meta">${item['年龄'] ? item['年龄'] + '岁 · ' : ''}${item['身高'] || ''} · ${item['职业/学生'] || ''}</div>
+            <div class="card-quote">“${item['一句话介绍'] || '暂无一句话介绍'}”</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function openDetail(id) {
+    const item = appState.profiles.find(p => p.id === id);
+    if (!item) return;
+
+    currentDetailMediaList = item.mediaList || [];
+
+    const modalBody = document.getElementById('modalBody');
+    modalBody.innerHTML = `
+      <div class="media-gallery">
+        <div class="media-viewer" id="mainViewer"></div>
+        <div class="thumbnail-bar" id="thumbBar"></div>
+      </div>
+
+      <div class="modal-title" style="margin-bottom:14px;">
+        <h2>
+          ${item.isPinned ? '<span style="color:var(--pin-gold); font-size:16px;">[已置顶] </span>' : ''}
+          ${item['姓名']}
+          <span style="font-size:14px; color:var(--text-muted); font-weight:normal;">(${item['性别']} · ${item['性取向'] || '未填'})</span>
+        </h2>
+        <div style="display:flex; justify-content:space-between; align-items:center; color:var(--text-muted); font-size:12px; margin-top:4px;">
+          <span>📍 ${item['国家/城市'] || '未填'}</span>
+          <span>📅 上传日期：${item.uploadDate || '近期'}</span>
+        </div>
+      </div>
+
+      <div class="modal-grid">
+        <div><strong>生日：</strong>${item['生日'] || '-'}</div>
+        <div><strong>年龄：</strong>${item['年龄'] || '-'} 岁</div>
+        <div><strong>身高：</strong>${item['身高'] || '-'}</div>
+        <div><strong>体重：</strong>${item['体重'] || '-'}</div>
+        <div><strong>星座：</strong>${item['星座'] || '-'}</div>
+        <div><strong>职业/学生：</strong>${item['职业/学生'] || '-'}</div>
+      </div>
+
+      <div class="modal-row"><div class="modal-label">【性格】</div><div class="modal-box">${item['性格'] || '-'}</div></div>
+      <div class="modal-row"><div class="modal-label">【兴趣爱好】</div><div class="modal-box">${item['兴趣爱好'] || '-'}</div></div>
+      <div class="modal-row"><div class="modal-label">【生活习惯】</div><div class="modal-box">${item['生活习惯'] || '-'}</div></div>
+      <div class="modal-row"><div class="modal-label">【要求】</div><div class="modal-box">${item['要求'] || '-'}</div></div>
+      <div class="modal-row"><div class="modal-label">【一句话介绍】</div><div class="modal-box" style="font-style:italic;">“${item['一句话介绍'] || '-'}”</div></div>
+
+      <div class="admin-action-row admin-only">
+        <button class="btn btn-outline" style="flex:1; color:${item.isPinned ? '#4b5563' : 'var(--pin-gold)'}; border-color:${item.isPinned ? '#d1d5db' : 'var(--pin-gold)'};" onclick="togglePinProfile(${item.id})">
+          ${item.isPinned ? '取消置顶' : '📌 置顶此档案'}
+        </button>
+        <button class="btn btn-outline" style="flex:1; color:var(--danger); border-color:#fca5a5;" onclick="deleteProfile(${item.id})">
+          🗑️ 删除档案
+        </button>
+      </div>
+    `;
+
+    renderGallery();
+    toggleModal('detailModal', true);
+  }
+
+  function renderGallery() {
+    const viewer = document.getElementById('mainViewer');
+    const thumbBar = document.getElementById('thumbBar');
+
+    if (currentDetailMediaList.length === 0) {
+      viewer.innerHTML = `<img src="${placeholderDataURI('暂无照片')}" alt="空">`;
+      thumbBar.style.display = 'none';
+      return;
+    }
+
+    thumbBar.style.display = 'flex';
+    thumbBar.innerHTML = currentDetailMediaList.map((m, idx) => `
+      <div class="thumb-item ${idx === 0 ? 'active' : ''}" onclick="switchMedia(${idx})">
+        ${m.type && m.type.startsWith('video') ? `<video src="${m.url}"></video><div class="thumb-video-icon">▶</div>` : `<img src="${m.url}">`}
+      </div>
+    `).join('');
+
+    switchMedia(0);
+  }
+
+  function switchMedia(idx) {
+    const viewer = document.getElementById('mainViewer');
+    const media = currentDetailMediaList[idx];
+    if (!media) return;
+
+    if (media.type && media.type.startsWith('video')) {
+      viewer.innerHTML = `<video src="${media.url}" controls autoplay playsinline></video>`;
+    } else {
+      viewer.innerHTML = `<img src="${media.url}" alt="大图">`;
+    }
+
+    document.querySelectorAll('.thumb-item').forEach((el, i) => {
+      el.classList.toggle('active', i === idx);
+    });
+  }
+
+  async function togglePinProfile(id) {
+    const item = appState.profiles.find(p => p.id === id);
+    if (!item) return;
+    item.isPinned = !item.isPinned;
+    try {
+      await saveToGitHub();
+      renderCards();
+      openDetail(id);
+    } catch (err) {
+      alert("❌ 同步失败：" + err.message);
+    }
+  }
+
+  async function deleteProfile(id) {
+    if (!confirm("确定要删除这份嘉宾档案吗？")) return;
+    appState.profiles = appState.profiles.filter(p => p.id !== id);
+    try {
+      await saveToGitHub();
+      renderCards();
+      toggleModal('detailModal', false);
+    } catch (err) {
+      alert("❌ 同步失败：" + err.message);
+    }
+  }
+
+  function toggleModal(id, show) {
+    const modal = document.getElementById(id);
+    modal.style.display = show ? 'flex' : 'none';
+    if (!show && id === 'detailModal') {
+      const video = modal.querySelector('video');
+      if (video) video.pause();
+    }
+  }
+
+  function handleOverlayClick(e, id) {
+    if (e.target.id === id) toggleModal(id, false);
+  }
+
+  checkAdminState();
+  loadData();
+</script>
+
+</body>
+</html>
