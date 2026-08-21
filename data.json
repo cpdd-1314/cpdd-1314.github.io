@@ -158,15 +158,7 @@
       "mediaList": []
     }
   ],
-  "passes": [
-    {
-      "code": "Q6CS8QSU",
-      "expiresAt": 1787343088094,
-      "note": "",
-      "name": "小红",
-      "guestNo": "G100"
-    }
-  ],
+  "passes": [],
   "staffs": [],
   "nextProfileNo": 5
 }
