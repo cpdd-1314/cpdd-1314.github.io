@@ -9,7 +9,7 @@
       "姓名": "陈",
       "guestNo": "A111",
       "性别": "男",
-      "性取向": "",
+      "性取向": "女",
       "国家/城市": "那不勒斯",
       "生日": "10",
       "年龄": "16",
@@ -31,7 +31,8 @@
       "fromGuest": true,
       "uploaderPass": "BSBSGBHN",
       "profileNo": "A008",
-      "mediaList": []
+      "mediaList": [],
+      "updatedAt": 1787346010354
     },
     {
       "id": 1787342474983,
