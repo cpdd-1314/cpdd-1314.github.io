@@ -1018,20 +1018,65 @@
       box.innerHTML = `<div style="font-size:12px; color:var(--text-muted); text-align:center; padding:8px;">还没有生成过凭证</div>`;
       return;
     }
-    box.innerHTML = `<div style="font-size:12px; color:var(--text-muted); margin-bottom:6px;">已生成凭证（${passes.length} 个）：</div>` +
-      passes.map(p => {
-        const expired = Date.now() > p.expiresAt;
-        return `<div style="display:flex; justify-content:space-between; align-items:center; font-size:13px; padding:7px 10px; border:1px solid var(--border); border-radius:8px; margin-bottom:6px; background:var(--card-bg);">
-          <div>
-            <strong style="letter-spacing:1px;">${p.code}</strong>
-            ${p.note ? `<span style="color:var(--text-muted); font-size:12px;">（${p.note}）</span>` : ''}
-            <div style="font-size:11px; color:${expired ? 'var(--danger)' : 'var(--text-muted)'};">
-              ${expired ? '已过期' : '有效至'} ${fmtTime(p.expiresAt)}
-            </div>
+    const now = Date.now();
+    const active = passes.filter(p => now <= p.expiresAt);
+    const expired = passes.filter(p => now > p.expiresAt);
+
+    const passItem = p => {
+      const isExpired = now > p.expiresAt;
+      return `<div style="display:flex; justify-content:space-between; align-items:center; font-size:13px; padding:7px 10px; border:1px solid ${isExpired ? '#fecaca' : 'var(--border)'}; border-radius:8px; margin-bottom:6px; background:${isExpired ? '#fef2f2' : 'var(--card-bg)'};">
+        <div>
+          <strong style="letter-spacing:1px;">${p.code}</strong>
+          ${p.note ? `<span style="color:var(--text-muted); font-size:12px;">（${p.note}）</span>` : ''}
+          <div style="font-size:11px; color:${isExpired ? 'var(--danger)' : 'var(--text-muted)'};">
+            ${isExpired ? '🚫 已过期 · 失效于' : '✅ 有效至'} ${fmtTime(p.expiresAt)}
           </div>
-          <button class="btn btn-outline" style="font-size:11px; padding:4px 10px;" onclick="copyPass('${p.code}')">复制</button>
-        </div>`;
-      }).join('');
+        </div>
+        <div style="display:flex; gap:4px; flex-shrink:0;">
+          ${isExpired
+            ? `<button class="btn btn-outline" style="font-size:11px; padding:4px 8px;" onclick="deletePass('${p.code}')">🗑️ 删除</button>`
+            : `<button class="btn btn-outline" style="font-size:11px; padding:4px 8px; color:var(--danger); border-color:#fca5a5;" onclick="expirePass('${p.code}')">⏹️ 立即过期</button>
+               <button class="btn btn-outline" style="font-size:11px; padding:4px 8px;" onclick="copyPass('${p.code}')">复制</button>`}
+        </div>
+      </div>`;
+    };
+
+    let html = '';
+    if (active.length > 0) {
+      html += `<div style="font-size:12px; color:#047857; margin:8px 0 6px; font-weight:700;">✅ 有效凭证（${active.length}）</div>` +
+        active.map(passItem).join('');
+    }
+    if (expired.length > 0) {
+      html += `<div style="font-size:12px; color:var(--danger); margin:10px 0 6px; font-weight:700;">🚫 已过期凭证（${expired.length}）</div>` +
+        expired.map(passItem).join('');
+    }
+    box.innerHTML = html;
+  }
+  // 立即作废某个凭证
+  async function expirePass(code) {
+    if (!confirm(`确定要让凭证 ${code} 立即过期吗？嘉宾将无法再使用它上传。`)) return;
+    const pass = (appState.passes || []).find(p => p.code === code);
+    if (!pass) return;
+    pass.expiresAt = Date.now() - 1;
+    try {
+      await saveToGitHub();
+      renderPassList();
+      alert("✅ 凭证已作废，嘉宾无法再使用。");
+    } catch (err) {
+      alert("❌ 操作失败：" + err.message);
+    }
+  }
+  // 删除凭证（仅限已过期的）
+  async function deletePass(code) {
+    if (!confirm(`确定删除已过期凭证 ${code} 吗？`)) return;
+    appState.passes = (appState.passes || []).filter(p => p.code !== code);
+    try {
+      await saveToGitHub();
+      renderPassList();
+      alert("✅ 凭证已删除。");
+    } catch (err) {
+      alert("❌ 删除失败：" + err.message);
+    }
   }
   function copyPass(code) {
     navigator.clipboard.writeText(code).then(() => alert("凭证码已复制：" + code))
