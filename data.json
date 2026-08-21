@@ -176,7 +176,8 @@
       "isPinned": true,
       "mediaList": [],
       "guestNo": "LC-88",
-      "updatedAt": 1787342047019
+      "updatedAt": 1787342047019,
+      "isHidden": true
     },
     {
       "id": 1700000000002,
