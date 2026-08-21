@@ -71,11 +71,5 @@
       "mediaList": []
     }
   ],
-  "passes": [
-    {
-      "code": "KK8GL3JL",
-      "expiresAt": 1787336643624,
-      "note": "过期测试"
-    }
-  ]
+  "passes": []
 }
