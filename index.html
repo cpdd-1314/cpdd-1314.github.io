@@ -245,6 +245,50 @@
       background: #fff7ed; border: 1px solid #fed7aa; color: #9a3412;
       font-size: 12px; padding: 8px 12px; border-radius: 8px; margin-bottom: 12px; line-height: 1.6;
     }
+
+    /* ===== 全屏照片灯箱 ===== */
+    .lightbox {
+      position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,0.94);
+      display: none; align-items: center; justify-content: center;
+      flex-direction: column; user-select: none;
+    }
+    .lightbox.open { display: flex; }
+    .lightbox-stage {
+      width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+      cursor: grab; overflow: hidden; position: relative;
+    }
+    .lightbox-stage:active { cursor: grabbing; }
+    .lightbox-stage img, .lightbox-stage video {
+      max-width: 94%; max-height: 92%; object-fit: contain; border-radius: 6px;
+      transition: transform 0.2s ease; background: #000;
+    }
+    .lightbox-close {
+      position: absolute; top: 16px; right: 20px; width: 40px; height: 40px; z-index: 10;
+      border-radius: 50%; border: none; background: rgba(255,255,255,0.15); color: #fff;
+      font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    }
+    .lightbox-close:hover { background: rgba(255,255,255,0.3); }
+    .lightbox-nav {
+      position: absolute; top: 50%; transform: translateY(-50%);
+      width: 48px; height: 48px; border-radius: 50%; border: none; z-index: 10;
+      background: rgba(255,255,255,0.15); color: #fff; font-size: 22px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .lightbox-nav:hover { background: rgba(255,255,255,0.3); }
+    .lightbox-nav.prev { left: 16px; }
+    .lightbox-nav.next { right: 16px; }
+    .lightbox-info {
+      position: absolute; bottom: 16px; left: 0; right: 0; text-align: center;
+      color: rgba(255,255,255,0.75); font-size: 13px; z-index: 10;
+    }
+    .lightbox-counter {
+      position: absolute; top: 18px; left: 20px; color: rgba(255,255,255,0.75);
+      font-size: 13px; z-index: 10; background: rgba(0,0,0,0.5); padding: 3px 10px; border-radius: 6px;
+    }
+    .lightbox-zoom-hint {
+      position: absolute; bottom: 44px; left: 0; right: 0; text-align: center;
+      color: rgba(255,255,255,0.45); font-size: 12px; z-index: 10;
+    }
   </style>
 </head>
 <body>
@@ -613,6 +657,17 @@
       <button type="submit" class="btn btn-primary" style="width:100%; padding:10px;" id="submitBtn">确认保存并同步到全网</button>
     </form>
   </div>
+</div>
+
+<!-- 全屏照片/视频灯箱 -->
+<div class="lightbox" id="lightbox" onclick="lightboxBackdropClick(event)">
+  <button class="lightbox-close" onclick="lightboxClose()" aria-label="关闭">✕</button>
+  <span class="lightbox-counter" id="lightboxCounter"></span>
+  <button class="lightbox-nav prev" id="lightboxPrev" onclick="lightboxPrev()" aria-label="上一张">‹</button>
+  <div class="lightbox-stage" id="lightboxStage"></div>
+  <button class="lightbox-nav next" id="lightboxNext" onclick="lightboxNext()" aria-label="下一张">›</button>
+  <div class="lightbox-info" id="lightboxInfo"></div>
+  <div class="lightbox-zoom-hint" id="lightboxHint">点击左右按钮切换 · 鼠标滚轮缩放 · 拖动平移</div>
 </div>
 
 <script>
@@ -1685,9 +1740,9 @@
       let coverHtml = `<img src="${placeholderDataURI('暂无照片')}" alt="封面">`;
       if (firstMedia) {
         if (firstMedia.type && firstMedia.type.startsWith('video')) {
-          coverHtml = `<video src="${firstMedia.url}" muted playsinline loop onmouseover="this.play()" onmouseout="this.pause()"></video>`;
+          coverHtml = `<video src="${firstMedia.url}" muted playsinline loop onmouseover="this.play()" onmouseout="this.pause()" onclick="openCardLightbox(${item.id}, 0)"></video>`;
         } else {
-          coverHtml = `<img src="${firstMedia.url}" alt="${item['姓名']}">`;
+          coverHtml = `<img src="${firstMedia.url}" alt="${item['姓名']}" style="cursor:zoom-in;" onclick="openCardLightbox(${item.id}, 0)">`;
         }
       }
 
@@ -1797,7 +1852,7 @@
 
     thumbBar.style.display = 'flex';
     thumbBar.innerHTML = currentDetailMediaList.map((m, idx) => `
-      <div class="thumb-item ${idx === 0 ? 'active' : ''}" onclick="switchMedia(${idx})">
+      <div class="thumb-item ${idx === 0 ? 'active' : ''}" onclick="switchMedia(${idx}); openLightbox(${idx})" title="点击放大全屏">
         ${m.type && m.type.startsWith('video') ? `<video src="${m.url}"></video><div class="thumb-video-icon">▶</div>` : `<img src="${m.url}">`}
       </div>
     `).join('');
@@ -1813,13 +1868,149 @@
     if (media.type && media.type.startsWith('video')) {
       viewer.innerHTML = `<video src="${media.url}" controls autoplay playsinline></video>`;
     } else {
-      viewer.innerHTML = `<img src="${media.url}" alt="大图">`;
+      viewer.innerHTML = `<img src="${media.url}" alt="大图" style="cursor:zoom-in;" onclick="openLightbox(${idx})" title="点击放大全屏">`;
     }
 
     document.querySelectorAll('.thumb-item').forEach((el, i) => {
       el.classList.toggle('active', i === idx);
     });
   }
+
+  // 从卡片封面打开全屏（不触发打开详情）
+  function openCardLightbox(profileId, idx) {
+    event.stopPropagation();
+    const item = appState.profiles.find(p => p.id === profileId);
+    if (!item || !item.mediaList || item.mediaList.length === 0) return;
+    currentDetailMediaList = item.mediaList;
+    openLightbox(idx || 0);
+  }
+
+  // ===== 全屏灯箱 =====
+  let lightboxList = [];      // 当前灯箱的媒体列表
+  let lightboxIndex = 0;      // 当前索引
+  let lbZoom = 1;             // 缩放比例
+  let lbDragging = false, lbStartX = 0, lbStartY = 0, lbTx = 0, lbTy = 0;
+
+  function openLightbox(idx) {
+    const list = currentDetailMediaList;
+    if (!list || list.length === 0) return;
+    if (idx < 0) idx = 0;
+    if (idx >= list.length) idx = list.length - 1;
+    lightboxList = list;
+    lightboxIndex = idx;
+    lbZoom = 1; lbTx = 0; lbTy = 0;
+    lightboxRender();
+    const lb = document.getElementById('lightbox');
+    lb.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function lightboxRender() {
+    const stage = document.getElementById('lightboxStage');
+    const media = lightboxList[lightboxIndex];
+    if (!media) return;
+
+    const isVid = media.type && media.type.startsWith('video');
+    stage.innerHTML = isVid
+      ? `<video src="${media.url}" controls autoplay playsinline style="transform:scale(${lbZoom});"></video>`
+      : `<img src="${media.url}" alt="全屏照片" style="transform:scale(${lbZoom}) translate(${lbTx}px, ${lbTy}px);">`;
+
+    // 计数 + 描述
+    document.getElementById('lightboxCounter').textContent = `${lightboxIndex + 1} / ${lightboxList.length}`;
+    const name = media.type && media.type.startsWith('video') ? '视频' : '照片';
+    document.getElementById('lightboxInfo').textContent = `${name} ${lightboxIndex + 1} / ${lightboxList.length}`;
+
+    // 导航按钮显隐
+    document.getElementById('lightboxPrev').style.display = lightboxList.length > 1 ? 'flex' : 'none';
+    document.getElementById('lightboxNext').style.display = lightboxList.length > 1 ? 'flex' : 'none';
+    document.getElementById('lightboxHint').textContent = lightboxList.length > 1
+      ? '点击左右切换 · 滚轮缩放 · 拖动平移 · Esc 关闭'
+      : '滚轮缩放 · 拖动平移 · Esc 关闭';
+  }
+
+  function lightboxNext() {
+    if (lightboxList.length === 0) return;
+    lightboxIndex = (lightboxIndex + 1) % lightboxList.length;
+    lbZoom = 1; lbTx = 0; lbTy = 0;
+    lightboxRender();
+  }
+  function lightboxPrev() {
+    if (lightboxList.length === 0) return;
+    lightboxIndex = (lightboxIndex - 1 + lightboxList.length) % lightboxList.length;
+    lbZoom = 1; lbTx = 0; lbTy = 0;
+    lightboxRender();
+  }
+  function lightboxClose() {
+    const lb = document.getElementById('lightbox');
+    lb.classList.remove('open');
+    document.body.style.overflow = '';
+    document.getElementById('lightboxStage').innerHTML = '';
+    lightboxList = [];
+  }
+  // 点击背景（非图片本身）关闭
+  function lightboxBackdropClick(e) {
+    if (e.target === document.getElementById('lightbox') || e.target.classList.contains('lightbox-stage')) {
+      lightboxClose();
+    }
+  }
+
+  // 键盘：Esc 关闭、左右切换
+  document.addEventListener('keydown', (e) => {
+    const lb = document.getElementById('lightbox');
+    if (!lb.classList.contains('open')) return;
+    if (e.key === 'Escape') lightboxClose();
+    else if (e.key === 'ArrowRight') lightboxNext();
+    else if (e.key === 'ArrowLeft') lightboxPrev();
+  });
+
+  // 灯箱缩放（滚轮）与拖动平移
+  document.getElementById('lightboxStage').addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const delta = e.deltaY < 0 ? 0.15 : -0.15;
+    lbZoom = Math.min(4, Math.max(1, lbZoom + delta));
+    lightboxRender();
+  }, { passive: false });
+
+  document.getElementById('lightboxStage').addEventListener('mousedown', (e) => {
+    if (e.target.tagName === 'VIDEO') return;
+    if (lbZoom <= 1) return; // 未放大时不拖动
+    lbDragging = true;
+    lbStartX = e.clientX - lbTx;
+    lbStartY = e.clientY - lbTy;
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove', (e) => {
+    if (!lbDragging) return;
+    lbTx = e.clientX - lbStartX;
+    lbTy = e.clientY - lbStartY;
+    lightboxRender();
+  });
+  document.addEventListener('mouseup', () => { lbDragging = false; });
+
+  // 触屏支持：双指缩放 + 单指平移（简化实现）
+  let pinchDist = 0;
+  document.getElementById('lightboxStage').addEventListener('touchstart', (e) => {
+    if (e.touches.length === 2) {
+      pinchDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+    } else if (e.touches.length === 1 && lbZoom > 1) {
+      lbDragging = true;
+      lbStartX = e.touches[0].clientX - lbTx;
+      lbStartY = e.touches[0].clientY - lbTy;
+    }
+  }, { passive: true });
+  document.getElementById('lightboxStage').addEventListener('touchmove', (e) => {
+    if (e.touches.length === 2 && pinchDist > 0) {
+      const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+      lbZoom = Math.min(4, Math.max(1, lbZoom * (dist / pinchDist)));
+      pinchDist = dist;
+      lightboxRender();
+    } else if (e.touches.length === 1 && lbDragging) {
+      lbTx = e.touches[0].clientX - lbStartX;
+      lbTy = e.touches[0].clientY - lbStartY;
+      lightboxRender();
+    }
+  }, { passive: true });
+  document.getElementById('lightboxStage').addEventListener('touchend', () => { lbDragging = false; pinchDist = 0; }, { passive: true });
 
   async function togglePinProfile(id) {
     const item = appState.profiles.find(p => p.id === id);
