@@ -5,6 +5,32 @@
   },
   "profiles": [
     {
+      "id": 1787339325905,
+      "姓名": "ff",
+      "性别": "男",
+      "性取向": "",
+      "国家/城市": "",
+      "生日": "",
+      "年龄": "",
+      "身高": "",
+      "体重": "",
+      "星座": "",
+      "职业/学生": "",
+      "性格": "",
+      "兴趣爱好": "",
+      "生活习惯": "",
+      "要求": "",
+      "一句话介绍": "",
+      "uploadDate": "2026-08-21",
+      "createdAt": 1787339325905,
+      "isPinned": false,
+      "uploaderType": "super",
+      "uploaderName": "管理员",
+      "uploaderCode": "ADMIN",
+      "profileNo": "A005",
+      "mediaList": []
+    },
+    {
       "id": 1787335033486,
       "姓名": "ff",
       "性别": "男",
@@ -160,5 +186,5 @@
   ],
   "passes": [],
   "staffs": [],
-  "nextProfileNo": 5
+  "nextProfileNo": 6
 }
