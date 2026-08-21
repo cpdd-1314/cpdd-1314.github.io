@@ -321,7 +321,7 @@
     <h2 style="font-size:18px; margin-bottom:12px;">管理员登录</h2>
     <div class="notice">
       口令用于身份门槛；<b>GitHub 令牌</b>用于把改动提交到仓库、让所有人看到。<br>
-      令牌请用 <b>fine-grained PAT</b>，权限仅限本仓库的 <b>Contents 读写</b>，仅保存在当前浏览器会话，关闭标签页即清除。
+      勾选「记住我」后令牌会保存在本机，下次打开网站自动解锁，无需重复输入。
     </div>
     <form onsubmit="handleLogin(event)">
       <div class="form-group" style="margin-bottom:10px;">
@@ -331,7 +331,11 @@
       <div class="form-group" style="margin-bottom:14px;">
         <label>GitHub 令牌 (PAT)</label>
         <input type="password" id="adminTokenInput" placeholder="github_pat_xxx" required>
-        <div class="file-hint">在 GitHub → Settings → Developer settings → Fine-grained tokens 生成</div>
+        <div class="file-hint">在 GitHub → Settings → Developer settings → Tokens (classic) 生成，勾选 repo 权限</div>
+      </div>
+      <div class="form-group" style="margin-bottom:14px; flex-direction:row; align-items:center; gap:8px;">
+        <input type="checkbox" id="rememberMe" style="width:16px; height:16px;" checked>
+        <label for="rememberMe" style="font-size:13px; font-weight:500; color:var(--text); margin:0;">记住我（下次免登录，本机保存令牌）</label>
       </div>
       <button type="submit" class="btn btn-primary" style="width:100%;">解锁</button>
     </form>
@@ -665,7 +669,22 @@
   }
 
   // ===== GitHub 读写 =====
-  function getToken() { return sessionStorage.getItem('gh_token') || ''; }
+  // 令牌存取：优先 sessionStorage（本次会话），其次 localStorage（记住我）
+  function getToken() {
+    return sessionStorage.getItem('gh_token') || localStorage.getItem('gh_token') || '';
+  }
+  function setRemember(remember) {
+    // 把令牌从 session 挪到 localStorage 或反过来
+    const token = sessionStorage.getItem('gh_token') || localStorage.getItem('gh_token') || '';
+    const admin = sessionStorage.getItem('is_match_admin') || localStorage.getItem('is_match_admin') || '';
+    sessionStorage.removeItem('gh_token');
+    sessionStorage.removeItem('is_match_admin');
+    localStorage.removeItem('gh_token');
+    localStorage.removeItem('is_match_admin');
+    const store = remember ? localStorage : sessionStorage;
+    if (token) store.setItem('gh_token', token);
+    if (admin) store.setItem('is_match_admin', admin);
+  }
 
   async function uploadToRepo(file) {
     const token = getToken();
@@ -864,7 +883,7 @@
   }
 
   function checkAdminState() {
-    const isAdmin = sessionStorage.getItem('is_match_admin') === 'true';
+    const isAdmin = sessionStorage.getItem('is_match_admin') === 'true' || localStorage.getItem('is_match_admin') === 'true';
     document.body.classList.toggle('is-admin', isAdmin);
   }
 
@@ -887,8 +906,10 @@
       return;
     }
 
+    const rememberMe = document.getElementById('rememberMe').checked;
     sessionStorage.setItem('is_match_admin', 'true');
     sessionStorage.setItem('gh_token', token);
+    if (rememberMe) setRemember(true);
     checkAdminState();
     toggleModal('loginModal', false);
     document.getElementById('adminPwdInput').value = '';
@@ -899,6 +920,8 @@
   function logoutAdmin() {
     sessionStorage.removeItem('is_match_admin');
     sessionStorage.removeItem('gh_token');
+    localStorage.removeItem('is_match_admin');
+    localStorage.removeItem('gh_token');
     checkAdminState();
     renderCards();
   }
@@ -1108,7 +1131,12 @@
     if (e.target.id === id) toggleModal(id, false);
   }
 
+  // 页面加载时：若本机记住了令牌，自动恢复管理员状态（下次无需再登录）
   checkAdminState();
+  if (getToken() && !document.body.classList.contains('is-admin')) {
+    localStorage.setItem('is_match_admin', 'true');
+    checkAdminState();
+  }
   loadData();
 </script>
 
