@@ -195,7 +195,8 @@
       "uploadDate": "2025-06-08",
       "createdAt": 1700000000003,
       "isPinned": false,
-      "mediaList": []
+      "mediaList": [],
+      "isHidden": true
     }
   ],
   "passes": [
