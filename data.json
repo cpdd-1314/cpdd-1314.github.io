@@ -1,97 +1,9 @@
 {
   "wechat": {
     "id": "xiaomaomiii777",
-    "qr": "./media/1787335501942_13291.png"
+    "qr": ""
   },
   "profiles": [
-    {
-      "id": 1787335033486,
-      "姓名": "ff",
-      "性别": "男",
-      "性取向": "",
-      "国家/城市": "",
-      "生日": "",
-      "年龄": "",
-      "身高": "",
-      "体重": "",
-      "星座": "",
-      "职业/学生": "",
-      "性格": "",
-      "兴趣爱好": "",
-      "生活习惯": "",
-      "要求": "",
-      "一句话介绍": "",
-      "uploadDate": "2026-08-21",
-      "createdAt": 1787335033486,
-      "isPinned": false,
-      "mediaList": [
-        {
-          "url": "./media/1787335033871___1-removebg-preview.jpg",
-          "type": "image/jpeg"
-        },
-        {
-          "url": "./media/1787335035077___1.jpg",
-          "type": "image/jpeg"
-        },
-        {
-          "url": "./media/1787335037688_QWERT.jpg",
-          "type": "image/jpeg"
-        },
-        {
-          "url": "./media/1787335038927_SFFSFSF.jpg",
-          "type": "image/jpeg"
-        },
-        {
-          "url": "./media/1787335040391_DDD.jpg",
-          "type": "image/jpeg"
-        },
-        {
-          "url": "./media/1787335041571_AWQ.jpg",
-          "type": "image/jpeg"
-        },
-        {
-          "url": "./media/1787335042851_WAS.jpg",
-          "type": "image/jpeg"
-        },
-        {
-          "url": "./media/1787335044450_QWE.jpg",
-          "type": "image/jpeg"
-        },
-        {
-          "url": "./media/1787335046944_SFB.jpg",
-          "type": "image/jpeg"
-        },
-        {
-          "url": "./media/1787335048376_BBB.jpg",
-          "type": "image/jpeg"
-        },
-        {
-          "url": "./media/1787335049883_aaa.jpg",
-          "type": "image/jpeg"
-        },
-        {
-          "url": "./media/1787335051276_dft.jpg",
-          "type": "image/jpeg"
-        },
-        {
-          "url": "./media/1787335052838___.jpg",
-          "type": "image/jpeg"
-        },
-        {
-          "url": "./media/1787335054298_image.jpg",
-          "type": "image/jpeg"
-        },
-        {
-          "url": "./media/1787335055500_DFGDSGDGDFG.jpg",
-          "type": "image/jpeg"
-        },
-        {
-          "url": "./media/1787335056973_DXVDSZVGBDXFSG.jpg",
-          "type": "image/jpeg"
-        }
-      ],
-      "updatedAt": 1787336888232
-    },
     {
       "id": 1700000000001,
       "姓名": "林辰",
@@ -159,5 +71,11 @@
       "mediaList": []
     }
   ],
-  "passes": []
+  "passes": [
+    {
+      "code": "ZZP4D3AN",
+      "expiresAt": 1787340515770,
+      "note": ""
+    }
+  ]
 }
