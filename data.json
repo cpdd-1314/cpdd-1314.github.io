@@ -159,12 +159,6 @@
     }
   ],
   "passes": [],
-  "staffs": [
-    {
-      "code": "ST001",
-      "name": ".",
-      "password": "123"
-    }
-  ],
+  "staffs": [],
   "nextProfileNo": 5
 }
