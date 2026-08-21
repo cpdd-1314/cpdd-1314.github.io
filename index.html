@@ -63,6 +63,10 @@
 
     .admin-only { display: none !important; }
     body.is-admin .admin-only { display: inline-flex !important; }
+    .super-only { display: none !important; }
+    body.is-super .super-only { display: inline-flex !important; }
+    .staff-only { display: none !important; }
+    body.is-staff .staff-only { display: inline-flex !important; }
     .guest-only { display: none !important; }
     body.is-guest .guest-only { display: inline-flex !important; }
     .guest-badge {
@@ -70,6 +74,16 @@
       font-size: 12px; padding: 4px 10px; border-radius: 8px;
     }
     body.is-guest .guest-badge { display: inline-flex; align-items: center; gap: 4px; }
+    .staff-badge {
+      display: none; background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;
+      font-size: 12px; padding: 4px 10px; border-radius: 8px;
+    }
+    body.is-staff .staff-badge { display: inline-flex; align-items: center; gap: 4px; }
+    .uploader-tag {
+      font-size: 11px; color: var(--text-muted); background: var(--bg);
+      border-radius: 6px; padding: 2px 8px; display: inline-flex; align-items: center; gap: 4px;
+    }
+    .uploader-tag .dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
 
     .toolbar {
       display: flex;
@@ -248,10 +262,12 @@
       </button>
 
       <button class="btn btn-outline" onclick="toggleModal('passLoginModal', true)">🎫 我有上传凭证</button>
-      <span class="guest-badge" id="guestBadge">🟢 嘉宾自助上传模式 <span style="cursor:pointer; text-decoration:underline;" onclick="logoutGuest()">退出</span></span>
+      <span class="guest-badge" id="guestBadge">🟢 嘉宾上传模式 <span style="cursor:pointer; text-decoration:underline;" onclick="logoutGuest()">退出</span></span>
+      <span class="staff-badge" id="staffBadge">👤 内部管理员 <span style="cursor:pointer; text-decoration:underline;" onclick="logoutStaff()">退出</span></span>
 
-      <button class="btn btn-outline admin-only" onclick="toggleModal('passAdminModal', true)">🎟️ 生成临时凭证</button>
-      <button class="btn btn-outline admin-only" onclick="toggleModal('wechatConfigModal', true)">⚙️ 修改微信名片</button>
+      <button class="btn btn-outline super-only" onclick="toggleModal('passAdminModal', true)">🎟️ 生成临时凭证</button>
+      <button class="btn btn-outline super-only" onclick="toggleModal('staffAdminModal', true)">👥 内部管理员</button>
+      <button class="btn btn-outline super-only" onclick="toggleModal('wechatConfigModal', true)">⚙️ 修改微信名片</button>
       <button class="btn btn-outline admin-only" onclick="logoutAdmin()">🚪 退出管理</button>
       <button class="btn btn-primary admin-only" onclick="openAddForm()">➕ 添加新嘉宾</button>
       <button class="btn btn-primary guest-only" onclick="openAddForm()">📝 上传我的资料</button>
@@ -330,19 +346,25 @@
 <div class="modal-overlay" id="loginModal" onclick="handleOverlayClick(event, 'loginModal')">
   <div class="modal" style="max-width:380px;">
     <button class="close-btn" onclick="toggleModal('loginModal', false)">×</button>
-    <h2 style="font-size:18px; margin-bottom:12px;">管理员登录</h2>
-    <div class="notice">
-      口令用于身份门槛；<b>GitHub 令牌</b>用于把改动提交到仓库、让所有人看到。<br>
-      勾选「记住我」后令牌会保存在本机，下次打开网站自动解锁，无需重复输入。
+    <h2 style="font-size:18px; margin-bottom:12px;">登录</h2>
+    <div style="display:flex; gap:8px; margin-bottom:12px;">
+      <button type="button" id="loginTabSuper" class="btn btn-primary" style="flex:1; padding:6px;" onclick="switchLoginTab('super')">超级管理员</button>
+      <button type="button" id="loginTabStaff" class="btn btn-outline" style="flex:1; padding:6px;" onclick="switchLoginTab('staff')">内部管理员</button>
     </div>
-    <form onsubmit="handleLogin(event)">
+
+    <!-- 超级管理员登录 -->
+    <form onsubmit="handleLogin(event)" id="loginFormSuper">
+      <div class="notice">
+        口令用于身份门槛；<b>GitHub 令牌</b>用于把改动提交到仓库。<br>
+        勾选「记住我」后令牌会保存在本机，下次自动解锁。
+      </div>
       <div class="form-group" style="margin-bottom:10px;">
         <label>管理员口令</label>
-        <input type="password" id="adminPwdInput" placeholder="输入口令解锁管理权限" required autofocus>
+        <input type="password" id="adminPwdInput" placeholder="输入口令解锁管理权限" autofocus>
       </div>
       <div class="form-group" style="margin-bottom:14px;">
         <label>GitHub 令牌 (PAT)</label>
-        <input type="password" id="adminTokenInput" placeholder="github_pat_xxx" required>
+        <input type="password" id="adminTokenInput" placeholder="github_pat_xxx">
         <div class="file-hint">在 GitHub → Settings → Developer settings → Tokens (classic) 生成，勾选 repo 权限</div>
       </div>
       <div class="form-group" style="margin-bottom:14px; flex-direction:row; align-items:center; gap:8px;">
@@ -350,6 +372,23 @@
         <label for="rememberMe" style="font-size:13px; font-weight:500; color:var(--text); margin:0;">记住我（下次免登录，本机保存令牌）</label>
       </div>
       <button type="submit" class="btn btn-primary" style="width:100%;">解锁</button>
+    </form>
+
+    <!-- 内部管理员登录 -->
+    <form onsubmit="handleStaffLogin(event)" id="loginFormStaff" style="display:none;">
+      <div class="notice">
+        内部管理员用自己的<b>姓名/编号</b>和<b>登录密码</b>进入，<b>只能编辑自己上传的档案</b>，不能管理他人资料。<br>
+        由超级管理员在「⚙️ 内部管理员」中创建。
+      </div>
+      <div class="form-group" style="margin-bottom:10px;">
+        <label>姓名 或 编号</label>
+        <input type="text" id="staffNameInput" placeholder="如：小明 或 ST001">
+      </div>
+      <div class="form-group" style="margin-bottom:14px;">
+        <label>登录密码</label>
+        <input type="password" id="staffPwdInput" placeholder="输入内部管理员密码">
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%;">进入内部管理</button>
     </form>
   </div>
 </div>
@@ -379,10 +418,15 @@
     <button class="close-btn" onclick="toggleModal('passAdminModal', false)">×</button>
     <h2 style="font-size:18px; margin-bottom:12px;">🎟️ 生成临时上传凭证</h2>
     <div class="notice">
-      生成一个一次性凭证码发给嘉宾，对方在有效期内可自助上传自己的档案。
+      生成一个一次性凭证码发给嘉宾，对方在有效期内可自助上传自己的档案。<br>
+      <b>填写嘉宾名字</b>后，对方上传的资料会显示「嘉宾·名字」来源。
     </div>
     <form onsubmit="handlePassCreate(event)">
       <div class="form-grid">
+        <div class="form-group">
+          <label>嘉宾名字 *</label>
+          <input type="text" id="passNameInput" placeholder="如：小红" required>
+        </div>
         <div class="form-group">
           <label>有效期</label>
           <select id="passDurationSelect" onchange="togglePassCustom()">
@@ -406,6 +450,32 @@
       <button type="submit" class="btn btn-primary" style="width:100%;" id="passCreateBtn">生成凭证</button>
     </form>
     <div id="passList" style="margin-top:16px;"></div>
+  </div>
+</div>
+
+<!-- 内部管理员管理弹窗 -->
+<div class="modal-overlay" id="staffAdminModal" onclick="handleOverlayClick(event, 'staffAdminModal')">
+  <div class="modal" style="max-width:440px;">
+    <button class="close-btn" onclick="toggleModal('staffAdminModal', false)">×</button>
+    <h2 style="font-size:18px; margin-bottom:12px;">👥 内部管理员</h2>
+    <div class="notice">
+      内部管理员登录后<b>只能上传档案和编辑自己上传的档案</b>，不能管理他人的资料。<br>
+      姓名用于显示上传者；编号自动分配（如 ST001）。
+    </div>
+    <form onsubmit="handleStaffCreate(event)">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>姓名 *</label>
+          <input type="text" id="staffNameNew" placeholder="如：小明" required>
+        </div>
+        <div class="form-group">
+          <label>登录密码 *</label>
+          <input type="text" id="staffPwdNew" placeholder="自定义密码" required>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%; margin-bottom:12px;" id="staffCreateBtn">➕ 添加内部管理员</button>
+    </form>
+    <div id="staffList" style="margin-top:4px;"></div>
   </div>
 </div>
 
@@ -557,7 +627,9 @@
   let appState = {
     wechat: { id: "xiaomaomiii777", qr: "" },
     profiles: [],
-    passes: []
+    passes: [],
+    staffs: [],          // 内部管理员列表
+    nextProfileNo: 1     // 档案编号计数器
   };
 
   // 内置示例兜底：当取不到仓库 data.json（本地预览 / 分享链接 / 直接双击打开）时，
@@ -602,7 +674,9 @@
         uploadDate: "2025-06-08", createdAt: 1700000000003, isPinned: false, mediaList: []
       }
     ],
-    passes: []   // 临时上传凭证列表
+    passes: [],        // 临时上传凭证列表
+    staffs: [],        // 内部管理员列表
+    nextProfileNo: 1   // 档案编号计数器
   };
 
   // 内联 SVG 占位图（离线可用、国内友好，替代 via.placeholder.com）
@@ -763,9 +837,9 @@
     if (!pass) return false;
     return Date.now() <= (pass.expiresAt || 0);
   }
-  // 写入用令牌：嘉宾模式用内置受限令牌，管理员用个人令牌
+  // 写入用令牌：嘉宾/内部管理员用内置受限令牌，超级管理员用个人令牌
   function getWriteToken() {
-    if (isGuestActive()) return GUEST_TOKEN;
+    if (isGuestActive() || isStaff()) return GUEST_TOKEN;
     return getToken();
   }
 
@@ -981,10 +1055,27 @@
         newProfile.uploadDate = `${year}-${month}-${day}`;
         newProfile.createdAt = now.getTime();
         newProfile.isPinned = false;
-        if (isGuestActive()) {
-          newProfile.fromGuest = true;   // 标记为嘉宾自助上传
+
+        // 记录上传者身份（超级管理员/内部管理员/嘉宾）
+        const ident = getCurrentIdentity();
+        if (ident && ident.type === 'staff') {
+          newProfile.uploaderType = 'staff';
+          newProfile.uploaderName = ident.name;
+          newProfile.uploaderCode = ident.code;
+        } else if (ident && ident.type === 'guest') {
+          newProfile.uploaderType = 'guest';
+          newProfile.uploaderName = ident.name;
+          newProfile.uploaderCode = ident.code;
+          newProfile.fromGuest = true;
           newProfile.uploaderPass = getGuestCode();
+        } else {
+          newProfile.uploaderType = 'super';
+          newProfile.uploaderName = '管理员';
+          newProfile.uploaderCode = 'ADMIN';
         }
+        // 分配档案编号
+        newProfile.profileNo = 'A' + String(appState.nextProfileNo || 1).padStart(3, '0');
+        appState.nextProfileNo = (appState.nextProfileNo || 1) + 1;
 
         const fileInput = document.getElementById('mediaInput');
         const mediaList = [];
@@ -1084,6 +1175,8 @@
         if (data.wechat) appState.wechat = data.wechat;
         appState.profiles = Array.isArray(data.profiles) ? data.profiles : [];
         appState.passes = Array.isArray(data.passes) ? data.passes : [];
+        appState.staffs = Array.isArray(data.staffs) ? data.staffs : [];
+        if (typeof data.nextProfileNo === 'number') appState.nextProfileNo = data.nextProfileNo;
         loaded = true;
       }
     } catch (err) {
@@ -1103,6 +1196,172 @@
   function checkAdminState() {
     const isAdmin = sessionStorage.getItem('is_match_admin') === 'true' || localStorage.getItem('is_match_admin') === 'true';
     document.body.classList.toggle('is-admin', isAdmin);
+  }
+
+  // ===== 身份系统 =====
+  // 身份类型：super(超级管理员) / staff(内部管理员) / guest(临时用户)
+  // 当前身份存储在 sessionStorage.current_identity = JSON {type, name, code}
+  function setCurrentIdentity(identity) {
+    if (identity) sessionStorage.setItem('current_identity', JSON.stringify(identity));
+    else sessionStorage.removeItem('current_identity');
+  }
+  function getCurrentIdentity() {
+    try { return JSON.parse(sessionStorage.getItem('current_identity') || 'null'); }
+    catch (e) { return null; }
+  }
+  function isSuper() { return (getCurrentIdentity() || {}).type === 'super'; }
+  function isStaff() { return (getCurrentIdentity() || {}).type === 'staff'; }
+  function isGuestIdentity() { return (getCurrentIdentity() || {}).type === 'guest'; }
+
+  // 刷新所有身份相关 UI 状态
+  function refreshIdentityUI() {
+    const ident = getCurrentIdentity();
+    const isSuperV = ident && ident.type === 'super';
+    const isStaffV = ident && ident.type === 'staff';
+    const isGuestV = ident && ident.type === 'guest';
+
+    document.body.classList.toggle('is-super', isSuperV);
+    document.body.classList.toggle('is-staff', isStaffV);
+    document.body.classList.toggle('is-admin', isSuperV || isStaffV);
+    document.body.classList.toggle('is-guest', isGuestV && isGuestActive());
+
+    const staffBadge = document.getElementById('staffBadge');
+    if (staffBadge) {
+      staffBadge.style.display = isStaffV ? 'inline-flex' : 'none';
+      staffBadge.innerHTML = isStaffV ? `👤 内部管理员：${ident.name} <span style="cursor:pointer; text-decoration:underline;" onclick="logoutStaff()">退出</span>` : '';
+    }
+
+    const guestBadge = document.getElementById('guestBadge');
+    if (guestBadge) guestBadge.style.display = isGuestV && isGuestActive() ? 'inline-flex' : 'none';
+  }
+
+  function logoutStaff() {
+    setCurrentIdentity(null);
+    sessionStorage.removeItem('is_match_admin');
+    sessionStorage.removeItem('gh_token');
+    refreshIdentityUI();
+    renderCards();
+    alert("已退出内部管理员。");
+  }
+
+  // 内部管理员登录
+  async function handleStaffLogin(e) {
+    e.preventDefault();
+    const nameOrCode = document.getElementById('staffNameInput').value.trim();
+    const pwd = document.getElementById('staffPwdInput').value;
+    if (!nameOrCode || !pwd) { alert("请填写姓名/编号和密码"); return; }
+    const staff = (appState.staffs || []).find(s =>
+      (s.name === nameOrCode) || (s.code === nameOrCode) || (s.code === nameOrCode.toUpperCase())
+    );
+    if (!staff) { alert("❌ 未找到该内部管理员，请联系超级管理员创建"); return; }
+    if (staff.password !== pwd) { alert("❌ 密码错误"); return; }
+    if (!GUEST_TOKEN) { alert("⚠️ 内部管理功能尚未配置完成（需要配置写入令牌）"); return; }
+
+    setCurrentIdentity({ type: 'staff', name: staff.name, code: staff.code });
+    sessionStorage.removeItem('guest_pass_code');
+    refreshIdentityUI();
+    toggleModal('loginModal', false);
+    document.getElementById('staffNameInput').value = '';
+    document.getElementById('staffPwdInput').value = '';
+    alert("✅ 已进入内部管理员：" + staff.name + "（可上传档案、编辑自己上传的资料）");
+  }
+
+  // 切换登录弹窗 Tab
+  function switchLoginTab(tab) {
+    const isSuperTab = tab === 'super';
+    document.getElementById('loginFormSuper').style.display = isSuperTab ? 'block' : 'none';
+    document.getElementById('loginFormStaff').style.display = isSuperTab ? 'none' : 'block';
+    document.getElementById('loginTabSuper').className = isSuperTab ? 'btn btn-primary' : 'btn btn-outline';
+    document.getElementById('loginTabStaff').className = isSuperTab ? 'btn btn-outline' : 'btn btn-primary';
+  }
+
+  // ===== 内部管理员管理（超级管理员） =====
+  function renderStaffList() {
+    const box = document.getElementById('staffList');
+    if (!box) return;
+    const staffs = appState.staffs || [];
+    if (staffs.length === 0) {
+      box.innerHTML = `<div style="font-size:12px; color:var(--text-muted); text-align:center; padding:8px;">还没有内部管理员</div>`;
+      return;
+    }
+    box.innerHTML = `<div style="font-size:12px; color:var(--text-muted); margin-bottom:6px;">已添加（${staffs.length} 人）：</div>` +
+      staffs.map(s => `<div style="display:flex; justify-content:space-between; align-items:center; font-size:13px; padding:7px 10px; border:1px solid var(--border); border-radius:8px; margin-bottom:6px;">
+        <div>
+          <strong>${s.name}</strong>
+          <span style="color:var(--text-muted); font-size:12px;">（${s.code}）</span>
+        </div>
+        <button class="btn btn-outline" style="font-size:11px; padding:4px 8px; color:var(--danger); border-color:#fca5a5;" onclick="deleteStaff('${s.code}')">删除</button>
+      </div>`).join('');
+  }
+  async function handleStaffCreate(e) {
+    e.preventDefault();
+    const btn = document.getElementById('staffCreateBtn');
+    btn.disabled = true;
+    try {
+      const name = document.getElementById('staffNameNew').value.trim();
+      const password = document.getElementById('staffPwdNew').value.trim();
+      if (!name || !password) { alert("请填写姓名和密码"); return; }
+      const maxNo = (appState.staffs || []).reduce((m, s) => {
+        const n = parseInt((s.code || '').replace(/\D/g, ''), 10) || 0;
+        return Math.max(m, n);
+      }, 0);
+      const code = 'ST' + String(maxNo + 1).padStart(3, '0');
+      appState.staffs = appState.staffs || [];
+      appState.staffs.push({ code, name, password });
+      await saveToGitHub();
+      renderStaffList();
+      document.getElementById('staffNameNew').value = '';
+      document.getElementById('staffPwdNew').value = '';
+      alert("✅ 内部管理员已创建：\n\n姓名：" + name + "\n编号：" + code + "\n密码：" + password + "\n\n把编号和密码告诉对方即可登录。");
+    } catch (err) {
+      alert("❌ 创建失败：" + err.message);
+    } finally {
+      btn.disabled = false;
+    }
+  }
+  async function deleteStaff(code) {
+    if (!confirm("确定删除该内部管理员吗？")) return;
+    appState.staffs = (appState.staffs || []).filter(s => s.code !== code);
+    try {
+      await saveToGitHub();
+      renderStaffList();
+      alert("✅ 已删除该内部管理员。");
+    } catch (err) {
+      alert("❌ 删除失败：" + err.message);
+    }
+  }
+
+  // 判断当前身份能否编辑某档案（内部管理员只能编辑自己上传的）
+  function canEditProfile(profile) {
+    const ident = getCurrentIdentity();
+    if (!ident) return false;
+    if (ident.type === 'super') return true;
+    if (ident.type === 'guest') {
+      // 嘉宾只能编辑自己上传的（凭证匹配）
+      return profile.uploaderType === 'guest' && profile.uploaderCode === ident.code;
+    }
+    if (ident.type === 'staff') {
+      return profile.uploaderType === 'staff' && profile.uploaderCode === ident.code;
+    }
+    return false;
+  }
+
+  // 上传者展示标签
+  function uploaderTag(profile) {
+    if (!profile) return '';
+    const type = profile.uploaderType || '';
+    const name = profile.uploaderName || '';
+    const code = profile.uploaderCode || '';
+    if (!name && !code) return '';
+    let color = '#94a3b8';
+    if (type === 'super') color = '#f59e0b';
+    else if (type === 'staff') color = '#3b82f6';
+    else if (type === 'guest') color = '#10b981';
+    let label = '';
+    if (type === 'super') label = '管理员';
+    else if (type === 'staff') label = '内部';
+    else if (type === 'guest') label = '嘉宾';
+    return `<span class="uploader-tag"><span class="dot" style="background:${color}"></span>${label}·${name}${code ? '（' + code + '）' : ''}</span>`;
   }
 
   // ===== 临时上传凭证 =====
@@ -1143,6 +1402,7 @@
       return `<div style="display:flex; justify-content:space-between; align-items:center; font-size:13px; padding:7px 10px; border:1px solid ${isExpired ? '#fecaca' : 'var(--border)'}; border-radius:8px; margin-bottom:6px; background:${isExpired ? '#fef2f2' : 'var(--card-bg)'};">
         <div>
           <strong style="letter-spacing:1px;">${p.code}</strong>
+          ${p.name ? `<span style="color:var(--primary); font-size:12px;">👤 ${p.name}</span>` : ''}
           ${p.note ? `<span style="color:var(--text-muted); font-size:12px;">（${p.note}）</span>` : ''}
           <div style="font-size:11px; color:${isExpired ? 'var(--danger)' : 'var(--text-muted)'};">
             ${isExpired ? '🚫 已过期 · 失效于' : '✅ 有效至'} ${fmtTime(p.expiresAt)}
@@ -1209,27 +1469,29 @@
       else if (sel === '6h') hours = 6;
       else if (sel === '24h') hours = 24;
       else if (sel === '3d') hours = 72;
-      else if (sel === 'custom') {
+      else       if (sel === 'custom') {
         const customVal = document.getElementById('passCustomTime').value;
         if (!customVal) { alert("请选择自定义过期时间"); return; }
         const target = new Date(customVal).getTime();
         if (target <= Date.now()) { alert("过期时间必须晚于当前时间"); return; }
-        const pass = { code: genPassCode(), expiresAt: target, note: document.getElementById('passNoteInput').value.trim() || '' };
+        const pass = { code: genPassCode(), expiresAt: target, note: document.getElementById('passNoteInput').value.trim() || '', name: document.getElementById('passNameInput').value.trim() };
         appState.passes = appState.passes || [];
         appState.passes.push(pass);
         await saveToGitHub();
         renderPassList();
         document.getElementById('passNoteInput').value = '';
-        alert("✅ 凭证已生成：\n\n" + pass.code + "\n\n有效至 " + fmtTime(pass.expiresAt) + "\n把这个码发给嘉宾即可。");
+        document.getElementById('passNameInput').value = '';
+        alert("✅ 凭证已生成：\n\n" + pass.code + "\n\n嘉宾：" + pass.name + "\n有效至 " + fmtTime(pass.expiresAt) + "\n把这个码发给嘉宾即可。");
         return;
       }
-      const pass = { code: genPassCode(), expiresAt: Date.now() + hours * 3600 * 1000, note: document.getElementById('passNoteInput').value.trim() || '' };
+      const pass = { code: genPassCode(), expiresAt: Date.now() + hours * 3600 * 1000, note: document.getElementById('passNoteInput').value.trim() || '', name: document.getElementById('passNameInput').value.trim() };
       appState.passes = appState.passes || [];
       appState.passes.push(pass);
       await saveToGitHub();
       renderPassList();
       document.getElementById('passNoteInput').value = '';
-      alert("✅ 凭证已生成：\n\n" + pass.code + "\n\n有效至 " + fmtTime(pass.expiresAt) + "\n把这个码发给嘉宾即可。");
+      document.getElementById('passNameInput').value = '';
+      alert("✅ 凭证已生成：\n\n" + pass.code + "\n\n嘉宾：" + pass.name + "\n有效至 " + fmtTime(pass.expiresAt) + "\n把这个码发给嘉宾即可。");
     } catch (err) {
       alert("❌ 生成凭证失败：" + err.message + "\n（请先登录管理员）");
     } finally {
@@ -1254,10 +1516,14 @@
       return;
     }
     sessionStorage.setItem('guest_pass_code', code);
-    refreshGuestState();
+    // 设置嘉宾身份（带名字）
+    setCurrentIdentity({ type: 'guest', name: pass.name || '嘉宾', code: code });
+    sessionStorage.removeItem('is_match_admin');
+    sessionStorage.removeItem('gh_token');
+    refreshIdentityUI();
     toggleModal('passLoginModal', false);
     document.getElementById('passCodeInput').value = '';
-    alert("✅ 凭证有效！你现在可以上传自己的照片、视频和资料了。");
+    alert("✅ 凭证有效！" + (pass.name ? '你好，' + pass.name + '！' : '') + "你现在可以上传自己的照片、视频和资料了。");
   }
 
   async function handleLogin(e) {
@@ -1283,11 +1549,13 @@
     sessionStorage.setItem('is_match_admin', 'true');
     sessionStorage.setItem('gh_token', token);
     if (rememberMe) setRemember(true);
-    checkAdminState();
+    setCurrentIdentity({ type: 'super', name: '管理员', code: 'ADMIN' });
+    sessionStorage.removeItem('guest_pass_code');
+    refreshIdentityUI();
     toggleModal('loginModal', false);
     document.getElementById('adminPwdInput').value = '';
     document.getElementById('adminTokenInput').value = '';
-    alert("已解锁管理权限，现在可以添加/修改资料。");
+    alert("已解锁超级管理员权限，现在可以管理所有档案。");
   }
 
   function logoutAdmin() {
@@ -1295,7 +1563,9 @@
     sessionStorage.removeItem('gh_token');
     localStorage.removeItem('is_match_admin');
     localStorage.removeItem('gh_token');
+    setCurrentIdentity(null);
     checkAdminState();
+    refreshIdentityUI();
     renderCards();
   }
 
@@ -1369,6 +1639,10 @@
               <span class="card-loc">${item['国家/城市'] || ''}</span>
             </div>
             <div class="card-meta">${item['年龄'] ? item['年龄'] + '岁 · ' : ''}${item['身高'] || ''} · ${item['职业/学生'] || ''}</div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+              ${item.profileNo ? `<span class="uploader-tag">🔖 编号 ${item.profileNo}</span>` : '<span></span>'}
+              ${uploaderTag(item)}
+            </div>
             <div class="card-quote">“${item['一句话介绍'] || '暂无一句话介绍'}”</div>
           </div>
         </div>
@@ -1399,6 +1673,10 @@
           <span>📍 ${item['国家/城市'] || '未填'}</span>
           <span>📅 上传日期：${item.uploadDate || '近期'}</span>
         </div>
+        <div style="display:flex; gap:6px; margin-top:6px; flex-wrap:wrap;">
+          ${item.profileNo ? `<span class="uploader-tag">🔖 编号 ${item.profileNo}</span>` : ''}
+          ${uploaderTag(item)}
+        </div>
       </div>
 
       <div class="modal-grid">
@@ -1416,16 +1694,18 @@
       <div class="modal-row"><div class="modal-label">【要求】</div><div class="modal-box">${item['要求'] || '-'}</div></div>
       <div class="modal-row"><div class="modal-label">【一句话介绍】</div><div class="modal-box" style="font-style:italic;">“${item['一句话介绍'] || '-'}”</div></div>
 
-      <div class="admin-action-row admin-only">
+      <div class="admin-action-row ${canEditProfile(item) ? '' : 'hidden'}">
         <button class="btn btn-outline" style="flex:1; color:var(--primary); border-color:#a5b4fc;" onclick="openEditForm(${item.id})">
           ✏️ 编辑档案
         </button>
+        ${isSuper() ? `
         <button class="btn btn-outline" style="flex:1; color:${item.isPinned ? '#4b5563' : 'var(--pin-gold)'}; border-color:${item.isPinned ? '#d1d5db' : 'var(--pin-gold)'};" onclick="togglePinProfile(${item.id})">
           ${item.isPinned ? '取消置顶' : '📌 置顶此档案'}
         </button>
         <button class="btn btn-outline" style="flex:1; color:var(--danger); border-color:#fca5a5;" onclick="deleteProfile(${item.id})">
           🗑️ 删除档案
         </button>
+        ` : ''}
       </div>
     `;
 
@@ -1514,13 +1794,21 @@
     if (e.target.id === id) toggleModal(id, false);
   }
 
-  // 页面加载时：若本机记住了令牌，自动恢复管理员状态（下次无需再登录）
+  // 页面加载时：若本机记住了令牌，自动恢复超级管理员状态（下次无需再登录）
   checkAdminState();
-  if (getToken() && !document.body.classList.contains('is-admin')) {
-    localStorage.setItem('is_match_admin', 'true');
-    checkAdminState();
+  if (getToken() && !getCurrentIdentity()) {
+    const hadToken = getToken();
+    if (hadToken && (sessionStorage.getItem('is_match_admin') === 'true' || localStorage.getItem('is_match_admin') === 'true')) {
+      setCurrentIdentity({ type: 'super', name: '管理员', code: 'ADMIN' });
+      localStorage.setItem('is_match_admin', 'true');
+      sessionStorage.setItem('is_match_admin', 'true');
+    }
   }
-  refreshGuestState();
+  // 若身份丢失但 token 还在，恢复超级管理员
+  if (!getCurrentIdentity() && getToken()) {
+    setCurrentIdentity({ type: 'super', name: '管理员', code: 'ADMIN' });
+  }
+  refreshIdentityUI();
   loadData();
 </script>
 
