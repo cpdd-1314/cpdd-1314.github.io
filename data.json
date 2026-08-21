@@ -174,7 +174,9 @@
       "uploadDate": "2025-06-12",
       "createdAt": 1700000000001,
       "isPinned": true,
-      "mediaList": []
+      "mediaList": [],
+      "guestNo": "LC-88",
+      "updatedAt": 1787342047019
     },
     {
       "id": 1700000000002,
