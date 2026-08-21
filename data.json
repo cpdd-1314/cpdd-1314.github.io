@@ -158,7 +158,14 @@
       "mediaList": []
     }
   ],
-  "passes": [],
+  "passes": [
+    {
+      "code": "VYBUQV43",
+      "expiresAt": 1787341686667,
+      "note": "",
+      "name": "小红"
+    }
+  ],
   "staffs": [],
   "nextProfileNo": 5
 }
