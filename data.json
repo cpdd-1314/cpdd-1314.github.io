@@ -31,7 +31,8 @@
       "fromPublic": true,
       "status": "pending",
       "profileNo": "A010",
-      "mediaList": []
+      "mediaList": [],
+      "isHidden": true
     },
     {
       "id": 1787348572474,
