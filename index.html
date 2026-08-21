@@ -1439,8 +1439,14 @@
     return false;
   }
 
+  // 是否允许查看内部标识（上传者标签、档案编号）：仅登录身份可见，普通访客隐藏
+  function canSeeInternalTags() {
+    return isSuper() || isStaff() || isGuestIdentity();
+  }
+
   // 上传者展示标签
   function uploaderTag(profile) {
+    if (!canSeeInternalTags()) return '';  // 普通访客不显示上传者信息
     if (!profile) return '';
     const type = profile.uploaderType || '';
     const name = profile.uploaderName || '';
@@ -1764,7 +1770,7 @@
             </div>
             <div class="card-meta">${item['年龄'] ? item['年龄'] + '岁 · ' : ''}${item['身高'] || ''} · ${item['职业/学生'] || ''}</div>
             <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
-              ${item.profileNo ? `<span class="uploader-tag">🔖 编号 ${item.profileNo}</span>` : '<span></span>'}
+              ${canSeeInternalTags() && item.profileNo ? `<span class="uploader-tag">🔖 编号 ${item.profileNo}</span>` : '<span></span>'}
               ${uploaderTag(item)}
             </div>
             <div class="card-quote">“${item['一句话介绍'] || '暂无一句话介绍'}”</div>
@@ -1798,7 +1804,7 @@
           <span>📅 上传日期：${item.uploadDate || '近期'}</span>
         </div>
         <div style="display:flex; gap:6px; margin-top:6px; flex-wrap:wrap;">
-          ${item.profileNo ? `<span class="uploader-tag">🔖 编号 ${item.profileNo}</span>` : ''}
+          ${canSeeInternalTags() && item.profileNo ? `<span class="uploader-tag">🔖 编号 ${item.profileNo}</span>` : ''}
           ${uploaderTag(item)}
         </div>
       </div>
