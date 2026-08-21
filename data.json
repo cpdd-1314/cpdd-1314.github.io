@@ -167,7 +167,15 @@
       "mediaList": []
     }
   ],
-  "passes": [],
+  "passes": [
+    {
+      "code": "BSBSGBHN",
+      "expiresAt": 1787349379622,
+      "note": "",
+      "name": "陈",
+      "guestNo": "A111"
+    }
+  ],
   "staffs": [],
   "nextProfileNo": 8
 }
