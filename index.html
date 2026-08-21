@@ -419,13 +419,18 @@
     <h2 style="font-size:18px; margin-bottom:12px;">🎟️ 生成临时上传凭证</h2>
     <div class="notice">
       生成一个一次性凭证码发给嘉宾，对方在有效期内可自助上传自己的档案。<br>
-      <b>填写嘉宾名字</b>后，对方上传的资料会显示「嘉宾·名字」来源。
+      <b>填写嘉宾名字和编号</b>后，对方上传的资料会显示「嘉宾·名字（编号）」，所有访客可见。
     </div>
     <form onsubmit="handlePassCreate(event)">
       <div class="form-grid">
         <div class="form-group">
           <label>嘉宾名字 *</label>
           <input type="text" id="passNameInput" placeholder="如：小红" required>
+        </div>
+        <div class="form-group">
+          <label>嘉宾编号</label>
+          <input type="text" id="passGuestNoInput" placeholder="留空自动分配，如 G001">
+          <div class="file-hint">自定义编号，如 G001 / M03 / 08</div>
         </div>
         <div class="form-group">
           <label>有效期</label>
@@ -1066,6 +1071,7 @@
           newProfile.uploaderType = 'guest';
           newProfile.uploaderName = ident.name;
           newProfile.uploaderCode = ident.code;
+          newProfile.guestNo = ident.guestNo || '';
           newProfile.fromGuest = true;
           newProfile.uploaderPass = getGuestCode();
         } else {
@@ -1232,7 +1238,10 @@
     }
 
     const guestBadge = document.getElementById('guestBadge');
-    if (guestBadge) guestBadge.style.display = isGuestV && isGuestActive() ? 'inline-flex' : 'none';
+    if (guestBadge) {
+      guestBadge.style.display = isGuestV && isGuestActive() ? 'inline-flex' : 'none';
+      guestBadge.innerHTML = isGuestV && isGuestActive() ? `🟢 嘉宾：${ident.name}${ident.guestNo ? '（' + ident.guestNo + '）' : ''} <span style="cursor:pointer; text-decoration:underline;" onclick="logoutGuest()">退出</span>` : '';
+    }
   }
 
   function logoutStaff() {
@@ -1352,7 +1361,8 @@
     const type = profile.uploaderType || '';
     const name = profile.uploaderName || '';
     const code = profile.uploaderCode || '';
-    if (!name && !code) return '';
+    const guestNo = profile.guestNo || '';
+    if (!name && !code && !guestNo) return '';
     let color = '#94a3b8';
     if (type === 'super') color = '#f59e0b';
     else if (type === 'staff') color = '#3b82f6';
@@ -1361,7 +1371,9 @@
     if (type === 'super') label = '管理员';
     else if (type === 'staff') label = '内部';
     else if (type === 'guest') label = '嘉宾';
-    return `<span class="uploader-tag"><span class="dot" style="background:${color}"></span>${label}·${name}${code ? '（' + code + '）' : ''}</span>`;
+    // 嘉宾优先显示自定义编号，其次凭证码
+    const shownCode = type === 'guest' ? (guestNo || code) : code;
+    return `<span class="uploader-tag"><span class="dot" style="background:${color}"></span>${label}·${name}${shownCode ? '（' + shownCode + '）' : ''}</span>`;
   }
 
   // ===== 临时上传凭证 =====
@@ -1403,6 +1415,7 @@
         <div>
           <strong style="letter-spacing:1px;">${p.code}</strong>
           ${p.name ? `<span style="color:var(--primary); font-size:12px;">👤 ${p.name}</span>` : ''}
+          ${p.guestNo ? `<span style="color:var(--text-muted); font-size:12px;">🔖 ${p.guestNo}</span>` : ''}
           ${p.note ? `<span style="color:var(--text-muted); font-size:12px;">（${p.note}）</span>` : ''}
           <div style="font-size:11px; color:${isExpired ? 'var(--danger)' : 'var(--text-muted)'};">
             ${isExpired ? '🚫 已过期 · 失效于' : '✅ 有效至'} ${fmtTime(p.expiresAt)}
@@ -1474,24 +1487,28 @@
         if (!customVal) { alert("请选择自定义过期时间"); return; }
         const target = new Date(customVal).getTime();
         if (target <= Date.now()) { alert("过期时间必须晚于当前时间"); return; }
-        const pass = { code: genPassCode(), expiresAt: target, note: document.getElementById('passNoteInput').value.trim() || '', name: document.getElementById('passNameInput').value.trim() };
+        const guestNo = genGuestNo(document.getElementById('passGuestNoInput').value);
+        const pass = { code: genPassCode(), expiresAt: target, note: document.getElementById('passNoteInput').value.trim() || '', name: document.getElementById('passNameInput').value.trim(), guestNo };
         appState.passes = appState.passes || [];
         appState.passes.push(pass);
         await saveToGitHub();
         renderPassList();
         document.getElementById('passNoteInput').value = '';
         document.getElementById('passNameInput').value = '';
-        alert("✅ 凭证已生成：\n\n" + pass.code + "\n\n嘉宾：" + pass.name + "\n有效至 " + fmtTime(pass.expiresAt) + "\n把这个码发给嘉宾即可。");
+        document.getElementById('passGuestNoInput').value = '';
+        alert("✅ 凭证已生成：\n\n凭证码：" + pass.code + "\n嘉宾：" + pass.name + "\n嘉宾编号：" + pass.guestNo + "\n有效至 " + fmtTime(pass.expiresAt) + "\n把这个码发给嘉宾即可。");
         return;
       }
-      const pass = { code: genPassCode(), expiresAt: Date.now() + hours * 3600 * 1000, note: document.getElementById('passNoteInput').value.trim() || '', name: document.getElementById('passNameInput').value.trim() };
+      const guestNo = genGuestNo(document.getElementById('passGuestNoInput').value);
+      const pass = { code: genPassCode(), expiresAt: Date.now() + hours * 3600 * 1000, note: document.getElementById('passNoteInput').value.trim() || '', name: document.getElementById('passNameInput').value.trim(), guestNo };
       appState.passes = appState.passes || [];
       appState.passes.push(pass);
       await saveToGitHub();
       renderPassList();
       document.getElementById('passNoteInput').value = '';
       document.getElementById('passNameInput').value = '';
-      alert("✅ 凭证已生成：\n\n" + pass.code + "\n\n嘉宾：" + pass.name + "\n有效至 " + fmtTime(pass.expiresAt) + "\n把这个码发给嘉宾即可。");
+      document.getElementById('passGuestNoInput').value = '';
+      alert("✅ 凭证已生成：\n\n凭证码：" + pass.code + "\n嘉宾：" + pass.name + "\n嘉宾编号：" + pass.guestNo + "\n有效至 " + fmtTime(pass.expiresAt) + "\n把这个码发给嘉宾即可。");
     } catch (err) {
       alert("❌ 生成凭证失败：" + err.message + "\n（请先登录管理员）");
     } finally {
@@ -1503,6 +1520,17 @@
     let code = '';
     for (let i = 0; i < 8; i++) code += chars[Math.floor(Math.random() * chars.length)];
     return code;
+  }
+  // 嘉宾编号：自定义或自动分配（G001、G002...）
+  function genGuestNo(customVal) {
+    const custom = (customVal || '').trim();
+    if (custom) return custom;
+    const used = new Set();
+    (appState.passes || []).forEach(p => { if (p.guestNo) used.add(p.guestNo); });
+    (appState.profiles || []).forEach(p => { if (p.guestNo) used.add(p.guestNo); });
+    let n = 1;
+    while (used.has('G' + String(n).padStart(3, '0'))) n++;
+    return 'G' + String(n).padStart(3, '0');
   }
   async function handlePassLogin(e) {
     e.preventDefault();
@@ -1516,14 +1544,14 @@
       return;
     }
     sessionStorage.setItem('guest_pass_code', code);
-    // 设置嘉宾身份（带名字）
-    setCurrentIdentity({ type: 'guest', name: pass.name || '嘉宾', code: code });
+    // 设置嘉宾身份（带名字 + 编号）
+    setCurrentIdentity({ type: 'guest', name: pass.name || '嘉宾', code: code, guestNo: pass.guestNo || '' });
     sessionStorage.removeItem('is_match_admin');
     sessionStorage.removeItem('gh_token');
     refreshIdentityUI();
     toggleModal('passLoginModal', false);
     document.getElementById('passCodeInput').value = '';
-    alert("✅ 凭证有效！" + (pass.name ? '你好，' + pass.name + '！' : '') + "你现在可以上传自己的照片、视频和资料了。");
+    alert("✅ 凭证有效！" + (pass.name ? '你好，' + pass.name + '！' : '') + (pass.guestNo ? '（编号 ' + pass.guestNo + '）' : '') + "你现在可以上传自己的照片、视频和资料了。");
   }
 
   async function handleLogin(e) {
