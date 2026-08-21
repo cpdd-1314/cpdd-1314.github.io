@@ -428,9 +428,9 @@
           <input type="text" id="passNameInput" placeholder="如：小红" required>
         </div>
         <div class="form-group">
-          <label>嘉宾编号</label>
-          <input type="text" id="passGuestNoInput" placeholder="留空自动分配，如 G001">
-          <div class="file-hint">自定义编号，如 G001 / M03 / 08</div>
+          <label>嘉宾编号 *</label>
+          <input type="text" id="passGuestNoInput" placeholder="如：G001" required>
+          <div class="file-hint">由你指定编号，如 G001 / M03 / 08，不可与已有编号重复</div>
         </div>
         <div class="form-group">
           <label>有效期</label>
@@ -1521,16 +1521,15 @@
     for (let i = 0; i < 8; i++) code += chars[Math.floor(Math.random() * chars.length)];
     return code;
   }
-  // 嘉宾编号：自定义或自动分配（G001、G002...）
+  // 嘉宾编号：必须由管理员指定，检查是否与已有编号重复
   function genGuestNo(customVal) {
     const custom = (customVal || '').trim();
-    if (custom) return custom;
+    if (!custom) throw new Error('请填写嘉宾编号');
     const used = new Set();
     (appState.passes || []).forEach(p => { if (p.guestNo) used.add(p.guestNo); });
     (appState.profiles || []).forEach(p => { if (p.guestNo) used.add(p.guestNo); });
-    let n = 1;
-    while (used.has('G' + String(n).padStart(3, '0'))) n++;
-    return 'G' + String(n).padStart(3, '0');
+    if (used.has(custom)) throw new Error('编号「' + custom + '」已被使用，请换一个');
+    return custom;
   }
   async function handlePassLogin(e) {
     e.preventDefault();
