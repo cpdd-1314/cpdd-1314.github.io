@@ -63,6 +63,13 @@
 
     .admin-only { display: none !important; }
     body.is-admin .admin-only { display: inline-flex !important; }
+    .guest-only { display: none !important; }
+    body.is-guest .guest-only { display: inline-flex !important; }
+    .guest-badge {
+      display: none; background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0;
+      font-size: 12px; padding: 4px 10px; border-radius: 8px;
+    }
+    body.is-guest .guest-badge { display: inline-flex; align-items: center; gap: 4px; }
 
     .toolbar {
       display: flex;
@@ -240,9 +247,14 @@
         <span>加微信上传资料</span>
       </button>
 
+      <button class="btn btn-outline" onclick="toggleModal('passLoginModal', true)">🎫 我有上传凭证</button>
+      <span class="guest-badge" id="guestBadge">🟢 嘉宾自助上传模式 <span style="cursor:pointer; text-decoration:underline;" onclick="logoutGuest()">退出</span></span>
+
+      <button class="btn btn-outline admin-only" onclick="toggleModal('passAdminModal', true)">🎟️ 生成临时凭证</button>
       <button class="btn btn-outline admin-only" onclick="toggleModal('wechatConfigModal', true)">⚙️ 修改微信名片</button>
       <button class="btn btn-outline admin-only" onclick="logoutAdmin()">🚪 退出管理</button>
       <button class="btn btn-primary admin-only" onclick="toggleModal('formModal', true)">➕ 添加新嘉宾</button>
+      <button class="btn btn-primary guest-only" onclick="toggleModal('formModal', true)">📝 上传我的资料</button>
     </div>
   </header>
 
@@ -339,6 +351,61 @@
       </div>
       <button type="submit" class="btn btn-primary" style="width:100%;">解锁</button>
     </form>
+  </div>
+</div>
+
+<!-- 嘉宾凭证登录弹窗 -->
+<div class="modal-overlay" id="passLoginModal" onclick="handleOverlayClick(event, 'passLoginModal')">
+  <div class="modal" style="max-width:380px;">
+    <button class="close-btn" onclick="toggleModal('passLoginModal', false)">×</button>
+    <h2 style="font-size:18px; margin-bottom:12px;">🎫 输入上传凭证</h2>
+    <div class="notice">
+      管理员发给你一个临时凭证码，输入后即可<b>自助上传你的照片、视频和资料</b>。<br>
+      凭证有有效期，过期自动失效；你只能添加自己的档案，无法修改他人资料。
+    </div>
+    <form onsubmit="handlePassLogin(event)">
+      <div class="form-group" style="margin-bottom:14px;">
+        <label>临时凭证码</label>
+        <input type="text" id="passCodeInput" placeholder="如：A1B2C3D4" required autofocus style="letter-spacing:2px; text-transform:uppercase;">
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%;">验证并进入</button>
+    </form>
+  </div>
+</div>
+
+<!-- 管理员生成临时凭证弹窗 -->
+<div class="modal-overlay" id="passAdminModal" onclick="handleOverlayClick(event, 'passAdminModal')">
+  <div class="modal" style="max-width:460px;">
+    <button class="close-btn" onclick="toggleModal('passAdminModal', false)">×</button>
+    <h2 style="font-size:18px; margin-bottom:12px;">🎟️ 生成临时上传凭证</h2>
+    <div class="notice">
+      生成一个一次性凭证码发给嘉宾，对方在有效期内可自助上传自己的档案。
+    </div>
+    <form onsubmit="handlePassCreate(event)">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>有效期</label>
+          <select id="passDurationSelect" onchange="togglePassCustom()">
+            <option value="1h">1 小时</option>
+            <option value="2h">2 小时</option>
+            <option value="6h">6 小时</option>
+            <option value="24h">24 小时</option>
+            <option value="3d">3 天</option>
+            <option value="custom">自定义</option>
+          </select>
+        </div>
+        <div class="form-group" id="passCustomGroup" style="display:none;">
+          <label>自定义过期时间</label>
+          <input type="datetime-local" id="passCustomTime">
+        </div>
+        <div class="form-group full">
+          <label>备注（发给谁 / 用途）</label>
+          <input type="text" id="passNoteInput" placeholder="如：发给林辰">
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%;" id="passCreateBtn">生成凭证</button>
+    </form>
+    <div id="passList" style="margin-top:16px;"></div>
   </div>
 </div>
 
@@ -468,6 +535,9 @@
   // 若你用的是 <用户名>.github.io 这种“用户/组织页”，把 GITHUB_REPO 设为仓库名（即你的用户名.github.io）。
   const GITHUB_OWNER = "cpdd-1314";
   const GITHUB_REPO = "cpdd-1314.github.io";
+
+  // 嘉宾自助上传专用令牌：仅授权本仓库 Contents 读写的受限令牌（在 GitHub 生成后填入，勿填全权限令牌）
+  const GUEST_TOKEN = "";
   function getRepo() {
     const owner = GITHUB_OWNER || location.hostname.split('.')[0];
     const repo = GITHUB_REPO || (location.pathname.split('/')[1] || '');
@@ -478,7 +548,8 @@
 
   let appState = {
     wechat: { id: "xiaomaomiii777", qr: "" },
-    profiles: []
+    profiles: [],
+    passes: []
   };
 
   // 内置示例兜底：当取不到仓库 data.json（本地预览 / 分享链接 / 直接双击打开）时，
@@ -522,7 +593,8 @@
         "一句话介绍": "在外面闯荡久了，想找个能一起回家的人。",
         uploadDate: "2025-06-08", createdAt: 1700000000003, isPinned: false, mediaList: []
       }
-    ]
+    ],
+    passes: []   // 临时上传凭证列表
   };
 
   // 内联 SVG 占位图（离线可用、国内友好，替代 via.placeholder.com）
@@ -673,6 +745,22 @@
   function getToken() {
     return sessionStorage.getItem('gh_token') || localStorage.getItem('gh_token') || '';
   }
+
+  // 嘉宾模式：凭证码保存在 sessionStorage
+  function getGuestCode() { return sessionStorage.getItem('guest_pass_code') || ''; }
+  function isGuestActive() {
+    const code = getGuestCode();
+    if (!code) return false;
+    const pass = (appState.passes || []).find(p => p.code === code);
+    if (!pass) return false;
+    return Date.now() <= (pass.expiresAt || 0);
+  }
+  // 写入用令牌：嘉宾模式用内置受限令牌，管理员用个人令牌
+  function getWriteToken() {
+    if (isGuestActive()) return GUEST_TOKEN;
+    return getToken();
+  }
+
   function setRemember(remember) {
     // 把令牌从 session 挪到 localStorage 或反过来
     const token = sessionStorage.getItem('gh_token') || localStorage.getItem('gh_token') || '';
@@ -687,8 +775,8 @@
   }
 
   async function uploadToRepo(file) {
-    const token = getToken();
-    if (!token) throw new Error('请先登录并粘贴 GitHub 令牌');
+    const token = getWriteToken();
+    if (!token) throw new Error('未检测到写入令牌（管理员需登录，或嘉宾需输入有效凭证）');
     const safeName = Date.now() + '_' + file.name.replace(/[^\w.\-]/g, '_');
     const path = 'media/' + safeName;
     const buf = await file.arrayBuffer();
@@ -707,8 +795,8 @@
   }
 
   async function saveToGitHub() {
-    const token = getToken();
-    if (!token) throw new Error('请先登录并粘贴 GitHub 令牌');
+    const token = getWriteToken();
+    if (!token) throw new Error('未检测到写入令牌（管理员需登录，或嘉宾需输入有效凭证）');
     // 先取当前 sha
     let sha;
     const getRes = await fetch(`${API}/data.json`, { headers: { Authorization: `Bearer ${token}` } });
@@ -775,6 +863,10 @@
       newProfile.uploadDate = `${year}-${month}-${day}`;
       newProfile.createdAt = now.getTime();
       newProfile.isPinned = false;
+      if (isGuestActive()) {
+        newProfile.fromGuest = true;   // 标记为嘉宾自助上传
+        newProfile.uploaderPass = getGuestCode();
+      }
 
       const fileInput = document.getElementById('mediaInput');
       const mediaList = [];
@@ -800,7 +892,11 @@
       renderCards();
       toggleModal('formModal', false);
       e.target.reset();
-      alert("🎉 资料已保存到仓库，所有人刷新即可看到！");
+      if (isGuestActive()) {
+        alert("🎉 资料上传成功！感谢你的参与，资料已经展示在网站上了。");
+      } else {
+        alert("🎉 资料已保存到仓库，所有人刷新即可看到！");
+      }
     } catch (err) {
       alert("❌ 保存出错：" + err.message);
     } finally {
@@ -868,6 +964,7 @@
         const data = await res.json();
         if (data.wechat) appState.wechat = data.wechat;
         appState.profiles = Array.isArray(data.profiles) ? data.profiles : [];
+        appState.passes = Array.isArray(data.passes) ? data.passes : [];
         loaded = true;
       }
     } catch (err) {
@@ -880,11 +977,123 @@
     }
     updateWechatUI();
     renderCards();
+    refreshGuestState();
+    if (document.body.classList.contains('is-admin')) renderPassList();
   }
 
   function checkAdminState() {
     const isAdmin = sessionStorage.getItem('is_match_admin') === 'true' || localStorage.getItem('is_match_admin') === 'true';
     document.body.classList.toggle('is-admin', isAdmin);
+  }
+
+  // ===== 临时上传凭证 =====
+  function refreshGuestState() {
+    const active = isGuestActive();
+    document.body.classList.toggle('is-guest', active);
+    const badge = document.getElementById('guestBadge');
+    if (badge) badge.style.display = active ? 'inline-flex' : 'none';
+  }
+  function logoutGuest() {
+    sessionStorage.removeItem('guest_pass_code');
+    refreshGuestState();
+    alert("已退出嘉宾上传模式。");
+  }
+  function togglePassCustom() {
+    const v = document.getElementById('passDurationSelect').value;
+    document.getElementById('passCustomGroup').style.display = v === 'custom' ? 'flex' : 'none';
+  }
+  function fmtTime(ts) {
+    const d = new Date(ts);
+    const p = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+  }
+  function renderPassList() {
+    const box = document.getElementById('passList');
+    if (!box) return;
+    const passes = appState.passes || [];
+    if (passes.length === 0) {
+      box.innerHTML = `<div style="font-size:12px; color:var(--text-muted); text-align:center; padding:8px;">还没有生成过凭证</div>`;
+      return;
+    }
+    box.innerHTML = `<div style="font-size:12px; color:var(--text-muted); margin-bottom:6px;">已生成凭证（${passes.length} 个）：</div>` +
+      passes.map(p => {
+        const expired = Date.now() > p.expiresAt;
+        return `<div style="display:flex; justify-content:space-between; align-items:center; font-size:13px; padding:7px 10px; border:1px solid var(--border); border-radius:8px; margin-bottom:6px; background:var(--card-bg);">
+          <div>
+            <strong style="letter-spacing:1px;">${p.code}</strong>
+            ${p.note ? `<span style="color:var(--text-muted); font-size:12px;">（${p.note}）</span>` : ''}
+            <div style="font-size:11px; color:${expired ? 'var(--danger)' : 'var(--text-muted)'};">
+              ${expired ? '已过期' : '有效至'} ${fmtTime(p.expiresAt)}
+            </div>
+          </div>
+          <button class="btn btn-outline" style="font-size:11px; padding:4px 10px;" onclick="copyPass('${p.code}')">复制</button>
+        </div>`;
+      }).join('');
+  }
+  function copyPass(code) {
+    navigator.clipboard.writeText(code).then(() => alert("凭证码已复制：" + code))
+      .catch(() => prompt("请手动复制凭证码：", code));
+  }
+  async function handlePassCreate(e) {
+    e.preventDefault();
+    const btn = document.getElementById('passCreateBtn');
+    btn.disabled = true;
+    try {
+      const sel = document.getElementById('passDurationSelect').value;
+      let hours = 1;
+      if (sel === '2h') hours = 2;
+      else if (sel === '6h') hours = 6;
+      else if (sel === '24h') hours = 24;
+      else if (sel === '3d') hours = 72;
+      else if (sel === 'custom') {
+        const customVal = document.getElementById('passCustomTime').value;
+        if (!customVal) { alert("请选择自定义过期时间"); return; }
+        const target = new Date(customVal).getTime();
+        if (target <= Date.now()) { alert("过期时间必须晚于当前时间"); return; }
+        const pass = { code: genPassCode(), expiresAt: target, note: document.getElementById('passNoteInput').value.trim() || '' };
+        appState.passes = appState.passes || [];
+        appState.passes.push(pass);
+        await saveToGitHub();
+        renderPassList();
+        document.getElementById('passNoteInput').value = '';
+        alert("✅ 凭证已生成：\n\n" + pass.code + "\n\n有效至 " + fmtTime(pass.expiresAt) + "\n把这个码发给嘉宾即可。");
+        return;
+      }
+      const pass = { code: genPassCode(), expiresAt: Date.now() + hours * 3600 * 1000, note: document.getElementById('passNoteInput').value.trim() || '' };
+      appState.passes = appState.passes || [];
+      appState.passes.push(pass);
+      await saveToGitHub();
+      renderPassList();
+      document.getElementById('passNoteInput').value = '';
+      alert("✅ 凭证已生成：\n\n" + pass.code + "\n\n有效至 " + fmtTime(pass.expiresAt) + "\n把这个码发给嘉宾即可。");
+    } catch (err) {
+      alert("❌ 生成凭证失败：" + err.message + "\n（请先登录管理员）");
+    } finally {
+      btn.disabled = false;
+    }
+  }
+  function genPassCode() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code = '';
+    for (let i = 0; i < 8; i++) code += chars[Math.floor(Math.random() * chars.length)];
+    return code;
+  }
+  async function handlePassLogin(e) {
+    e.preventDefault();
+    const code = document.getElementById('passCodeInput').value.trim().toUpperCase();
+    if (!code) { alert("请输入凭证码"); return; }
+    const pass = (appState.passes || []).find(p => p.code === code);
+    if (!pass) { alert("❌ 凭证不存在，请检查后重试"); return; }
+    if (Date.now() > pass.expiresAt) { alert("⏰ 凭证已过期，请联系管理员重新获取"); return; }
+    if (!GUEST_TOKEN) {
+      alert("⚠️ 嘉宾自助上传功能尚未配置完成，请联系管理员（需要在代码中配置嘉宾上传令牌）。");
+      return;
+    }
+    sessionStorage.setItem('guest_pass_code', code);
+    refreshGuestState();
+    toggleModal('passLoginModal', false);
+    document.getElementById('passCodeInput').value = '';
+    alert("✅ 凭证有效！你现在可以上传自己的照片、视频和资料了。");
   }
 
   async function handleLogin(e) {
@@ -1137,6 +1346,7 @@
     localStorage.setItem('is_match_admin', 'true');
     checkAdminState();
   }
+  refreshGuestState();
   loadData();
 </script>
 
