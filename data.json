@@ -173,7 +173,8 @@
       "uploadDate": "2025-06-10",
       "createdAt": 1700000000002,
       "isPinned": false,
-      "mediaList": []
+      "mediaList": [],
+      "isHidden": true
     },
     {
       "id": 1700000000003,
