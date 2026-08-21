@@ -315,8 +315,8 @@
       <button class="btn btn-outline super-only" onclick="toggleModal('staffAdminModal', true)">👥 内部管理员</button>
       <button class="btn btn-outline super-only" onclick="toggleModal('wechatConfigModal', true)">⚙️ 修改微信名片</button>
       <button class="btn btn-outline admin-only" onclick="logoutAdmin()">🚪 退出管理</button>
-      <button class="btn btn-primary admin-only" onclick="openAddForm()">➕ 添加新嘉宾</button>
-      <button class="btn btn-primary guest-only" onclick="openAddForm()">📝 上传我的资料</button>
+      <button class="btn btn-primary admin-only" onclick="openAddForm('admin')">➕ 添加新嘉宾</button>
+      <button class="btn btn-primary" onclick="openAddForm('public')">📝 上传我的资料</button>
     </div>
   </header>
 
@@ -536,6 +536,9 @@
   <div class="modal">
     <button class="close-btn" onclick="toggleModal('formModal', false)">×</button>
     <h2 style="font-size:18px; margin-bottom:14px;" id="formModalTitle">添加新嘉宾档案</h2>
+    <div class="notice" id="formPublicNotice" style="display:none;">
+      📮 资料提交后进入<b>待审核</b>状态，管理员审核通过后才会展示在网站上。请如实填写信息。
+    </div>
     <form id="addProfileForm" onsubmit="handleFormSubmit(event)">
       <input type="hidden" id="editingProfileId" value="">
       <div class="form-grid">
@@ -905,9 +908,12 @@
     if (!pass) return false;
     return Date.now() <= (pass.expiresAt || 0);
   }
-  // 写入用令牌：嘉宾/内部管理员用内置受限令牌，超级管理员用个人令牌
+  // 写入用令牌：嘉宾/内部管理员/公开上传访客用内置受限令牌，超级管理员用个人令牌
   function getWriteToken() {
+    const ident = getCurrentIdentity();
     if (isGuestActive() || isStaff()) return GUEST_TOKEN;
+    // 访客公开上传（未登录）也使用内置受限令牌
+    if (!getToken()) return GUEST_TOKEN;
     return getToken();
   }
 
@@ -998,10 +1004,11 @@
 
   // ===== 添加/编辑档案 =====
   // 打开"添加新档案"表单（重置所有状态）
-  function openAddForm() {
+  // mode: 'admin' 管理员直接添加（立即显示）；'public' 访客公开上传（提交后进入待审核）
+  function openAddForm(mode) {
     document.getElementById('editingProfileId').value = '';
-    document.getElementById('formModalTitle').textContent = '添加新嘉宾档案';
-    document.getElementById('submitBtn').textContent = '确认保存并同步到全网';
+    document.getElementById('formModalTitle').textContent = mode === 'public' ? '上传我的资料' : '添加新嘉宾档案';
+    document.getElementById('submitBtn').textContent = mode === 'public' ? '提交资料（等待管理员审核）' : '确认保存并同步到全网';
     document.getElementById('existingMediaBox').style.display = 'none';
     document.getElementById('existingMediaList').innerHTML = '';
     document.getElementById('mediaInput').value = '';
@@ -1012,6 +1019,11 @@
     form.reset();
     document.getElementById('editingProfileId').value = '';
     setCompressStatus('');
+    // 记录当前表单模式
+    window.__formMode = mode || (isSuper() || isStaff() ? 'admin' : 'public');
+    // 公开上传提示
+    const notice = document.getElementById('formPublicNotice');
+    if (notice) notice.style.display = mode === 'public' ? 'block' : 'none';
     toggleModal('formModal', true);
   }
 
@@ -1145,8 +1157,9 @@
         newProfile.createdAt = now.getTime();
         newProfile.isPinned = false;
 
-        // 记录上传者身份（超级管理员/内部管理员/嘉宾）
+        // 记录上传者身份（超级管理员/内部管理员/嘉宾/公开访客）
         const ident = getCurrentIdentity();
+        const formMode = window.__formMode;
         if (ident && ident.type === 'staff') {
           newProfile.uploaderType = 'staff';
           newProfile.uploaderName = ident.name;
@@ -1158,11 +1171,20 @@
           newProfile.guestNo = ident.guestNo || '';
           newProfile.fromGuest = true;
           newProfile.uploaderPass = getGuestCode();
+        } else if (formMode === 'public' || !isSuper()) {
+          // 公开上传（访客直接提交）
+          newProfile.uploaderType = 'public';
+          newProfile.uploaderName = '网友';
+          newProfile.uploaderCode = '';
+          newProfile.fromPublic = true;
         } else {
           newProfile.uploaderType = 'super';
           newProfile.uploaderName = '管理员';
           newProfile.uploaderCode = 'ADMIN';
         }
+        // 审核状态：公开上传(或访客/嘉宾)默认待审核，管理员添加立即通过
+        const isPublicUpload = formMode === 'public' || (!isSuper() && !isStaff());
+        newProfile.status = isPublicUpload ? 'pending' : 'approved';
         // 分配档案编号
         newProfile.profileNo = 'A' + String(appState.nextProfileNo || 1).padStart(3, '0');
         appState.nextProfileNo = (appState.nextProfileNo || 1) + 1;
@@ -1191,7 +1213,9 @@
         renderCards();
         toggleModal('formModal', false);
         e.target.reset();
-        if (isGuestActive()) {
+        if (newProfile.status === 'pending') {
+          alert("📮 资料已提交成功！正在等待管理员审核，审核通过后就会展示在网站上。");
+        } else if (isGuestActive()) {
           alert("🎉 资料上传成功！感谢你的参与，资料已经展示在网站上了。");
         } else {
           alert("🎉 资料已保存到仓库，所有人刷新即可看到！");
@@ -1201,7 +1225,8 @@
       alert("❌ 保存出错：" + err.message);
     } finally {
       btn.disabled = false;
-      btn.textContent = document.getElementById('editingProfileId').value ? '保存修改并同步到全网' : '确认保存并同步到全网';
+      const editingId2 = document.getElementById('editingProfileId').value;
+      btn.textContent = editingId2 ? '保存修改并同步到全网' : (window.__formMode === 'public' ? '提交资料（等待管理员审核）' : '确认保存并同步到全网');
     }
   }
 
@@ -1460,10 +1485,12 @@
     if (type === 'super') color = '#f59e0b';
     else if (type === 'staff') color = '#3b82f6';
     else if (type === 'guest') color = '#10b981';
+    else if (type === 'public') color = '#8b5cf6';
     let label = '';
     if (type === 'super') label = '管理员';
     else if (type === 'staff') label = '内部';
     else if (type === 'guest') label = '嘉宾';
+    else if (type === 'public') label = '网友';
     // 嘉宾优先显示自定义编号，其次凭证码
     const shownCode = type === 'guest' ? (guestNo || code) : code;
     return `<span class="uploader-tag"><span class="dot" style="background:${color}"></span>${label}·${name}${shownCode ? '（' + shownCode + '）' : ''}</span>`;
@@ -1712,6 +1739,8 @@
     const isAdminView = isSuper() || isStaff() || isGuestIdentity();
 
     let filtered = (appState.profiles || []).filter(item => {
+      // 待审核档案：普通访客看不到，只有管理员（含内部管理员）能看到
+      if (item.status === 'pending' && !(isSuper() || isStaff())) return false;
       // 隐藏档案：普通访客一律看不到；管理员只有开启"显示已隐藏"才看到
       if (item.isHidden && !(isAdminView && showHidden)) return false;
       const matchGender = currentGender === '全部' || item['性别'] === currentGender;
@@ -1763,6 +1792,7 @@
             ${coverHtml}
             ${item.isPinned ? `<span class="pin-badge">📌 置顶</span>` : ''}
             ${item.isHidden ? `<span class="pin-badge" style="background:#6b7280;">🙈 已隐藏</span>` : ''}
+            ${item.status === 'pending' ? `<span class="pin-badge" style="background:#f59e0b;">⏳ 待审核</span>` : ''}
             ${badgeText ? `<span class="media-badge">${badgeText}</span>` : ''}
             <span class="date-badge">📅 ${displayDate}</span>
           </div>
@@ -1827,6 +1857,12 @@
       <div class="modal-row"><div class="modal-label">【要求】</div><div class="modal-box">${item['要求'] || '-'}</div></div>
       <div class="modal-row"><div class="modal-label">【一句话介绍】</div><div class="modal-box" style="font-style:italic;">“${item['一句话介绍'] || '-'}”</div></div>
 
+      ${item.status === 'pending' ? `
+      <div class="admin-action-row">
+        <button class="btn btn-primary" style="flex:1; background:#16a34a;" onclick="approveProfile(${item.id})">✅ 通过审核</button>
+        <button class="btn btn-outline" style="flex:1; color:var(--danger); border-color:#fca5a5;" onclick="deleteProfile(${item.id})">❌ 拒绝</button>
+      </div>
+      ` : ''}
       <div class="admin-action-row ${canEditProfile(item) ? '' : 'hidden'}">
         <button class="btn btn-outline" style="flex:1; color:var(--primary); border-color:#a5b4fc;" onclick="openEditForm(${item.id})">
           ✏️ 编辑档案
@@ -2058,6 +2094,21 @@
       await saveToGitHub();
       renderCards();
       toggleModal('detailModal', false);
+    } catch (err) {
+      alert("❌ 同步失败：" + err.message);
+    }
+  }
+
+  // 审核通过：待审核 → 公开显示
+  async function approveProfile(id) {
+    const item = appState.profiles.find(p => p.id === id);
+    if (!item) return;
+    item.status = 'approved';
+    try {
+      await saveToGitHub();
+      renderCards();
+      openDetail(id);
+      alert("✅ 已通过审核，资料现在展示给所有人了！");
     } catch (err) {
       alert("❌ 同步失败：" + err.message);
     }
