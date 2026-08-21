@@ -165,6 +165,13 @@
       "note": "",
       "name": "小红",
       "guestNo": "M03"
+    },
+    {
+      "code": "HPDRR8PE",
+      "expiresAt": 1787342166247,
+      "note": "",
+      "name": "小李",
+      "guestNo": "G001"
     }
   ],
   "staffs": [],
