@@ -253,8 +253,8 @@
       <button class="btn btn-outline admin-only" onclick="toggleModal('passAdminModal', true)">🎟️ 生成临时凭证</button>
       <button class="btn btn-outline admin-only" onclick="toggleModal('wechatConfigModal', true)">⚙️ 修改微信名片</button>
       <button class="btn btn-outline admin-only" onclick="logoutAdmin()">🚪 退出管理</button>
-      <button class="btn btn-primary admin-only" onclick="toggleModal('formModal', true)">➕ 添加新嘉宾</button>
-      <button class="btn btn-primary guest-only" onclick="toggleModal('formModal', true)">📝 上传我的资料</button>
+      <button class="btn btn-primary admin-only" onclick="openAddForm()">➕ 添加新嘉宾</button>
+      <button class="btn btn-primary guest-only" onclick="openAddForm()">📝 上传我的资料</button>
     </div>
   </header>
 
@@ -409,12 +409,13 @@
   </div>
 </div>
 
-<!-- 添加表单弹窗 -->
+<!-- 添加/编辑表单弹窗 -->
 <div class="modal-overlay" id="formModal" onclick="handleOverlayClick(event, 'formModal')">
   <div class="modal">
     <button class="close-btn" onclick="toggleModal('formModal', false)">×</button>
-    <h2 style="font-size:18px; margin-bottom:14px;">添加新嘉宾档案</h2>
+    <h2 style="font-size:18px; margin-bottom:14px;" id="formModalTitle">添加新嘉宾档案</h2>
     <form id="addProfileForm" onsubmit="handleFormSubmit(event)">
+      <input type="hidden" id="editingProfileId" value="">
       <div class="form-grid">
         <div class="form-group">
           <label>姓名 *</label>
@@ -463,6 +464,10 @@
           <label>上传照片与视频（按住 Ctrl/Cmd 多选，提交到仓库 media/ 目录）</label>
           <input type="file" id="mediaInput" accept="image/*,video/*" multiple>
           <div class="file-hint">上传前会<b>自动压缩</b>：图片转 JPEG、视频转码缩小，20MB 的视频可压到 2~5MB，仓库放得下、加载也快</div>
+        </div>
+        <div class="form-group full" id="existingMediaBox" style="display:none;">
+          <label>已上传的照片/视频（可移除）</label>
+          <div id="existingMediaList" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
         </div>
         <div class="form-grid" style="background:var(--bg); padding:12px; border-radius:10px;">
           <div class="form-group">
@@ -849,62 +854,173 @@
     });
   }
 
+  // ===== 添加/编辑档案 =====
+  // 打开"添加新档案"表单（重置所有状态）
+  function openAddForm() {
+    document.getElementById('editingProfileId').value = '';
+    document.getElementById('formModalTitle').textContent = '添加新嘉宾档案';
+    document.getElementById('submitBtn').textContent = '确认保存并同步到全网';
+    document.getElementById('existingMediaBox').style.display = 'none';
+    document.getElementById('existingMediaList').innerHTML = '';
+    document.getElementById('mediaInput').value = '';
+    const form = document.getElementById('addProfileForm');
+    form.reset();
+    document.getElementById('editingProfileId').value = '';
+    setCompressStatus('');
+    toggleModal('formModal', true);
+  }
+
+  // 打开"编辑档案"表单（预填数据 + 展示已有媒体）
+  function openEditForm(id) {
+    const item = appState.profiles.find(p => p.id === id);
+    if (!item) return;
+    const form = document.getElementById('addProfileForm');
+    form.reset();
+    document.getElementById('editingProfileId').value = String(id);
+    document.getElementById('formModalTitle').textContent = '✏️ 编辑档案：' + (item['姓名'] || '');
+    document.getElementById('submitBtn').textContent = '保存修改并同步到全网';
+    document.getElementById('mediaInput').value = '';
+    setCompressStatus('');
+
+    // 填充文字字段
+    const fields = ['姓名','性别','性取向','国家/城市','生日','年龄','身高','体重','星座','职业/学生','性格','兴趣爱好','生活习惯','要求','一句话介绍'];
+    fields.forEach(f => {
+      const el = form.querySelector(`[name="${f}"]`);
+      if (el && item[f] !== undefined && item[f] !== null) el.value = item[f];
+    });
+
+    // 展示已有媒体，可逐个移除
+    currentDetailMediaList = item.mediaList || [];
+    const box = document.getElementById('existingMediaBox');
+    const listEl = document.getElementById('existingMediaList');
+    if (currentDetailMediaList.length === 0) {
+      box.style.display = 'none';
+      listEl.innerHTML = '';
+    } else {
+      box.style.display = 'flex';
+      renderExistingMedia();
+    }
+    toggleModal('formModal', true);
+  }
+
+  function renderExistingMedia() {
+    const listEl = document.getElementById('existingMediaList');
+    listEl.innerHTML = currentDetailMediaList.map((m, idx) => {
+      const isVid = m.type && m.type.startsWith('video');
+      const thumb = isVid
+        ? `<video src="${m.url}" muted></video><span style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#fff; font-size:14px; background:rgba(0,0,0,.3);">▶</span>`
+        : `<img src="${m.url}" style="width:100%; height:100%; object-fit:cover;">`;
+      return `<div style="position:relative; width:64px; height:64px; border-radius:8px; overflow:hidden; border:1px solid var(--border); background:#000;">
+        ${thumb}
+        <button type="button" onclick="removeExistingMedia(${idx})" style="position:absolute; top:2px; right:2px; width:18px; height:18px; border-radius:50%; border:none; background:rgba(239,68,68,.9); color:#fff; font-size:11px; line-height:1; cursor:pointer; padding:0;">×</button>
+      </div>`;
+    }).join('');
+  }
+
+  function removeExistingMedia(idx) {
+    currentDetailMediaList.splice(idx, 1);
+    renderExistingMedia();
+    if (currentDetailMediaList.length === 0) {
+      document.getElementById('existingMediaBox').style.display = 'none';
+    }
+  }
+
   async function handleFormSubmit(e) {
     e.preventDefault();
     const btn = document.getElementById('submitBtn');
+    const editingId = document.getElementById('editingProfileId').value;
     btn.disabled = true;
 
     try {
       const formData = new FormData(e.target);
-      const newProfile = { id: Date.now() };
-      formData.forEach((val, key) => { if (typeof val === 'string') newProfile[key] = val.trim(); });
-
       const now = new Date();
       const year = now.getFullYear();
       const month = String(now.getMonth() + 1).padStart(2, '0');
       const day = String(now.getDate()).padStart(2, '0');
-      newProfile.uploadDate = `${year}-${month}-${day}`;
-      newProfile.createdAt = now.getTime();
-      newProfile.isPinned = false;
-      if (isGuestActive()) {
-        newProfile.fromGuest = true;   // 标记为嘉宾自助上传
-        newProfile.uploaderPass = getGuestCode();
-      }
 
-      const fileInput = document.getElementById('mediaInput');
-      const mediaList = [];
-      for (let i = 0; i < fileInput.files.length; i++) {
-        const rawFile = fileInput.files[i];
-        setCompressStatus(`⏳ 正在压缩第 ${i + 1}/${fileInput.files.length} 个文件：${rawFile.name} (${formatSize(rawFile.size)})`);
-        btn.textContent = `正在压缩 (${i + 1}/${fileInput.files.length})...`;
-        const finalFile = await autoCompress(rawFile);
-        if (finalFile.size < rawFile.size) {
-          setCompressStatus(`✅ ${rawFile.name}：${formatSize(rawFile.size)} → ${formatSize(finalFile.size)}，正在上传...`);
+      // 编辑模式：更新已有档案
+      if (editingId) {
+        const target = appState.profiles.find(p => String(p.id) === String(editingId));
+        if (!target) throw new Error('未找到要编辑的档案');
+        const editableFields = ['姓名','性别','性取向','国家/城市','生日','年龄','身高','体重','星座','职业/学生','性格','兴趣爱好','生活习惯','要求','一句话介绍'];
+        editableFields.forEach(f => {
+          const v = formData.get(f);
+          target[f] = typeof v === 'string' ? v.trim() : '';
+        });
+
+        // 新上传的媒体
+        const fileInput = document.getElementById('mediaInput');
+        const newMedia = [];
+        for (let i = 0; i < fileInput.files.length; i++) {
+          const rawFile = fileInput.files[i];
+          setCompressStatus(`⏳ 正在压缩第 ${i + 1}/${fileInput.files.length} 个新文件：${rawFile.name} (${formatSize(rawFile.size)})`);
+          btn.textContent = `正在压缩新文件 (${i + 1}/${fileInput.files.length})...`;
+          const finalFile = await autoCompress(rawFile);
+          if (finalFile.size < rawFile.size) {
+            setCompressStatus(`✅ ${rawFile.name}：${formatSize(rawFile.size)} → ${formatSize(finalFile.size)}，正在上传...`);
+          }
+          btn.textContent = `正在上传新文件 (${i + 1}/${fileInput.files.length})...`;
+          newMedia.push(await uploadToRepo(finalFile));
         }
-        btn.textContent = `正在上传第 (${i + 1}/${fileInput.files.length}) 个文件...`;
-        mediaList.push(await uploadToRepo(finalFile));
-      }
-      setCompressStatus('');
+        setCompressStatus('');
 
-      newProfile.mediaList = mediaList;
-      appState.profiles.unshift(newProfile);
+        // 已有媒体（保留未移除的）+ 新媒体
+        target.mediaList = currentDetailMediaList.concat(newMedia);
+        target.updatedAt = now.getTime();
+        target.uploadDate = target.uploadDate || `${year}-${month}-${day}`;
 
-      btn.textContent = '正在同步到仓库...';
-      await saveToGitHub();
-
-      renderCards();
-      toggleModal('formModal', false);
-      e.target.reset();
-      if (isGuestActive()) {
-        alert("🎉 资料上传成功！感谢你的参与，资料已经展示在网站上了。");
+        btn.textContent = '正在同步到仓库...';
+        await saveToGitHub();
+        renderCards();
+        toggleModal('formModal', false);
+        alert("✏️ 档案已更新并同步，所有人刷新即可看到最新资料！");
       } else {
-        alert("🎉 资料已保存到仓库，所有人刷新即可看到！");
+        // 新增模式
+        const newProfile = { id: Date.now() };
+        formData.forEach((val, key) => { if (typeof val === 'string') newProfile[key] = val.trim(); });
+        newProfile.uploadDate = `${year}-${month}-${day}`;
+        newProfile.createdAt = now.getTime();
+        newProfile.isPinned = false;
+        if (isGuestActive()) {
+          newProfile.fromGuest = true;   // 标记为嘉宾自助上传
+          newProfile.uploaderPass = getGuestCode();
+        }
+
+        const fileInput = document.getElementById('mediaInput');
+        const mediaList = [];
+        for (let i = 0; i < fileInput.files.length; i++) {
+          const rawFile = fileInput.files[i];
+          setCompressStatus(`⏳ 正在压缩第 ${i + 1}/${fileInput.files.length} 个文件：${rawFile.name} (${formatSize(rawFile.size)})`);
+          btn.textContent = `正在压缩 (${i + 1}/${fileInput.files.length})...`;
+          const finalFile = await autoCompress(rawFile);
+          if (finalFile.size < rawFile.size) {
+            setCompressStatus(`✅ ${rawFile.name}：${formatSize(rawFile.size)} → ${formatSize(finalFile.size)}，正在上传...`);
+          }
+          btn.textContent = `正在上传第 (${i + 1}/${fileInput.files.length}) 个文件...`;
+          mediaList.push(await uploadToRepo(finalFile));
+        }
+        setCompressStatus('');
+
+        newProfile.mediaList = mediaList;
+        appState.profiles.unshift(newProfile);
+
+        btn.textContent = '正在同步到仓库...';
+        await saveToGitHub();
+
+        renderCards();
+        toggleModal('formModal', false);
+        e.target.reset();
+        if (isGuestActive()) {
+          alert("🎉 资料上传成功！感谢你的参与，资料已经展示在网站上了。");
+        } else {
+          alert("🎉 资料已保存到仓库，所有人刷新即可看到！");
+        }
       }
     } catch (err) {
       alert("❌ 保存出错：" + err.message);
     } finally {
       btn.disabled = false;
-      btn.textContent = '确认保存并同步到全网';
+      btn.textContent = document.getElementById('editingProfileId').value ? '保存修改并同步到全网' : '确认保存并同步到全网';
     }
   }
 
@@ -1301,6 +1417,9 @@
       <div class="modal-row"><div class="modal-label">【一句话介绍】</div><div class="modal-box" style="font-style:italic;">“${item['一句话介绍'] || '-'}”</div></div>
 
       <div class="admin-action-row admin-only">
+        <button class="btn btn-outline" style="flex:1; color:var(--primary); border-color:#a5b4fc;" onclick="openEditForm(${item.id})">
+          ✏️ 编辑档案
+        </button>
         <button class="btn btn-outline" style="flex:1; color:${item.isPinned ? '#4b5563' : 'var(--pin-gold)'}; border-color:${item.isPinned ? '#d1d5db' : 'var(--pin-gold)'};" onclick="togglePinProfile(${item.id})">
           ${item.isPinned ? '取消置顶' : '📌 置顶此档案'}
         </button>
@@ -1381,6 +1500,13 @@
     if (!show && id === 'detailModal') {
       const video = modal.querySelector('video');
       if (video) video.pause();
+    }
+    if (!show && id === 'formModal') {
+      // 关闭编辑表单时清理编辑状态，避免下次误入编辑模式
+      const editingInput = document.getElementById('editingProfileId');
+      if (editingInput) editingInput.value = '';
+      const box = document.getElementById('existingMediaBox');
+      if (box) box.style.display = 'none';
     }
   }
 
