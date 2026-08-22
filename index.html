@@ -1603,25 +1603,12 @@
       return matchGender && (!keyword || fullStr.includes(keyword));
     });
 
-    filtered.sort((a, b) => {
-      // 自定义位置（sortOrder）优先：设置了位置的按序号升序排在最前
-      const hasOrderA = typeof a.sortOrder === 'number';
-      const hasOrderB = typeof b.sortOrder === 'number';
-      if (hasOrderA || hasOrderB) {
-        if (hasOrderA && hasOrderB) return a.sortOrder - b.sortOrder;
-        return hasOrderA ? -1 : 1;
-      }
-
-      const isPinnedA = a.isPinned ? 1 : 0;
-      const isPinnedB = b.isPinned ? 1 : 0;
-      if (isPinnedA !== isPinnedB) return isPinnedB - isPinnedA;
-
-      if (sortBy === 'newest') return (b.createdAt || 0) - (a.createdAt || 0);
-      if (sortBy === 'oldest') return (a.createdAt || 0) - (b.createdAt || 0);
-      if (sortBy === 'age_asc') return (parseFloat(a['年龄']) || 999) - (parseFloat(b['年龄']) || 999);
-      if (sortBy === 'age_desc') return (parseFloat(b['年龄']) || 0) - (parseFloat(a['年龄']) || 0);
-      return 0;
-    });
+    // 排序：待审核模式按时间倒序；正常模式按"位置即序号"规则（与位置弹窗一致）
+    if (pendingReviewMode) {
+      filtered.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    } else {
+      filtered = sortByPosition(filtered);
+    }
 
     if (filtered.length === 0) {
       container.innerHTML = pendingReviewMode
@@ -1957,25 +1944,63 @@
   let posTargetId = null;   // 当前正在设置位置的档案 id
   let posCurrentPage = 1;   // 位置弹窗当前浏览的页码
 
+  // 位置即序号：设了位置的精确放对应序号，其余人按默认顺序填空位（主页与弹窗共用）
+  function sortByPosition(list) {
+    const sortBy = document.getElementById('sortSelect').value;
+    const withOrder = list.filter(p => typeof p.sortOrder === 'number').sort((a, b) => a.sortOrder - b.sortOrder);
+    const withoutOrder = list.filter(p => typeof p.sortOrder !== 'number');
+
+    // 默认顺序（置顶 → 时间/年龄）
+    withoutOrder.sort((a, b) => {
+      const isPinnedA = a.isPinned ? 1 : 0;
+      const isPinnedB = b.isPinned ? 1 : 0;
+      if (isPinnedA !== isPinnedB) return isPinnedB - isPinnedA;
+      if (sortBy === 'newest') return (b.createdAt || 0) - (a.createdAt || 0);
+      if (sortBy === 'oldest') return (a.createdAt || 0) - (b.createdAt || 0);
+      if (sortBy === 'age_asc') return (parseFloat(a['年龄']) || 999) - (parseFloat(b['年龄']) || 999);
+      if (sortBy === 'age_desc') return (parseFloat(b['年龄']) || 0) - (parseFloat(a['年龄']) || 0);
+      return 0;
+    });
+
+    const maxOrder = withOrder.reduce((m, p) => Math.max(m, p.sortOrder), 0);
+    const len = Math.max(list.length, maxOrder);
+    const arr = new Array(len);
+    const conflicts = [];
+    withOrder.forEach(p => {
+      const idx = p.sortOrder - 1;
+      if (idx >= 0 && idx < len && !arr[idx]) arr[idx] = p;
+      else conflicts.push(p);
+    });
+    withoutOrder.push(...conflicts);
+    let ri = 0;
+    for (let i = 0; i < arr.length && ri < withoutOrder.length; i++) {
+      if (!arr[i]) arr[i] = withoutOrder[ri++];
+    }
+    return arr.filter(Boolean);
+  }
+
+  // 当前实际展示顺序（位置弹窗用）
+  function getOrderedProfiles() {
+    const list = (appState.profiles || []).filter(p => p.status !== 'pending' && !p.isHidden);
+    return sortByPosition(list);
+  }
+
   // 打开位置设置弹窗
   function setProfilePosition(id) {
     const item = appState.profiles.find(p => p.id === id);
     if (!item) return;
     posTargetId = id;
     const guestNameEl = document.getElementById('posModalGuestName');
-    if (guestNameEl) guestNameEl.innerHTML = '为 <b>' + (item['姓名'] || '未填') + '</b> 选择展示位置：点击下方空位即可放置。';
-    posCurrentPage = Math.max(1, Math.ceil((typeof item.sortOrder === 'number' ? item.sortOrder : 1) / PAGE_SIZE));
+    if (guestNameEl) guestNameEl.innerHTML = '为 <b>' + (item['姓名'] || '未填') + '</b> 选择展示位置：<br>点击<b>有人的格子换位置</b>，点击<b>空位</b>直接放置。';
+    // 自动跳到该嘉宾当前所在页
+    const ordered = getOrderedProfiles();
+    const idx = ordered.findIndex(p => p.id === id);
+    posCurrentPage = idx >= 0 ? Math.floor(idx / PAGE_SIZE) + 1 : 1;
     renderPositionPage();
     toggleModal('positionModal', true);
   }
 
-  // 该档案当前所在序号（若已设置）
-  function posCurrentOrder() {
-    const item = appState.profiles.find(p => p.id === posTargetId);
-    return item && typeof item.sortOrder === 'number' ? item.sortOrder : null;
-  }
-
-  // 渲染当前页的 8 个位置格子
+  // 渲染当前页的 8 个位置格子：每个位置显示当前实际排在那里的嘉宾
   function renderPositionPage() {
     const page = posCurrentPage;
     const label = document.getElementById('posPageLabel');
@@ -1983,32 +2008,26 @@
     const grid = document.getElementById('posSlotGrid');
     if (!grid) return;
 
-    // 占位映射：序号 → 占用的档案（只统计已通过、未删除的）
-    const occupied = {};
-    (appState.profiles || []).forEach(p => {
-      if (p.status === 'pending') return;
-      if (typeof p.sortOrder === 'number') {
-        if (!occupied[p.sortOrder]) occupied[p.sortOrder] = p;
-      }
-    });
+    const ordered = getOrderedProfiles();
 
     let html = '';
     for (let i = 1; i <= PAGE_SIZE; i++) {
       const order = (page - 1) * PAGE_SIZE + i;
-      const holder = occupied[order];
+      const holder = ordered[order - 1];   // 当前实际排在这个位置的嘉宾
       const isSelf = holder && holder.id === posTargetId;
       let cellHtml;
       if (holder) {
+        const selfLabel = isSelf ? '👈 当前在此' : '点击换位置';
         cellHtml = `<div style="font-size:12px; font-weight:700; ${isSelf ? 'color:#7c3aed;' : 'color:var(--text);'} overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${holder['姓名'] || '未填'}</div>
-          <div style="font-size:10px; color:${isSelf ? '#7c3aed' : 'var(--text-muted)'};">${isSelf ? '👈 当前在此' : '已占用'}</div>`;
+          <div style="font-size:10px; color:${isSelf ? '#7c3aed' : 'var(--primary)'};">${selfLabel}</div>`;
       } else {
         cellHtml = `<div style="font-size:22px; color:#cbd5e1; line-height:1;">＋</div>
           <div style="font-size:11px; color:var(--text-muted);">空位</div>`;
       }
-      const canPlace = !holder || isSelf;
+      const clickable = !holder || !isSelf;
       html += `
-      <div style="border:2px ${holder ? (isSelf ? 'solid #7c3aed' : 'dashed #d1d5db') : 'dashed #cbd5e1'}; border-radius:10px; padding:10px 4px; text-align:center; background:${isSelf ? '#f5f3ff' : 'var(--card-bg)'}; cursor:${canPlace ? 'pointer' : 'not-allowed'}; ${canPlace ? 'transition:all .15s;' : 'opacity:.75;'} ${canPlace ? 'onmouseover="this.style.borderColor=\'#7c3aed\';this.style.transform=\'scale(1.03)\'" onmouseout="this.style.borderColor=\'#cbd5e1\';this.style.transform=\'scale(1)\'"' : ''}"
-        onclick="${canPlace ? 'posPlace(' + order + ')' : 'void(0)'}" title="${isSelf ? '当前所在位置' : holder ? holder['姓名'] + ' 占用此位' : '空位，点击放置'}">
+      <div style="border:2px ${holder ? (isSelf ? 'solid #7c3aed' : 'dashed #a5b4fc') : 'dashed #cbd5e1'}; border-radius:10px; padding:10px 4px; text-align:center; background:${isSelf ? '#f5f3ff' : 'var(--card-bg)'}; cursor:${clickable ? 'pointer' : 'default'}; ${clickable ? 'transition:all .15s;' : 'opacity:1;'} ${clickable ? 'onmouseover="this.style.borderColor=\'#7c3aed\';this.style.transform=\'scale(1.03)\'" onmouseout="this.style.borderColor=\'#cbd5e1\';this.style.transform=\'scale(1)\'"' : ''}"
+        onclick="${clickable ? 'posPlace(' + order + ')' : 'void(0)'}" title="${isSelf ? '当前所在位置' : holder ? '点击与 ' + holder['姓名'] + ' 交换位置' : '空位，点击放置'}">
         <div style="font-size:10px; color:var(--text-muted); margin-bottom:2px;">第${i}位</div>
         ${cellHtml}
       </div>`;
@@ -2026,16 +2045,31 @@
     renderPositionPage();
   }
 
-  // 把当前嘉宾放到第 order 个位置
+  // 点击位置：有人则交换位置（双方互换），空位则直接放置
   async function posPlace(order) {
-    const item = appState.profiles.find(p => p.id === posTargetId);
-    if (!item) return;
-    item.sortOrder = order;
+    const C = appState.profiles.find(p => p.id === posTargetId);
+    if (!C) return;
+    const ordered = getOrderedProfiles();
+    const M = ordered[order - 1];              // 当前占着这个位置的嘉宾
+    const cPos = ordered.findIndex(p => p.id === C.id) + 1;   // C 当前实际位置
+
+    if (M && M.id !== C.id) {
+      // 换位：C 占据 order，M 移到 C 原来的实际位置
+      C.sortOrder = order;
+      M.sortOrder = cPos;
+    } else if (!M) {
+      // 空位直接放置
+      C.sortOrder = order;
+    } else {
+      return; // 点击自己当前所在格，无操作
+    }
+
     try {
       await saveToGitHub();
       renderCards();
       toggleModal('positionModal', false);
-      alert('✅ ' + (item['姓名'] || '该嘉宾') + ' 已放置到' + posText(order) + '！');
+      const swapped = M && M.id !== C.id;
+      alert('✅ ' + (C['姓名'] || '该嘉宾') + (swapped ? ' 已与 ' + (M['姓名'] || '对方') + ' 交换位置，现在位于' : ' 已放置到') + posText(order) + '！');
     } catch (err) {
       alert('❌ 同步失败：' + err.message);
     }
