@@ -224,14 +224,11 @@
     .admin-action-row { display: flex; gap: 10px; margin-top: 16px; }
     .admin-action-row.hidden { display: none !important; }
 
-    /* 右下角版本信息 */
+    /* 页面底部版本信息（随页面滚动，不跟随视口） */
     #versionWidget {
-      position: fixed; right: 12px; bottom: 10px; z-index: 900;
-      display: flex; align-items: center; gap: 8px;
-      background: rgba(255,255,255,0.85); border: 1px solid var(--border);
-      border-radius: 20px; padding: 4px 12px; font-size: 11px;
-      color: var(--text-muted); box-shadow: 0 1px 6px rgba(0,0,0,0.08);
-      backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      margin-top: 28px; padding: 12px 0 8px; font-size: 11px;
+      color: var(--text-muted); border-top: 1px solid var(--border);
     }
     #versionWidget .ver-text { white-space: nowrap; }
 
@@ -361,6 +358,13 @@
     <div id="pageNumbers" style="display:flex; gap:6px; align-items:center;"></div>
     <button class="btn btn-outline" id="pageNext" style="font-size:13px; padding:6px 14px;" onclick="changePage(currentPage + 1)">下一页 →</button>
     <span id="pageInfo" style="font-size:12px; color:var(--text-muted);"></span>
+  </div>
+
+  <!-- 版本信息（固定在页面底部，随页面滚动，与内容同流） -->
+  <div id="versionWidget">
+    <span class="ver-text" id="versionText"></span>
+    <button class="btn btn-outline" style="font-size:11px; padding:2px 8px;" onclick="showChangelog()">📋 更新记录</button>
+    <span class="ver-text">© 2026 全球找对象</span>
   </div>
 </div>
 
@@ -662,13 +666,6 @@
   </div>
 </div>
 
-<!-- 右下角版本信息 -->
-<div id="versionWidget">
-  <span class="ver-text" id="versionText">v2.3.0</span>
-  <button class="btn btn-outline" style="font-size:11px; padding:2px 8px;" onclick="showChangelog()">📋 更新记录</button>
-  <span class="ver-text">© 2026 全球找对象</span>
-</div>
-
 <script>
   // ===== 站内弹窗组件（替代浏览器原生 alert/confirm/prompt） =====
   let __customOnConfirm = null;   // 确认框「确定」后的回调
@@ -725,9 +722,14 @@
   }
 
   // ===== 版本信息与更新记录 =====
-  // 版本规则：小改动 +0.0.1，一般新功能 +0.1.0，超大改动 +1.0.0
-  const APP_VERSION = '4.3.0';
+  // 版本规则：
+  //   🔧 小改动/修复      → +0.0.1
+  //   ✨ 一般新功能       → +0.1.0
+  //   🔥 超大改动         → +1.0.0
+  //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
+  const APP_VERSION = '4.3.1';
   const CHANGELOG = [
+    { v: '4.3.1', d: '2026-08-22', note: '版本号支持超级大改动(1.0.0.0)；版本信息固定到页面底部', type: 'fix' },
     { v: '4.3.0', d: '2026-08-22', note: '右下角版本信息与更新记录；版本升级自动弹出更新提示', type: 'feature' },
     { v: '4.2.1', d: '2026-08-22', note: '提交弹窗红字强调：必须把编码发到管理员微信才能审核', type: 'fix' },
     { v: '4.2.0', d: '2026-08-22', note: '提交时间精确到秒；提交后提示档案编码+管理员微信', type: 'feature' },
@@ -759,7 +761,7 @@
       <div style="display:flex; gap:8px; padding:8px 0; border-bottom:1px dashed var(--border);">
         <div style="flex-shrink:0; background:var(--primary); color:#fff; font-size:11px; font-weight:700; padding:2px 8px; border-radius:10px; height:fit-content; white-space:nowrap;">v${item.v}</div>
         <div>
-          <div style="font-size:10px; color:var(--text-muted);">${item.d}${item.type === 'major' ? ' · 🔥 超大更新' : item.type === 'feature' ? ' · ✨ 新功能' : ' · 🔧 优化修复'}</div>
+          <div style="font-size:10px; color:var(--text-muted);">${item.d}${item.type === 'epic' ? ' · 🔥🔥 超级大更新' : item.type === 'major' ? ' · 🔥 超大更新' : item.type === 'feature' ? ' · ✨ 新功能' : ' · 🔧 优化修复'}</div>
           <div style="font-size:12px;">${item.note}</div>
         </div>
       </div>`).join('');
