@@ -752,8 +752,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '4.3.2';
+  const APP_VERSION = '4.3.3';
   const CHANGELOG = [
+    { v: '4.3.3', d: '2026-08-22', note: '可隐藏任意一条更新记录；更新提示显示给每个用户', type: 'feature' },
     { v: '4.3.2', d: '2026-08-22', note: '超级管理员可修改版本号、对访客隐藏版本信息', type: 'feature' },
     { v: '4.3.1', d: '2026-08-22', note: '版本号支持超级大改动(1.0.0.0)；版本信息固定到页面底部', type: 'fix' },
     { v: '4.3.0', d: '2026-08-22', note: '右下角版本信息与更新记录；版本升级自动弹出更新提示', type: 'feature' },
@@ -783,15 +784,47 @@
   ];
 
   function showChangelog() {
-    const html = CHANGELOG.map(item => `
-      <div style="display:flex; gap:8px; padding:8px 0; border-bottom:1px dashed var(--border);">
-        <div style="flex-shrink:0; background:var(--primary); color:#fff; font-size:11px; font-weight:700; padding:2px 8px; border-radius:10px; height:fit-content; white-space:nowrap;">v${item.v}</div>
-        <div>
+    const hidden = appState.hiddenVersions || [];
+    const isAdmin = isSuper();
+    const visibleItems = CHANGELOG.filter(item => !hidden.includes(item.v));
+    const hiddenItems = CHANGELOG.filter(item => hidden.includes(item.v));
+
+    const itemHtml = (item, isHidden) => `
+      <div style="display:flex; gap:8px; align-items:flex-start; padding:8px 0; border-bottom:1px dashed var(--border); ${isHidden ? 'opacity:.45;' : ''}">
+        <div style="flex-shrink:0; background:${isHidden ? '#9ca3af' : 'var(--primary)'}; color:#fff; font-size:11px; font-weight:700; padding:2px 8px; border-radius:10px; height:fit-content; white-space:nowrap;">v${item.v}</div>
+        <div style="flex:1;">
           <div style="font-size:10px; color:var(--text-muted);">${item.d}${item.type === 'epic' ? ' · 🔥🔥 超级大更新' : item.type === 'major' ? ' · 🔥 超大更新' : item.type === 'feature' ? ' · ✨ 新功能' : ' · 🔧 优化修复'}</div>
           <div style="font-size:12px;">${item.note}</div>
         </div>
-      </div>`).join('');
+        ${isAdmin ? `
+        <button class="btn btn-outline" style="font-size:10px; padding:2px 8px; flex-shrink:0; ${isHidden ? 'color:#047857; border-color:#a7f3d0;' : 'color:var(--text-muted);'}" onclick="${isHidden ? `toggleHideVersion('${item.v}', false)` : `toggleHideVersion('${item.v}', true)`}">${isHidden ? '↩️ 恢复' : '🙈 隐藏'}</button>
+        ` : ''}
+      </div>`;
+
+    let html = visibleItems.map(item => itemHtml(item, false)).join('');
+    if (isAdmin && hiddenItems.length > 0) {
+      html += '<div style="font-size:11px; color:var(--text-muted); font-weight:700; margin:10px 0 4px;">🙈 已隐藏（仅管理员可见，可恢复）</div>' +
+        hiddenItems.map(item => itemHtml(item, true)).join('');
+    }
+    if (!html) html = '<div style="text-align:center; color:var(--text-muted); padding:20px;">暂无更新记录</div>';
     showAlertHtml(html, '📋 版本更新记录');
+  }
+
+  // 管理员隐藏/恢复某条更新记录（保存到 data.json，全站生效）
+  async function toggleHideVersion(v, hide) {
+    if (!isSuper()) return;
+    if (!Array.isArray(appState.hiddenVersions)) appState.hiddenVersions = [];
+    if (hide) {
+      if (!appState.hiddenVersions.includes(v)) appState.hiddenVersions.push(v);
+    } else {
+      appState.hiddenVersions = appState.hiddenVersions.filter(x => x !== v);
+    }
+    try {
+      await saveToGitHub();
+      showChangelog();
+    } catch (err) {
+      showAlert('❌ 同步失败：' + err.message);
+    }
   }
 
   // 当前显示版本号（管理员可在 data.json 中覆盖）
@@ -839,13 +872,12 @@
     }
   }
 
-  // 页面加载：每次更新自动弹出提示（版本号显示在底部初始化处执行）
+  // 页面加载：更新提示显示给每个用户（每个会话显示一次，不是"一个用户看过就不再显示"）
   (function () {
-    // 检测版本变化：本机记录过旧版本且版本升级 → 自动弹出更新提示
-    const KEY = 'seen_app_version';
-    let prev = '';
-    try { prev = localStorage.getItem(KEY) || ''; } catch (e) {}
-    if (prev && prev !== APP_VERSION) {
+    const KEY = 'announced_version_session';
+    let announced = '';
+    try { announced = sessionStorage.getItem(KEY) || ''; } catch (e) {}
+    if (announced !== APP_VERSION) {
       const latest = CHANGELOG[0];
       showAlertHtml(
         '🎉 网站已更新到 <b style="font-size:17px;">v' + APP_VERSION + '</b>！<br><br>' +
@@ -854,8 +886,8 @@
         '<br>点「📋 更新记录」可查看全部历史版本。',
         '版本更新'
       );
+      try { sessionStorage.setItem(KEY, APP_VERSION); } catch (e) {}
     }
-    try { localStorage.setItem(KEY, APP_VERSION); } catch (e) {}
   })();
 
   // ===== 基础配置 =====
@@ -885,7 +917,8 @@
     staffs: [],          // 内部管理员列表
     nextProfileNo: 1,    // 档案编号计数器
     version: '',         // 管理员自定义版本号（空 = 使用代码内置版本）
-    hideVersionInfo: false  // 管理员是否对访客隐藏版本信息
+    hideVersionInfo: false,  // 管理员是否对访客隐藏版本信息
+    hiddenVersions: []   // 管理员隐藏的更新记录版本号列表
   };
 
   // 内置示例兜底：当取不到仓库 data.json（本地预览 / 分享链接 / 直接双击打开）时，
@@ -1546,6 +1579,7 @@
         if (typeof data.nextProfileNo === 'number') appState.nextProfileNo = data.nextProfileNo;
         if (typeof data.version === 'string') appState.version = data.version;
         if (typeof data.hideVersionInfo === 'boolean') appState.hideVersionInfo = data.hideVersionInfo;
+        if (Array.isArray(data.hiddenVersions)) appState.hiddenVersions = data.hiddenVersions;
         loaded = true;
       }
     } catch (err) {
