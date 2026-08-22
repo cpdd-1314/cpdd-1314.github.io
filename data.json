@@ -5,6 +5,39 @@
   },
   "profiles": [
     {
+      "id": 1787399836191,
+      "姓名": "小陈",
+      "guestNo": "",
+      "性别": "男",
+      "性取向": "女",
+      "国家/城市": "马德里",
+      "生日": "2006",
+      "年龄": "20",
+      "身高": "184cm",
+      "体重": "72kg",
+      "星座": "天蝎",
+      "职业/学生": "开店",
+      "性格": "抽象",
+      "兴趣爱好": "打hok",
+      "生活习惯": "不抽烟喝酒",
+      "要求": "175+卡颜值",
+      "一句话介绍": "",
+      "uploadDate": "2026-08-22",
+      "createdAt": 1787399836190,
+      "isPinned": false,
+      "uploaderType": "super",
+      "uploaderName": "管理员",
+      "uploaderCode": "ADMIN",
+      "status": "approved",
+      "profileNo": "A016",
+      "mediaList": [
+        {
+          "url": "./media/1787399836279_IMG_6231.JPG",
+          "type": "image/jpeg"
+        }
+      ]
+    },
+    {
       "id": 1787399358830,
       "姓名": "张",
       "guestNo": "A015",
@@ -295,5 +328,5 @@
     }
   ],
   "staffs": [],
-  "nextProfileNo": 16
+  "nextProfileNo": 17
 }
