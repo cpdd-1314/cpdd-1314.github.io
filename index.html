@@ -249,7 +249,7 @@
 
     /* 左下角动态"加微信"浮动气泡 */
     #wechatFloat {
-      position: fixed; left: 16px; bottom: 16px; z-index: 900;
+      position: fixed; left: 16px; bottom: 76px; z-index: 900;
       display: flex; align-items: center; gap: 6px;
       background: #07c160; color: #fff;
       border-radius: 30px; padding: 11px 18px;
@@ -794,8 +794,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '4.4.1';
+  const APP_VERSION = '4.4.2';
   const CHANGELOG = [
+    { v: '4.4.2', d: '2026-08-22', note: '加微信浮动气泡位置上移，避免贴地', type: 'fix' },
     { v: '4.4.1', d: '2026-08-22', note: '修复版本号不自动更新：手动版本已清空，留空即自动跟随最新', type: 'fix' },
     { v: '4.4.0', d: '2026-08-22', note: '左下角动态「加微信」浮动气泡（微信头像+文字，点击扫码）', type: 'feature' },
     { v: '4.3.5', d: '2026-08-22', note: '管理员保存弹窗也显示扫码加微信按钮；更新提示每浏览器只显示一次', type: 'fix' },
