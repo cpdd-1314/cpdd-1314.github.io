@@ -449,12 +449,6 @@
       "isHidden": true
     }
   ],
-  "staffs": [
-    {
-      "code": "ST001",
-      "name": ".",
-      "password": "."
-    }
-  ],
+  "staffs": [],
   "nextProfileNo": 21
 }
