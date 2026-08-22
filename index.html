@@ -473,6 +473,25 @@
   </div>
 </div>
 
+<!-- 设置嘉宾位置弹窗 -->
+<div class="modal-overlay" id="positionModal" onclick="handleOverlayClick(event, 'positionModal')">
+  <div class="modal" style="max-width:460px;">
+    <button class="close-btn" onclick="toggleModal('positionModal', false)">×</button>
+    <h2 style="font-size:18px; margin-bottom:4px;">📍 设置嘉宾位置</h2>
+    <div style="font-size:12px; color:var(--text-muted); margin-bottom:12px;" id="posModalGuestName"></div>
+    <div style="display:flex; justify-content:center; align-items:center; gap:14px; margin-bottom:14px;">
+      <button class="btn btn-outline" style="font-size:13px; padding:4px 12px;" onclick="posPrevPage()">← 上一页</button>
+      <span style="font-size:15px; font-weight:700;" id="posPageLabel">第 1 页</span>
+      <button class="btn btn-outline" style="font-size:13px; padding:4px 12px;" onclick="posNextPage()">下一页 →</button>
+    </div>
+    <div id="posSlotGrid" style="display:grid; grid-template-columns:repeat(4, 1fr); gap:8px; margin-bottom:14px;"></div>
+    <div style="display:flex; gap:8px;">
+      <button class="btn btn-outline" style="flex:1; color:var(--danger); border-color:#fca5a5;" onclick="posCancelOrder()">🗑️ 取消自定义位置</button>
+      <button class="btn btn-primary" style="flex:1;" onclick="toggleModal('positionModal', false)">完成</button>
+    </div>
+  </div>
+</div>
+
 <!-- 添加/编辑表单弹窗 -->
 <div class="modal-overlay" id="formModal" onclick="handleOverlayClick(event, 'formModal')">
   <div class="modal">
@@ -1934,29 +1953,105 @@
     return '第' + page + '页第' + idx + '个';
   }
 
-  // 管理员设置嘉宾在列表中的具体位置（全局序号）
-  async function setProfilePosition(id) {
+  // ===== 可视化设置嘉宾位置 =====
+  let posTargetId = null;   // 当前正在设置位置的档案 id
+  let posCurrentPage = 1;   // 位置弹窗当前浏览的页码
+
+  // 打开位置设置弹窗
+  function setProfilePosition(id) {
     const item = appState.profiles.find(p => p.id === id);
     if (!item) return;
-    const cur = typeof item.sortOrder === 'number'
-      ? '当前位置：' + posText(item.sortOrder) + '（序号 ' + item.sortOrder + '）\n'
-      : '';
-    const hint = '输入嘉宾的位置序号：\n第1页第1个 = 1，第1页第' + PAGE_SIZE + '个 = ' + PAGE_SIZE + '\n第2页第5个 = ' + (PAGE_SIZE + 5) + '，第3页第2个 = ' + (PAGE_SIZE * 2 + 2) + '\n输入 0 或留空 = 取消自定义位置（恢复默认排序）';
-    const input = prompt(cur + hint, typeof item.sortOrder === 'number' ? item.sortOrder : '');
-    if (input === null) return;
-    const trimmed = String(input).trim();
-    if (trimmed === '' || parseInt(trimmed, 10) === 0) {
-      delete item.sortOrder;
-    } else {
-      const n = parseInt(trimmed, 10);
-      if (isNaN(n) || n < 1) { alert('请输入有效的序号（≥1）'); return; }
-      item.sortOrder = n;
+    posTargetId = id;
+    const guestNameEl = document.getElementById('posModalGuestName');
+    if (guestNameEl) guestNameEl.innerHTML = '为 <b>' + (item['姓名'] || '未填') + '</b> 选择展示位置：点击下方空位即可放置。';
+    posCurrentPage = Math.max(1, Math.ceil((typeof item.sortOrder === 'number' ? item.sortOrder : 1) / PAGE_SIZE));
+    renderPositionPage();
+    toggleModal('positionModal', true);
+  }
+
+  // 该档案当前所在序号（若已设置）
+  function posCurrentOrder() {
+    const item = appState.profiles.find(p => p.id === posTargetId);
+    return item && typeof item.sortOrder === 'number' ? item.sortOrder : null;
+  }
+
+  // 渲染当前页的 8 个位置格子
+  function renderPositionPage() {
+    const page = posCurrentPage;
+    const label = document.getElementById('posPageLabel');
+    if (label) label.textContent = '第 ' + page + ' 页';
+    const grid = document.getElementById('posSlotGrid');
+    if (!grid) return;
+
+    // 占位映射：序号 → 占用的档案（只统计已通过、未删除的）
+    const occupied = {};
+    (appState.profiles || []).forEach(p => {
+      if (p.status === 'pending') return;
+      if (typeof p.sortOrder === 'number') {
+        if (!occupied[p.sortOrder]) occupied[p.sortOrder] = p;
+      }
+    });
+
+    let html = '';
+    for (let i = 1; i <= PAGE_SIZE; i++) {
+      const order = (page - 1) * PAGE_SIZE + i;
+      const holder = occupied[order];
+      const isSelf = holder && holder.id === posTargetId;
+      let cellHtml;
+      if (holder) {
+        cellHtml = `<div style="font-size:12px; font-weight:700; ${isSelf ? 'color:#7c3aed;' : 'color:var(--text);'} overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${holder['姓名'] || '未填'}</div>
+          <div style="font-size:10px; color:${isSelf ? '#7c3aed' : 'var(--text-muted)'};">${isSelf ? '👈 当前在此' : '已占用'}</div>`;
+      } else {
+        cellHtml = `<div style="font-size:22px; color:#cbd5e1; line-height:1;">＋</div>
+          <div style="font-size:11px; color:var(--text-muted);">空位</div>`;
+      }
+      const canPlace = !holder || isSelf;
+      html += `
+      <div style="border:2px ${holder ? (isSelf ? 'solid #7c3aed' : 'dashed #d1d5db') : 'dashed #cbd5e1'}; border-radius:10px; padding:10px 4px; text-align:center; background:${isSelf ? '#f5f3ff' : 'var(--card-bg)'}; cursor:${canPlace ? 'pointer' : 'not-allowed'}; ${canPlace ? 'transition:all .15s;' : 'opacity:.75;'} ${canPlace ? 'onmouseover="this.style.borderColor=\'#7c3aed\';this.style.transform=\'scale(1.03)\'" onmouseout="this.style.borderColor=\'#cbd5e1\';this.style.transform=\'scale(1)\'"' : ''}"
+        onclick="${canPlace ? 'posPlace(' + order + ')' : 'void(0)'}" title="${isSelf ? '当前所在位置' : holder ? holder['姓名'] + ' 占用此位' : '空位，点击放置'}">
+        <div style="font-size:10px; color:var(--text-muted); margin-bottom:2px;">第${i}位</div>
+        ${cellHtml}
+      </div>`;
     }
+    grid.innerHTML = html;
+  }
+
+  function posPrevPage() {
+    if (posCurrentPage <= 1) return;
+    posCurrentPage--;
+    renderPositionPage();
+  }
+  function posNextPage() {
+    posCurrentPage++;
+    renderPositionPage();
+  }
+
+  // 把当前嘉宾放到第 order 个位置
+  async function posPlace(order) {
+    const item = appState.profiles.find(p => p.id === posTargetId);
+    if (!item) return;
+    item.sortOrder = order;
     try {
       await saveToGitHub();
       renderCards();
-      openDetail(id);
-      alert('✅ 位置已更新：' + (typeof item.sortOrder === 'number' ? posText(item.sortOrder) + '（序号 ' + item.sortOrder + '）' : '已取消自定义位置，恢复默认排序'));
+      toggleModal('positionModal', false);
+      alert('✅ ' + (item['姓名'] || '该嘉宾') + ' 已放置到' + posText(order) + '！');
+    } catch (err) {
+      alert('❌ 同步失败：' + err.message);
+    }
+  }
+
+  // 取消自定义位置
+  async function posCancelOrder() {
+    const item = appState.profiles.find(p => p.id === posTargetId);
+    if (!item) return;
+    if (!confirm('确定取消该嘉宾的自定义位置，恢复默认排序吗？')) return;
+    delete item.sortOrder;
+    try {
+      await saveToGitHub();
+      renderCards();
+      toggleModal('positionModal', false);
+      alert('✅ 已取消自定义位置，恢复默认排序。');
     } catch (err) {
       alert('❌ 同步失败：' + err.message);
     }
