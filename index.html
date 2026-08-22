@@ -641,7 +641,59 @@
   <div class="lightbox-zoom-hint" id="lightboxHint">点击左右按钮切换 · 鼠标滚轮缩放 · 拖动平移</div>
 </div>
 
+<!-- 站内通用提示/确认弹窗（替代浏览器 alert/confirm） -->
+<div class="modal-overlay" id="customDialog" onclick="closeCustomDialog()">
+  <div class="modal" style="max-width:380px; text-align:center;" onclick="event.stopPropagation()">
+    <div id="customDialogTitle" style="font-size:16px; font-weight:700; margin-bottom:12px;">提示</div>
+    <div id="customDialogMsg" style="font-size:13px; line-height:1.8; white-space:pre-line; text-align:left; background:var(--bg); border-radius:10px; padding:12px 14px; margin-bottom:16px; max-height:52vh; overflow:auto;"></div>
+    <div style="display:flex; gap:10px;" id="customDialogBtns"></div>
+  </div>
+</div>
+
 <script>
+  // ===== 站内弹窗组件（替代浏览器原生 alert/confirm/prompt） =====
+  let __customOnConfirm = null;   // 确认框「确定」后的回调
+
+  // 打开提示框：根据消息内容自动配色标题
+  function showAlert(msg, title) {
+    let t = title || '提示';
+    let color = 'var(--text)';
+    if (/❌|失败|错误|无效|不存在|未找到/.test(String(msg))) { t = '操作失败'; color = 'var(--danger)'; }
+    else if (/✅|🎉|已成功|已更新|已保存|已解锁/.test(String(msg))) { t = '操作成功'; color = '#16a34a'; }
+    const titleEl = document.getElementById('customDialogTitle');
+    titleEl.textContent = t;
+    titleEl.style.color = color;
+    document.getElementById('customDialogMsg').textContent = msg;
+    document.getElementById('customDialogBtns').innerHTML =
+      '<button class="btn btn-primary" style="flex:1;" onclick="closeCustomDialog()">知道了</button>';
+    document.getElementById('customDialog').style.display = 'flex';
+  }
+
+  // 确认框：点「确定」后执行 onConfirm 回调
+  function confirmAction(msg, onConfirm, title) {
+    __customOnConfirm = onConfirm;
+    const titleEl = document.getElementById('customDialogTitle');
+    titleEl.textContent = title || '确认操作';
+    titleEl.style.color = 'var(--text)';
+    document.getElementById('customDialogMsg').textContent = msg;
+    document.getElementById('customDialogBtns').innerHTML =
+      '<button class="btn btn-outline" style="flex:1;" onclick="closeCustomDialog()">取消</button>' +
+      '<button class="btn btn-primary" style="flex:1; background:var(--danger);" onclick="customConfirmOk()">确定</button>';
+    document.getElementById('customDialog').style.display = 'flex';
+  }
+
+  function customConfirmOk() {
+    const fn = __customOnConfirm;   // 先保存回调（closeCustomDialog 会清空它）
+    __customOnConfirm = null;
+    closeCustomDialog();
+    if (typeof fn === 'function') fn();
+  }
+
+  function closeCustomDialog() {
+    document.getElementById('customDialog').style.display = 'none';
+    __customOnConfirm = null;
+  }
+
   // ===== 基础配置 =====
   const ADMIN_PASSWORD = "admin123";
 
@@ -973,11 +1025,12 @@
 
   function copyWechatId() {
     const id = appState.wechat.id || '';
-    if (!id) { alert('尚未设置微信号'); return; }
+    if (!id) { showAlert('尚未设置微信号'); return; }
     navigator.clipboard.writeText(id).then(() => {
-      alert("微信号已成功复制到剪贴板：" + id);
+      showAlert("微信号已成功复制到剪贴板：" + id);
     }).catch(() => {
-      prompt("请长按/全选复制微信号：", id);
+      // 剪贴板不可用时，在站内弹窗中展示微信号方便手动复制
+      showAlert('剪贴板不可用，请手动复制微信号：\n\n' + id, '复制微信号');
     });
   }
 
@@ -1127,7 +1180,7 @@
         await saveToGitHub();
         renderCards();
         toggleModal('formModal', false);
-        alert("✏️ 档案已更新并同步，所有人刷新即可看到最新资料！");
+        showAlert("✏️ 档案已更新并同步，所有人刷新即可看到最新资料！");
       } else {
         // 新增模式
         const newProfile = { id: Date.now() };
@@ -1187,15 +1240,15 @@
         e.target.reset();
         if (newProfile.status === 'pending') {
           const wechatId = (appState.wechat && appState.wechat.id) || '';
-          alert('📮 资料已提交成功！\n\n你的档案编码：' + (newProfile.profileNo || newProfile.guestNo || '') +
+          showAlert('📮 资料已提交成功！\n\n你的档案编码：' + (newProfile.profileNo || newProfile.guestNo || '') +
             '\n\n请添加管理员微信：' + (wechatId || '(管理员微信待配置)') +
             '\n\n添加时请备注你的编码「' + (newProfile.profileNo || newProfile.guestNo || '') + '」，管理员审核通过后资料就会展示在网站上。');
         } else {
-          alert("🎉 资料已保存到仓库，所有人刷新即可看到！");
+          showAlert("🎉 资料已保存到仓库，所有人刷新即可看到！");
         }
       }
     } catch (err) {
-      alert("❌ 保存出错：" + err.message);
+      showAlert("❌ 保存出错：" + err.message);
     } finally {
       btn.disabled = false;
       const editingId2 = document.getElementById('editingProfileId').value;
@@ -1223,9 +1276,9 @@
       await saveToGitHub();
       updateWechatUI();
       toggleModal('wechatConfigModal', false);
-      alert("微信名片已更新并同步！");
+      showAlert("微信名片已更新并同步！");
     } catch (err) {
-      alert("❌ 更新微信名片失败：" + err.message);
+      showAlert("❌ 更新微信名片失败：" + err.message);
     } finally {
       btn.disabled = false;
       btn.textContent = '保存并同步';
@@ -1325,7 +1378,7 @@
     sessionStorage.removeItem('gh_token');
     refreshIdentityUI();
     renderCards();
-    alert("已退出内部管理员。");
+    showAlert("已退出内部管理员。");
   }
 
   // 内部管理员登录
@@ -1333,20 +1386,20 @@
     e.preventDefault();
     const nameOrCode = document.getElementById('staffNameInput').value.trim();
     const pwd = document.getElementById('staffPwdInput').value;
-    if (!nameOrCode || !pwd) { alert("请填写姓名/编号和密码"); return; }
+    if (!nameOrCode || !pwd) { showAlert("请填写姓名/编号和密码"); return; }
     const staff = (appState.staffs || []).find(s =>
       (s.name === nameOrCode) || (s.code === nameOrCode) || (s.code === nameOrCode.toUpperCase())
     );
-    if (!staff) { alert("❌ 未找到该内部管理员，请联系超级管理员创建"); return; }
-    if (staff.password !== pwd) { alert("❌ 密码错误"); return; }
-    if (!GUEST_TOKEN) { alert("⚠️ 内部管理功能尚未配置完成（需要配置写入令牌）"); return; }
+    if (!staff) { showAlert("❌ 未找到该内部管理员，请联系超级管理员创建"); return; }
+    if (staff.password !== pwd) { showAlert("❌ 密码错误"); return; }
+    if (!GUEST_TOKEN) { showAlert("⚠️ 内部管理功能尚未配置完成（需要配置写入令牌）"); return; }
 
     setCurrentIdentity({ type: 'staff', name: staff.name, code: staff.code });
     refreshIdentityUI();
     toggleModal('loginModal', false);
     document.getElementById('staffNameInput').value = '';
     document.getElementById('staffPwdInput').value = '';
-    alert("✅ 已进入内部管理员：" + staff.name + "（可上传档案、编辑自己上传的资料）");
+    showAlert("✅ 已进入内部管理员：" + staff.name + "（可上传档案、编辑自己上传的资料）");
   }
 
   // 切换登录弹窗 Tab
@@ -1383,7 +1436,7 @@
     try {
       const name = document.getElementById('staffNameNew').value.trim();
       const password = document.getElementById('staffPwdNew').value.trim();
-      if (!name || !password) { alert("请填写姓名和密码"); return; }
+      if (!name || !password) { showAlert("请填写姓名和密码"); return; }
       const maxNo = (appState.staffs || []).reduce((m, s) => {
         const n = parseInt((s.code || '').replace(/\D/g, ''), 10) || 0;
         return Math.max(m, n);
@@ -1395,23 +1448,24 @@
       renderStaffList();
       document.getElementById('staffNameNew').value = '';
       document.getElementById('staffPwdNew').value = '';
-      alert("✅ 内部管理员已创建：\n\n姓名：" + name + "\n编号：" + code + "\n密码：" + password + "\n\n把编号和密码告诉对方即可登录。");
+      showAlert("✅ 内部管理员已创建：\n\n姓名：" + name + "\n编号：" + code + "\n密码：" + password + "\n\n把编号和密码告诉对方即可登录。");
     } catch (err) {
-      alert("❌ 创建失败：" + err.message);
+      showAlert("❌ 创建失败：" + err.message);
     } finally {
       btn.disabled = false;
     }
   }
   async function deleteStaff(code) {
-    if (!confirm("确定删除该内部管理员吗？")) return;
-    appState.staffs = (appState.staffs || []).filter(s => s.code !== code);
-    try {
-      await saveToGitHub();
-      renderStaffList();
-      alert("✅ 已删除该内部管理员。");
-    } catch (err) {
-      alert("❌ 删除失败：" + err.message);
-    }
+    confirmAction("确定删除该内部管理员吗？", async () => {
+      appState.staffs = (appState.staffs || []).filter(s => s.code !== code);
+      try {
+        await saveToGitHub();
+        renderStaffList();
+        showAlert("✅ 已删除该内部管理员。");
+      } catch (err) {
+        showAlert("❌ 删除失败：" + err.message);
+      }
+    });
   }
 
   // 判断当前身份能否编辑某档案（内部管理员只能编辑自己上传的）
@@ -1462,18 +1516,18 @@
     e.preventDefault();
     const pwd = document.getElementById('adminPwdInput').value;
     const token = document.getElementById('adminTokenInput').value.trim();
-    if (pwd !== ADMIN_PASSWORD) { alert("口令错误！"); return; }
-    if (!token) { alert("请粘贴 GitHub 令牌！"); return; }
+    if (pwd !== ADMIN_PASSWORD) { showAlert("口令错误！"); return; }
+    if (!token) { showAlert("请粘贴 GitHub 令牌！"); return; }
 
     // 先校验令牌是否有效（尝试读取 data.json 的 sha）
     try {
       const test = await fetch(`${API}/data.json`, { headers: { Authorization: `Bearer ${token}` } });
       if (test.status === 401 || test.status === 403) {
-        alert("GitHub 令牌无效或无权限（需要本仓库 Contents 读写）。");
+        showAlert("GitHub 令牌无效或无权限（需要本仓库 Contents 读写）。");
         return;
       }
     } catch (err) {
-      alert("无法连接 GitHub，请检查网络：" + err.message);
+      showAlert("无法连接 GitHub，请检查网络：" + err.message);
       return;
     }
 
@@ -1486,7 +1540,7 @@
     toggleModal('loginModal', false);
     document.getElementById('adminPwdInput').value = '';
     document.getElementById('adminTokenInput').value = '';
-    alert("已解锁超级管理员权限，现在可以管理所有档案。");
+    showAlert("已解锁超级管理员权限，现在可以管理所有档案。");
   }
 
   function logoutAdmin() {
@@ -2080,26 +2134,27 @@
       renderCards();
       toggleModal('positionModal', false);
       const swapped = M && M.id !== C.id;
-      alert('✅ ' + (C['姓名'] || '该嘉宾') + (swapped ? ' 已与 ' + (M['姓名'] || '对方') + ' 交换位置，现在位于' : ' 已放置到') + posText(order) + '！');
+      showAlert('✅ ' + (C['姓名'] || '该嘉宾') + (swapped ? ' 已与 ' + (M['姓名'] || '对方') + ' 交换位置，现在位于' : ' 已放置到') + posText(order) + '！');
     } catch (err) {
-      alert('❌ 同步失败：' + err.message);
+      showAlert('❌ 同步失败：' + err.message);
     }
   }
 
   // 取消自定义位置
-  async function posCancelOrder() {
+  function posCancelOrder() {
     const item = appState.profiles.find(p => p.id === posTargetId);
     if (!item) return;
-    if (!confirm('确定取消该嘉宾的自定义位置，恢复默认排序吗？')) return;
-    delete item.sortOrder;
-    try {
-      await saveToGitHub();
-      renderCards();
-      toggleModal('positionModal', false);
-      alert('✅ 已取消自定义位置，恢复默认排序。');
-    } catch (err) {
-      alert('❌ 同步失败：' + err.message);
-    }
+    confirmAction('确定取消该嘉宾的自定义位置，恢复默认排序吗？', async () => {
+      delete item.sortOrder;
+      try {
+        await saveToGitHub();
+        renderCards();
+        toggleModal('positionModal', false);
+        showAlert('✅ 已取消自定义位置，恢复默认排序。');
+      } catch (err) {
+        showAlert('❌ 同步失败：' + err.message);
+      }
+    });
   }
 
   async function togglePinProfile(id) {
@@ -2111,7 +2166,7 @@
       renderCards();
       openDetail(id);
     } catch (err) {
-      alert("❌ 同步失败：" + err.message);
+      showAlert("❌ 同步失败：" + err.message);
     }
   }
 
@@ -2125,20 +2180,22 @@
       renderCards();
       openDetail(id);
     } catch (err) {
-      alert("❌ 同步失败：" + err.message);
+      showAlert("❌ 同步失败：" + err.message);
     }
   }
 
-  async function deleteProfile(id) {
-    if (!confirm("确定要删除这份嘉宾档案吗？")) return;
-    appState.profiles = appState.profiles.filter(p => p.id !== id);
-    try {
-      await saveToGitHub();
-      renderCards();
-      toggleModal('detailModal', false);
-    } catch (err) {
-      alert("❌ 同步失败：" + err.message);
-    }
+  function deleteProfile(id) {
+    confirmAction("确定要删除这份嘉宾档案吗？", async () => {
+      appState.profiles = appState.profiles.filter(p => p.id !== id);
+      try {
+        await saveToGitHub();
+        renderCards();
+        toggleModal('detailModal', false);
+        showAlert("✅ 档案已删除。");
+      } catch (err) {
+        showAlert("❌ 同步失败：" + err.message);
+      }
+    });
   }
 
   // 审核通过：待审核 → 公开显示
@@ -2150,9 +2207,9 @@
       await saveToGitHub();
       renderCards();
       openDetail(id);
-      alert("✅ 已通过审核，资料现在展示给所有人了！");
+      showAlert("✅ 已通过审核，资料现在展示给所有人了！");
     } catch (err) {
-      alert("❌ 同步失败：" + err.message);
+      showAlert("❌ 同步失败：" + err.message);
     }
   }
 
