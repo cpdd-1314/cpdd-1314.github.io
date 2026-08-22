@@ -767,8 +767,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '4.3.4';
+  const APP_VERSION = '4.3.5';
   const CHANGELOG = [
+    { v: '4.3.5', d: '2026-08-22', note: '管理员保存弹窗也显示扫码加微信按钮；更新提示每浏览器只显示一次', type: 'fix' },
     { v: '4.3.4', d: '2026-08-22', note: '加微信弹窗动态化：弹出动画、内容实时刷新、提交后一键跳转', type: 'feature' },
     { v: '4.3.3', d: '2026-08-22', note: '可隐藏任意一条更新记录；更新提示显示给每个用户', type: 'feature' },
     { v: '4.3.2', d: '2026-08-22', note: '超级管理员可修改版本号、对访客隐藏版本信息', type: 'feature' },
@@ -888,12 +889,12 @@
     }
   }
 
-  // 页面加载：更新提示显示给每个用户（每个会话显示一次，不是"一个用户看过就不再显示"）
+  // 页面加载：更新提示每个浏览器只显示一次（记录在本机；版本升级后再次显示）
   (function () {
-    const KEY = 'announced_version_session';
-    let announced = '';
-    try { announced = sessionStorage.getItem(KEY) || ''; } catch (e) {}
-    if (announced !== APP_VERSION) {
+    const KEY = 'seen_app_version';
+    let prev = '';
+    try { prev = localStorage.getItem(KEY) || ''; } catch (e) {}
+    if (prev !== APP_VERSION) {
       const latest = CHANGELOG[0];
       showAlertHtml(
         '🎉 网站已更新到 <b style="font-size:17px;">v' + APP_VERSION + '</b>！<br><br>' +
@@ -902,7 +903,7 @@
         '<br>点「📋 更新记录」可查看全部历史版本。',
         '版本更新'
       );
-      try { sessionStorage.setItem(KEY, APP_VERSION); } catch (e) {}
+      try { localStorage.setItem(KEY, APP_VERSION); } catch (e) {}
     }
   })();
 
@@ -1528,7 +1529,14 @@
             '<button class="btn btn-outline" style="flex:1;" onclick="closeCustomDialog()">知道了</button>'
           );
         } else {
-          showAlert("🎉 资料已保存到仓库，所有人刷新即可看到！");
+          const wechatId = (appState.wechat && appState.wechat.id) || '';
+          showAlertHtml(
+            '🎉 资料已保存到仓库，所有人刷新即可看到！<br><br>' +
+            '如需联系管理员，请添加微信：<b>' + (wechatId || '(管理员微信待配置)') + '</b>',
+            '保存成功',
+            '<button class="btn btn-primary" style="flex:1;" onclick="closeCustomDialog(); openWechatModal();">📱 扫码添加微信</button>' +
+            '<button class="btn btn-outline" style="flex:1;" onclick="closeCustomDialog()">知道了</button>'
+          );
         }
       }
     } catch (err) {
