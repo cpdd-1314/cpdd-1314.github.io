@@ -33,83 +33,62 @@
       "mediaList": [
         {
           "url": "./media/1787435858038_7988.jpg",
-          "type": "image/jpeg",
-          "isMain": false
+          "type": "image/jpeg"
         },
         {
           "url": "./media/1787435859306_7989.jpg",
-          "type": "image/jpeg",
-          "isMain": false
+          "type": "image/jpeg"
         },
         {
           "url": "./media/1787435860418_7990.jpg",
-          "type": "image/jpeg",
-          "isMain": false
+          "type": "image/jpeg"
         },
         {
           "url": "./media/1787435861739_7991.jpg",
-          "type": "image/jpeg",
-          "isMain": false
+          "type": "image/jpeg"
         },
         {
           "url": "./media/1787435862889_7992.jpg",
-          "type": "image/jpeg",
-          "isMain": false
+          "type": "image/jpeg"
         },
         {
           "url": "./media/1787435864408_7993.jpg",
-          "type": "image/jpeg",
-          "isMain": false
+          "type": "image/jpeg"
         },
         {
           "url": "./media/1787435865606_7995.jpg",
-          "type": "image/jpeg",
-          "isMain": false
+          "type": "image/jpeg"
         },
         {
           "url": "./media/1787435866768_7996.jpg",
-          "type": "image/jpeg",
-          "isMain": false
+          "type": "image/jpeg"
         },
         {
           "url": "./media/1787435868005_7997.jpg",
-          "type": "image/jpeg",
-          "isMain": false
+          "type": "image/jpeg"
         },
         {
           "url": "./media/1787435869178_7998.jpg",
-          "type": "image/jpeg",
-          "isMain": false
+          "type": "image/jpeg"
         },
         {
           "url": "./media/1787435870420_7999.jpg",
-          "type": "image/jpeg",
-          "isMain": false
+          "type": "image/jpeg"
         },
         {
           "url": "./media/1787435890760_8001.mp4",
-          "type": "video/mp4",
-          "isMain": false
+          "type": "video/mp4"
         },
         {
           "url": "./media/1787435928706_7973.mp4",
-          "type": "video/mp4",
-          "isMain": false
+          "type": "video/mp4"
         },
         {
           "url": "./media/1787435953125_8025.mp4",
-          "type": "video/mp4",
-          "isMain": false
-        },
-        {
-          "url": "./media/1787438551463_Screenshot_20260823_001630.jpg",
-          "type": "image/jpeg",
-          "isMain": true
+          "type": "video/mp4"
         }
       ],
-      "sortOrder": 18,
-      "guestNo": "A025",
-      "updatedAt": 1787438564763
+      "sortOrder": 18
     },
     {
       "id": 1787422835777,
@@ -628,7 +607,7 @@
   ],
   "staffs": [],
   "nextProfileNo": 26,
-  "version": "4.9.3",
+  "version": "",
   "hideVersionInfo": false,
   "hiddenVersions": [
     "4.3.3",
