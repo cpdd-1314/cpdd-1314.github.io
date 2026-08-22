@@ -292,12 +292,13 @@
     #floatBall {
       position: fixed; left: 16px; bottom: 76px; z-index: 900;
       display: none; align-items: center; justify-content: center;
-      width: 48px; height: 48px; border-radius: 50%;
+      width: 38px; height: 38px; border-radius: 50%;
       background: #07c160; color: #fff; cursor: pointer;
       box-shadow: 0 4px 16px rgba(7,193,96,0.5);
       animation: ballPulse 2.4s ease-in-out infinite;
     }
     #floatBall:hover { transform: scale(1.08); }
+    #floatBall svg { width: 18px; height: 18px; }
     @keyframes ballPulse {
       0%, 100% { transform: scale(1); }
       50%      { transform: scale(1.12); }
@@ -864,8 +865,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '4.6.0';
+  const APP_VERSION = '4.6.1';
   const CHANGELOG = [
+    { v: '4.6.1', d: '2026-08-22', note: '收起后的小圆球改小（38px）', type: 'fix' },
     { v: '4.6.0', d: '2026-08-22', note: '加微信/进微信群入口可收起为小圆球，点击动态弹出', type: 'feature' },
     { v: '4.5.0', d: '2026-08-22', note: '新增「进微信群」动态气泡，群二维码管理员可设置', type: 'feature' },
     { v: '4.4.2', d: '2026-08-22', note: '加微信浮动气泡位置上移，避免贴地', type: 'fix' },
