@@ -247,9 +247,29 @@
     }
     #versionWidget .ver-text { white-space: nowrap; }
 
-    /* 左下角动态浮动气泡：加微信（上）+ 进微信群（下） */
+    /* 左下角动态浮动入口（可收起/展开） */
+    #floatWrap {
+      position: fixed; left: 16px; bottom: 76px; z-index: 900;
+      display: flex; flex-direction: column; gap: 10px; align-items: flex-start;
+      animation: floatSlideIn .35s cubic-bezier(.34,1.3,.64,1);
+    }
+    #floatWrap.collapsing { animation: floatSlideOut .3s ease forwards; }
+    @keyframes floatSlideIn {
+      from { transform: translateX(-130%); opacity: 0; }
+      to   { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes floatSlideOut {
+      from { transform: translateX(0); opacity: 1; }
+      to   { transform: translateX(-130%); opacity: 0; }
+    }
+    #floatCollapseBtn {
+      align-self: flex-end; width: 20px; height: 20px; line-height: 18px;
+      border-radius: 50%; border: none; cursor: pointer;
+      background: rgba(0,0,0,0.25); color: #fff; font-size: 14px;
+      padding: 0; margin-right: 2px;
+    }
+    #floatCollapseBtn:hover { background: rgba(0,0,0,0.45); }
     #wechatFloat, #floatGroup {
-      position: fixed; left: 16px; z-index: 900;
       display: flex; align-items: center; gap: 6px;
       background: #07c160; color: #fff;
       border-radius: 30px; padding: 11px 18px;
@@ -258,9 +278,7 @@
       animation: wechatFloatY 2.8s ease-in-out infinite;
       transition: transform .18s ease, box-shadow .18s ease;
     }
-    #wechatFloat { bottom: 148px; }
     #floatGroup {
-      bottom: 76px;
       background: #0091ff; box-shadow: 0 4px 16px rgba(0,145,255,0.4);
       animation-delay: .9s;   /* 两个气泡错开浮动节奏 */
     }
@@ -269,6 +287,20 @@
     @keyframes wechatFloatY {
       0%, 100% { transform: translateY(0); }
       50%      { transform: translateY(-9px); }
+    }
+    /* 收起后的小圆球 */
+    #floatBall {
+      position: fixed; left: 16px; bottom: 76px; z-index: 900;
+      display: none; align-items: center; justify-content: center;
+      width: 48px; height: 48px; border-radius: 50%;
+      background: #07c160; color: #fff; cursor: pointer;
+      box-shadow: 0 4px 16px rgba(7,193,96,0.5);
+      animation: ballPulse 2.4s ease-in-out infinite;
+    }
+    #floatBall:hover { transform: scale(1.08); }
+    @keyframes ballPulse {
+      0%, 100% { transform: scale(1); }
+      50%      { transform: scale(1.12); }
     }
 
     .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 12px; }
@@ -749,18 +781,26 @@
   </div>
 </div>
 
-<!-- 左下角动态浮动入口：上面加微信，下面进微信群 -->
-<div id="floatGroup" onclick="openGroupModal()" title="点击进微信群">
-  <svg viewBox="0 0 24 24" style="width:20px; height:20px; fill:#fff; flex-shrink:0;">
-    <path d="M16 11c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
-  </svg>
-  <span style="font-size:14px; font-weight:600; white-space:nowrap;">进微信群</span>
-</div>
-<div id="wechatFloat" onclick="openWechatModal()" title="点击添加微信">
-  <svg viewBox="0 0 24 24" style="width:20px; height:20px; fill:#fff; flex-shrink:0;">
+<!-- 左下角动态浮动入口（可收起为小圆球，点击重新弹出） -->
+<div id="floatBall" onclick="expandFloats()" title="展开入口">
+  <svg viewBox="0 0 24 24" style="width:22px; height:22px; fill:#fff;">
     <path d="M9.5 4C4.8 4 1 7.4 1 11.5c0 2.4 1.3 4.5 3.4 5.9l-.9 2.6 3.1-1.6c.9.3 2 .5 2.9.5.3 0 .7 0 1-.1-.3-.7-.4-1.5-.4-2.3 0-4.1 3.8-7.5 8.5-7.5.3 0 .7 0 1 .1C19.1 6.8 14.8 4 9.5 4zm-2.2 4.2c.7 0 1.2.6 1.2 1.2s-.6 1.2-1.2 1.2c-.7 0-1.2-.6-1.2-1.2s.5-1.2 1.2-1.2zm4.8 0c.7 0 1.2.6 1.2 1.2s-.6 1.2-1.2 1.2c-.7 0-1.2-.6-1.2-1.2s.5-1.2 1.2-1.2zm6.9 3.8c-3.9 0-7 2.7-7 6 0 3.3 3.1 6 7 6 .8 0 1.6-.1 2.4-.4l2.5 1.3-.7-2.1c1.7-1.1 2.8-2.8 2.8-4.8 0-3.3-3.1-6-7-6zm-2.5 3.5c.5 0 .9.4.9.9s-.4.9-.9.9-.9-.4-.9-.9.4-.9.9-.9zm4.2 0c.5 0 .9.4.9.9s-.4.9-.9.9-.9-.4-.9-.9.4-.9.9-.9z"/>
   </svg>
-  <span style="font-size:14px; font-weight:600; white-space:nowrap;">加微信</span>
+</div>
+<div id="floatWrap">
+  <button id="floatCollapseBtn" onclick="collapseFloats()" title="收起入口">−</button>
+  <div id="wechatFloat" onclick="openWechatModal()" title="点击添加微信">
+    <svg viewBox="0 0 24 24" style="width:20px; height:20px; fill:#fff; flex-shrink:0;">
+      <path d="M9.5 4C4.8 4 1 7.4 1 11.5c0 2.4 1.3 4.5 3.4 5.9l-.9 2.6 3.1-1.6c.9.3 2 .5 2.9.5.3 0 .7 0 1-.1-.3-.7-.4-1.5-.4-2.3 0-4.1 3.8-7.5 8.5-7.5.3 0 .7 0 1 .1C19.1 6.8 14.8 4 9.5 4zm-2.2 4.2c.7 0 1.2.6 1.2 1.2s-.6 1.2-1.2 1.2c-.7 0-1.2-.6-1.2-1.2s.5-1.2 1.2-1.2zm4.8 0c.7 0 1.2.6 1.2 1.2s-.6 1.2-1.2 1.2c-.7 0-1.2-.6-1.2-1.2s.5-1.2 1.2-1.2zm6.9 3.8c-3.9 0-7 2.7-7 6 0 3.3 3.1 6 7 6 .8 0 1.6-.1 2.4-.4l2.5 1.3-.7-2.1c1.7-1.1 2.8-2.8 2.8-4.8 0-3.3-3.1-6-7-6zm-2.5 3.5c.5 0 .9.4.9.9s-.4.9-.9.9-.9-.4-.9-.9.4-.9.9-.9zm4.2 0c.5 0 .9.4.9.9s-.4.9-.9.9-.9-.4-.9-.9.4-.9.9-.9z"/>
+    </svg>
+    <span style="font-size:14px; font-weight:600; white-space:nowrap;">加微信</span>
+  </div>
+  <div id="floatGroup" onclick="openGroupModal()" title="点击进微信群">
+    <svg viewBox="0 0 24 24" style="width:20px; height:20px; fill:#fff; flex-shrink:0;">
+      <path d="M16 11c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+    </svg>
+    <span style="font-size:14px; font-weight:600; white-space:nowrap;">进微信群</span>
+  </div>
 </div>
 
 <script>
@@ -824,8 +864,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '4.5.0';
+  const APP_VERSION = '4.6.0';
   const CHANGELOG = [
+    { v: '4.6.0', d: '2026-08-22', note: '加微信/进微信群入口可收起为小圆球，点击动态弹出', type: 'feature' },
     { v: '4.5.0', d: '2026-08-22', note: '新增「进微信群」动态气泡，群二维码管理员可设置', type: 'feature' },
     { v: '4.4.2', d: '2026-08-22', note: '加微信浮动气泡位置上移，避免贴地', type: 'fix' },
     { v: '4.4.1', d: '2026-08-22', note: '修复版本号不自动更新：手动版本已清空，留空即自动跟随最新', type: 'fix' },
@@ -1311,6 +1352,25 @@
     const img = document.getElementById('groupQrDisplay');
     img.src = appState.wechat.groupQr || placeholderDataURI('群二维码待设置');
     toggleModal('groupModal', true);
+  }
+
+  // 收起左下角浮动入口 → 缩成小圆球
+  function collapseFloats() {
+    const wrap = document.getElementById('floatWrap');
+    wrap.classList.add('collapsing');
+    setTimeout(() => {
+      wrap.style.display = 'none';
+      wrap.classList.remove('collapsing');
+      document.getElementById('floatBall').style.display = 'flex';
+    }, 300);
+  }
+
+  // 点击小圆球 → 浮动入口重新动态弹出
+  function expandFloats() {
+    document.getElementById('floatBall').style.display = 'none';
+    const wrap = document.getElementById('floatWrap');
+    wrap.style.display = 'flex';
+    // display 从 none 变 flex 会自动重新触发滑入动画
   }
 
   // 动态打开加微信弹窗：每次打开都实时刷新微信号/二维码，管理员修改后立即生效
