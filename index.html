@@ -1484,9 +1484,11 @@
     const isAdminView = isSuper() || isStaff() || isGuestIdentity();
 
     let filtered = (appState.profiles || []).filter(item => {
-      // 待审核档案：普通访客看不到，只有管理员（含内部管理员）能看到
-      if (item.status === 'pending' && !(isSuper() || isStaff())) return false;
-      // 待审核模式下只显示待审核档案
+      // 待审核档案：不混入主列表，只有点开"待审核"按钮时才单独显示
+      if (item.status === 'pending') {
+        return pendingReviewMode;
+      }
+      // 待审核模式下只显示待审核档案（已通过的不显示）
       if (pendingReviewMode && item.status !== 'pending') return false;
       // 隐藏档案：普通访客一律看不到；管理员只有开启"显示已隐藏"才看到
       if (item.isHidden && !(isAdminView && showHidden)) return false;
