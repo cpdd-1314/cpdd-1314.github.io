@@ -408,13 +408,14 @@
     <button class="close-btn" onclick="toggleModal('versionAdminModal', false)">×</button>
     <h2 style="font-size:18px; margin-bottom:12px;">⚙️ 版本信息管理</h2>
     <div class="notice">
-      修改版本号后所有访客可见；隐藏后版本信息只对<b>访客隐藏</b>，管理员登录后仍可管理。
+      版本号<b>留空 = 自动跟随最新版本</b>（每次更新自动换）；填了则固定显示你填的版本号。<br>
+      隐藏后版本信息只对<b>访客隐藏</b>，管理员登录后仍可管理。
     </div>
     <form onsubmit="handleVersionSave(event)">
       <div class="form-grid">
         <div class="form-group">
           <label>当前显示版本号</label>
-          <input type="text" id="verAdminInput" placeholder="如：4.3.1" value="4.3.1">
+          <input type="text" id="verAdminInput" placeholder="留空 = 自动跟随最新版本">
         </div>
         <div class="form-group" style="flex-direction:row; align-items:center; gap:8px; align-self:end;">
           <input type="checkbox" id="verAdminHide" style="width:16px; height:16px;">
@@ -793,8 +794,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '4.4.0';
+  const APP_VERSION = '4.4.1';
   const CHANGELOG = [
+    { v: '4.4.1', d: '2026-08-22', note: '修复版本号不自动更新：手动版本已清空，留空即自动跟随最新', type: 'fix' },
     { v: '4.4.0', d: '2026-08-22', note: '左下角动态「加微信」浮动气泡（微信头像+文字，点击扫码）', type: 'feature' },
     { v: '4.3.5', d: '2026-08-22', note: '管理员保存弹窗也显示扫码加微信按钮；更新提示每浏览器只显示一次', type: 'fix' },
     { v: '4.3.4', d: '2026-08-22', note: '加微信弹窗动态化：弹出动画、内容实时刷新、提交后一键跳转', type: 'feature' },
@@ -890,7 +892,8 @@
   // 打开版本管理弹窗（仅超级管理员）
   function openVersionAdmin() {
     if (!isSuper()) return;
-    document.getElementById('verAdminInput').value = currentVersion();
+    document.getElementById('verAdminInput').value = appState.version || '';
+    document.getElementById('verAdminInput').placeholder = '留空 = 自动跟随最新版本 (v' + APP_VERSION + ')';
     document.getElementById('verAdminHide').checked = !!appState.hideVersionInfo;
     toggleModal('versionAdminModal', true);
   }
@@ -902,13 +905,15 @@
     btn.disabled = true;
     try {
       const ver = document.getElementById('verAdminInput').value.trim();
-      if (!ver) { showAlert('请输入版本号'); btn.disabled = false; return; }
-      appState.version = ver;
+      // 留空 = 清空手动版本号，恢复自动跟随代码里的最新版本
+      appState.version = ver || '';
       appState.hideVersionInfo = document.getElementById('verAdminHide').checked;
       await saveToGitHub();
       updateVersionWidget();
       toggleModal('versionAdminModal', false);
-      showAlert('✅ 版本信息已更新：' + (appState.hideVersionInfo ? 'v' + ver + '（已对访客隐藏）' : 'v' + ver + '（访客可见）'));
+      showAlert('✅ 版本信息已更新：' +
+        (ver ? 'v' + ver : '已恢复自动版本 v' + APP_VERSION) +
+        (appState.hideVersionInfo ? '（已对访客隐藏）' : '（访客可见）'));
     } catch (err) {
       showAlert('❌ 保存失败：' + err.message);
     } finally {
