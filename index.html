@@ -896,8 +896,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '4.9.0';
+  const APP_VERSION = '4.9.1';
   const CHANGELOG = [
+    { v: '4.9.1', d: '2026-08-23', note: '刷新保持原位：刷新后回到之前的滚动位置和页码/搜索/筛选', type: 'fix' },
     { v: '4.9.0', d: '2026-08-23', note: '主照片功能：编辑档案可任选一张设为封面；可随时追加更多照片/视频', type: 'feature' },
     { v: '4.8.1', d: '2026-08-22', note: '翻页优化：点击上一页/下一页自动平滑滚回列表顶部', type: 'fix' },
     { v: '4.8.0', d: '2026-08-22', note: '省流量提速：数据条件请求、图片懒加载、视频只载首帧', type: 'feature' },
@@ -1810,6 +1811,41 @@
   let currentGender = '全部';
   let currentDetailMediaList = [];
 
+  // ===== 刷新状态记忆：刷新后回到刚才的滚动位置与页面（页码/搜索/筛选/排序）=====
+  let __saveTimer = null;
+  function savePageState() {
+    try {
+      const st = {
+        scrollY: window.pageYOffset || 0,
+        page: currentPage,
+        keyword: (document.getElementById('searchInput').value || '').trim(),
+        gender: currentGender,
+        sortBy: document.getElementById('sortSelect').value
+      };
+      sessionStorage.setItem('pageState', JSON.stringify(st));
+    } catch (e) {}
+  }
+  window.addEventListener('scroll', function() {
+    if (__saveTimer) clearTimeout(__saveTimer);
+    __saveTimer = setTimeout(savePageState, 250);
+  }, { passive: true });
+
+  function restorePageState() {
+    let st = null;
+    try { st = JSON.parse(sessionStorage.getItem('pageState') || 'null'); } catch (e) {}
+    if (!st) return;
+    const si = document.getElementById('searchInput');
+    if (st.keyword && si) si.value = st.keyword;
+    currentGender = (st.gender === '男' || st.gender === '女') ? st.gender : '全部';
+    document.querySelectorAll('.filter-btn').forEach(b => {
+      b.classList.toggle('active', (b.textContent || '').trim() === currentGender);
+    });
+    const ss = document.getElementById('sortSelect');
+    if (ss && st.sortBy) ss.value = st.sortBy;
+    if (typeof st.page === 'number' && st.page >= 1) currentPage = st.page;
+    window.__restoreScrollY = (typeof st.scrollY === 'number') ? st.scrollY : 0;
+  }
+
   async function loadData() {
     let loaded = false;
     try {
@@ -1835,9 +1871,18 @@
       appState.profiles = DEFAULT_SAMPLE_DATA.profiles.map(p => ({ ...p }));
     }
     updateWechatUI();
+    // 刷新后恢复：页码/搜索/筛选/排序（在渲染前设置，renderCards 用恢复的状态出页）
+    restorePageState();
     renderCards();
     updateVersionWidget();
     refreshIdentityUI();
+    // 恢复滚动位置（图片懒加载会让高度变化，分几次校正到位）
+    const sy = window.__restoreScrollY || 0;
+    if (sy > 0) {
+      requestAnimationFrame(function() { window.scrollTo(0, sy); });
+      setTimeout(function() { window.scrollTo(0, sy); }, 350);
+      setTimeout(function() { window.scrollTo(0, sy); }, 1000);
+    }
   }
 
   function checkAdminState() {
@@ -2270,6 +2315,8 @@
     // 渲染分页控件 + 更新待审核计数
     renderPagination(filteredTotal);
     updatePendingCount();
+    // 记录当前页码/搜索/筛选/排序（滚动位置由 scroll 监听保存）
+    savePageState();
   }
 
   function openDetail(id) {
