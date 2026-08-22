@@ -457,8 +457,8 @@
   ],
   "staffs": [],
   "nextProfileNo": 23,
-  "version": "",
-  "hideVersionInfo": false,
+  "version": "4.3.4",
+  "hideVersionInfo": true,
   "hiddenVersions": [
     "4.3.3",
     "4.3.2"
