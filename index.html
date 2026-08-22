@@ -223,6 +223,28 @@
     }
     .thumb-item.active { border-color: var(--primary); }
     .thumb-item img, .thumb-item video { width: 100%; height: 100%; object-fit: cover; }
+    /* 主照片角标（详情页缩略图 + 编辑表单） */
+    .thumb-main-badge {
+      position: absolute; top: 2px; left: 2px; z-index: 2;
+      background: rgba(245,158,11,.95); color: #fff; font-size: 9px; font-weight: 700;
+      padding: 1px 5px; border-radius: 6px; line-height: 1.5;
+    }
+    .edit-thumb { position: relative; width: 74px; border-radius: 8px; overflow: hidden; flex-shrink: 0; background: #000; border: 2px solid var(--border); }
+    .edit-thumb.is-main { border-color: #f59e0b; box-shadow: 0 0 0 1px #f59e0b; }
+    .edit-thumb .edit-thumb-media { height: 62px; position: relative; }
+    .edit-thumb .edit-thumb-media img, .edit-thumb .edit-thumb-media video { width: 100%; height: 100%; object-fit: cover; }
+    .edit-thumb .set-main-btn {
+      display: block; width: 100%; border: none; padding: 2px 0; font-size: 9px; line-height: 1.6;
+      cursor: pointer; background: #1f2937; color: #d1d5db;
+    }
+    .edit-thumb.is-main .set-main-btn { background: #f59e0b; color: #fff; font-weight: 700; }
+    .edit-thumb .set-main-btn:hover { background: #374151; }
+    .edit-thumb.is-main .set-main-btn:hover { background: #d97706; }
+    .edit-thumb .remove-media-btn {
+      position: absolute; top: 2px; right: 2px; width: 18px; height: 18px; border-radius: 50%;
+      border: none; background: rgba(239,68,68,.92); color: #fff; font-size: 11px; line-height: 1;
+      cursor: pointer; padding: 0; z-index: 3;
+    }
     /* 详情视频播放按钮 */
     .video-play-btn {
       position: absolute; width: 56px; height: 56px; border-radius: 50%;
@@ -693,12 +715,12 @@
           <input type="text" name="职业/学生" placeholder="如：软件工程师">
         </div>
         <div class="form-group full">
-          <label>上传照片与视频（按住 Ctrl/Cmd 多选，提交到仓库 media/ 目录）</label>
+          <label>➕ 添加照片/视频（可多选，可多次添加）</label>
           <input type="file" id="mediaInput" accept="image/*,video/*" multiple>
-          <div class="file-hint">上传前会<b>自动压缩</b>：图片转 JPEG、视频转码缩小，20MB 的视频可压到 2~5MB，仓库放得下、加载也快</div>
+          <div class="file-hint">上传前会<b>自动压缩</b>：图片转 JPEG、视频转码缩小，20MB 的视频可压到 2~5MB，仓库放得下、加载也快。<b>新增档案时第一张自动成为封面</b>，之后随时可换。</div>
         </div>
         <div class="form-group full" id="existingMediaBox" style="display:none;">
-          <label>已上传的照片/视频（可移除）</label>
+          <label>已上传的照片/视频 —— 点「设为封面」换主照片，× 移除</label>
           <div id="existingMediaList" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
         </div>
         <div class="form-grid" style="background:var(--bg); padding:12px; border-radius:10px;">
@@ -874,8 +896,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '4.8.1';
+  const APP_VERSION = '4.9.0';
   const CHANGELOG = [
+    { v: '4.9.0', d: '2026-08-23', note: '主照片功能：编辑档案可任选一张设为封面；可随时追加更多照片/视频', type: 'feature' },
     { v: '4.8.1', d: '2026-08-22', note: '翻页优化：点击上一页/下一页自动平滑滚回列表顶部', type: 'fix' },
     { v: '4.8.0', d: '2026-08-22', note: '省流量提速：数据条件请求、图片懒加载、视频只载首帧', type: 'feature' },
     { v: '4.7.0', d: '2026-08-22', note: '视频显示优化（封面首帧+播放按钮）；上传显示完成百分比', type: 'feature' },
@@ -1486,11 +1509,22 @@
       const thumb = isVid
         ? `<video src="${m.url}" muted preload="metadata"></video><span style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#fff; font-size:14px; background:rgba(0,0,0,.3);">▶</span>`
         : `<img src="${m.url}" loading="lazy" decoding="async" style="width:100%; height:100%; object-fit:cover;">`;
-      return `<div style="position:relative; width:64px; height:64px; border-radius:8px; overflow:hidden; border:1px solid var(--border); background:#000;">
-        ${thumb}
-        <button type="button" onclick="removeExistingMedia(${idx})" style="position:absolute; top:2px; right:2px; width:18px; height:18px; border-radius:50%; border:none; background:rgba(239,68,68,.9); color:#fff; font-size:11px; line-height:1; cursor:pointer; padding:0;">×</button>
+      return `<div class="edit-thumb ${m.isMain ? 'is-main' : ''}">
+        <div class="edit-thumb-media">
+          ${thumb}
+          ${m.isMain ? '<span class="thumb-main-badge">⭐ 主照片</span>' : ''}
+        </div>
+        <button type="button" class="set-main-btn" onclick="setMainMedia(${idx})" title="设为封面（列表卡片显示的主照片）">${m.isMain ? '⭐ 主照片' : '设为封面'}</button>
+        <button type="button" class="remove-media-btn" onclick="removeExistingMedia(${idx})" title="移除">×</button>
       </div>`;
     }).join('');
+  }
+
+  // 设置某张媒体为主照片（封面）
+  function setMainMedia(idx) {
+    if (!currentDetailMediaList[idx]) return;
+    currentDetailMediaList.forEach((m, i) => { if (m) m.isMain = (i === idx); });
+    renderExistingMedia();
   }
 
   function removeExistingMedia(idx) {
@@ -1555,6 +1589,10 @@
           }
           setCompressStatus('');
           applyProfile.mediaList = currentDetailMediaList.concat(newMedia);
+          // 确保有一张主照片（默认第一张）
+          if (applyProfile.mediaList.length && !applyProfile.mediaList.some(m => m && m.isMain)) {
+            applyProfile.mediaList[0].isMain = true;
+          }
 
           appState.profiles.unshift(applyProfile);
           btn.textContent = '正在同步到仓库...';
@@ -1603,6 +1641,10 @@
 
         // 已有媒体（保留未移除的）+ 新媒体
         target.mediaList = currentDetailMediaList.concat(newMedia);
+        // 确保有一张主照片（默认第一张）
+        if (target.mediaList.length && !target.mediaList.some(m => m && m.isMain)) {
+          target.mediaList[0].isMain = true;
+        }
         target.updatedAt = now.getTime();
         target.uploadDate = target.uploadDate || `${year}-${month}-${day}`;
 
@@ -1665,6 +1707,8 @@
         setCompressStatus('');
 
         newProfile.mediaList = mediaList;
+        // 第一张自动成为主照片（封面），之后可在编辑时更换
+        if (mediaList.length && !mediaList.some(m => m && m.isMain)) mediaList[0].isMain = true;
         appState.profiles.unshift(newProfile);
 
         btn.textContent = '正在同步到仓库...';
@@ -2066,6 +2110,18 @@
 
   // ===== 分页 =====
   const PAGE_SIZE = 8;         // 每页 8 个嘉宾
+
+  // ===== 主照片（封面）=====
+  // 主照片 = mediaList 中 isMain:true 的那张；旧数据无标记时第一张即主照片
+  function getMainMediaIdx(list) {
+    list = list || [];
+    const i = list.findIndex(m => m && m.isMain);
+    return i >= 0 ? i : 0;
+  }
+  function getMainMedia(list) {
+    list = list || [];
+    return list[getMainMediaIdx(list)] || null;
+  }
   let currentPage = 1;          // 当前页码（从 1 开始）
   let filteredTotal = 0;        // 当前过滤后的档案总数（分页用）
 
@@ -2159,7 +2215,7 @@
 
     container.innerHTML = pageItems.map(item => {
       const mediaList = item.mediaList || [];
-      const firstMedia = mediaList[0];
+      const mainMedia = getMainMedia(mediaList);   // 主照片 = 封面
       const imgCount = mediaList.filter(m => m.type && m.type.startsWith('image')).length;
       const vidCount = mediaList.filter(m => m.type && m.type.startsWith('video')).length;
 
@@ -2168,17 +2224,17 @@
       if (vidCount > 0) badgeText += `🎬 ${vidCount}`;
 
       let coverHtml = `<img src="${placeholderDataURI('暂无照片')}" alt="封面">`;
-      if (firstMedia) {
-        if (firstMedia.type && firstMedia.type.startsWith('video')) {
+      if (mainMedia) {
+        if (mainMedia.type && mainMedia.type.startsWith('video')) {
           // 视频封面：快速加载首帧，悬停播放，带播放角标
           coverHtml = `<div style="position:relative; width:100%; height:100%;">
-            <video src="${firstMedia.url}" preload="metadata" muted playsinline loop onmouseover="this.play()" onmouseout="this.pause()"></video>
+            <video src="${mainMedia.url}" preload="metadata" muted playsinline loop onmouseover="this.play()" onmouseout="this.pause()"></video>
             <span style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none;">
               <span style="width:40px; height:40px; border-radius:50%; background:rgba(0,0,0,0.55); color:#fff; display:flex; align-items:center; justify-content:center; font-size:16px; border:2px solid rgba(255,255,255,0.8);">▶</span>
             </span>
           </div>`;
         } else {
-          coverHtml = `<img src="${firstMedia.url}" alt="${item['姓名']}" loading="lazy" decoding="async">`;
+          coverHtml = `<img src="${mainMedia.url}" alt="${item['姓名']}" loading="lazy" decoding="async">`;
         }
       }
 
@@ -2312,13 +2368,15 @@
     }
 
     thumbBar.style.display = 'flex';
+    const mainIdx = getMainMediaIdx(currentDetailMediaList);
     thumbBar.innerHTML = currentDetailMediaList.map((m, idx) => `
-      <div class="thumb-item ${idx === 0 ? 'active' : ''}" onclick="switchMedia(${idx})" title="点击切换，再点大图放大全屏">
+      <div class="thumb-item ${idx === mainIdx ? 'active' : ''}" onclick="switchMedia(${idx})" title="点击切换，再点大图放大全屏">
+        ${m.isMain ? '<span class="thumb-main-badge">⭐ 主</span>' : ''}
         ${m.type && m.type.startsWith('video') ? `<video src="${m.url}" preload="metadata"></video><div class="thumb-video-icon">▶</div>` : `<img src="${m.url}" loading="lazy" decoding="async">`}
       </div>
     `).join('');
 
-    switchMedia(0);
+    switchMedia(mainIdx);
   }
 
   function switchMedia(idx) {
