@@ -1623,7 +1623,7 @@
             </div>
             <div class="card-meta">${item['年龄'] ? item['年龄'] + '岁 · ' : ''}${item['身高'] || ''} · ${item['职业/学生'] || ''}</div>
             <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
-              ${canSeeInternalTags() && item.profileNo ? `<span class="uploader-tag">🔖 编号 ${item.profileNo}</span>` : '<span></span>'}
+              ${canSeeInternalTags() && (item.guestNo || item.profileNo) ? `<span class="uploader-tag">🔖 编号 ${item.guestNo || item.profileNo}</span>` : '<span></span>'}
               ${uploaderTag(item)}
             </div>
             <div class="card-quote">“${item['一句话介绍'] || '暂无一句话介绍'}”</div>
@@ -1661,7 +1661,7 @@
           <span>📅 上传日期：${item.uploadDate || '近期'}</span>
         </div>
         <div style="display:flex; gap:6px; margin-top:6px; flex-wrap:wrap;">
-          ${canSeeInternalTags() && item.profileNo ? `<span class="uploader-tag">🔖 编号 ${item.profileNo}</span>` : ''}
+          ${canSeeInternalTags() && (item.guestNo || item.profileNo) ? `<span class="uploader-tag">🔖 编号 ${item.guestNo || item.profileNo}</span>` : ''}
           ${uploaderTag(item)}
         </div>
       </div>
