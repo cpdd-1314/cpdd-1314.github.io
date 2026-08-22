@@ -382,7 +382,8 @@
           "type": "image/jpeg"
         }
       ],
-      "updatedAt": 1787342579489
+      "updatedAt": 1787342579489,
+      "sortOrder": 17
     },
     {
       "id": 1787341749316,
