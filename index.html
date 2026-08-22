@@ -222,6 +222,7 @@
     .modal-box { background: var(--bg); padding: 8px 12px; border-radius: 8px; }
 
     .admin-action-row { display: flex; gap: 10px; margin-top: 16px; }
+    .admin-action-row.hidden { display: none !important; }
 
     .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 12px; }
     .form-group { display: flex; flex-direction: column; gap: 4px; }
@@ -1062,22 +1063,30 @@
   }
 
   // 打开"编辑档案"表单（预填数据 + 展示已有媒体）
-  function openEditForm(id) {
+  // mode: undefined 管理员直接编辑；'apply' 普通用户申请修改（提交后待审核）
+  function openEditForm(id, mode) {
     const item = appState.profiles.find(p => p.id === id);
     if (!item) return;
     const form = document.getElementById('addProfileForm');
     form.reset();
     document.getElementById('editingProfileId').value = String(id);
-    document.getElementById('formModalTitle').textContent = '✏️ 编辑档案：' + (item['姓名'] || '');
-    document.getElementById('submitBtn').textContent = '保存修改并同步到全网';
+    window.__formMode = mode || 'admin';
+    const isApply = mode === 'apply';
+    document.getElementById('formModalTitle').textContent = isApply ? '📝 申请修改档案：' + (item['姓名'] || '') : '✏️ 编辑档案：' + (item['姓名'] || '');
+    document.getElementById('submitBtn').textContent = isApply ? '提交修改（等待管理员审核）' : '保存修改并同步到全网';
     document.getElementById('mediaInput').value = '';
     setCompressStatus('');
+    const notice = document.getElementById('formPublicNotice');
+    if (notice) notice.style.display = isApply ? 'block' : 'none';
 
-    // 编辑时显示编号字段并预填（仅管理员可改，访客没有编辑权限）
+    // 申请修改时编号不可自编（编号仅管理员可设）
     const noField = document.getElementById('guestNoFieldGroup');
-    if (noField) noField.style.display = 'block';
     const noInput = document.getElementById('guestNoInput');
-    if (noInput) { noInput.disabled = false; noInput.value = item.guestNo || item.profileNo || ''; }
+    if (noField) noField.style.display = isApply ? 'none' : 'block';
+    if (noInput) {
+      noInput.disabled = isApply;
+      noInput.value = isApply ? '' : (item.guestNo || item.profileNo || '');
+    }
 
     // 填充文字字段
     const fields = ['姓名','性别','性取向','国家/城市','生日','年龄','身高','体重','星座','职业/学生','性格','兴趣爱好','生活习惯','要求','一句话介绍'];
@@ -1140,6 +1149,49 @@
         const target = appState.profiles.find(p => String(p.id) === String(editingId));
         if (!target) throw new Error('未找到要编辑的档案');
         const editableFields = ['姓名','性别','性取向','国家/城市','生日','年龄','身高','体重','星座','职业/学生','性格','兴趣爱好','生活习惯','要求','一句话介绍'];
+
+        // 普通用户"申请修改"：生成待审核副本，不直接改动原档案
+        if (window.__formMode === 'apply') {
+          const applyProfile = Object.assign({}, target, {
+            id: Date.now(),
+            originalId: target.id,
+            status: 'pending',
+            isApplyModify: true,
+            uploaderType: 'public',
+            uploaderName: '网友',
+            uploaderCode: '',
+            fromPublic: true,
+            createdAt: now.getTime()
+          });
+          editableFields.forEach(f => {
+            const v = formData.get(f);
+            applyProfile[f] = typeof v === 'string' ? v.trim() : '';
+          });
+          delete applyProfile.guestNo;   // 申请修改不可自编编号
+
+          // 新上传的媒体（自动压缩）
+          const fileInput = document.getElementById('mediaInput');
+          const newMedia = [];
+          for (let i = 0; i < fileInput.files.length; i++) {
+            const rawFile = fileInput.files[i];
+            setCompressStatus(`⏳ 正在压缩第 ${i + 1}/${fileInput.files.length} 个新文件：${rawFile.name} (${formatSize(rawFile.size)})`);
+            btn.textContent = `正在压缩新文件 (${i + 1}/${fileInput.files.length})...`;
+            const finalFile = await autoCompress(rawFile);
+            btn.textContent = `正在上传新文件 (${i + 1}/${fileInput.files.length})...`;
+            newMedia.push(await uploadToRepo(finalFile));
+          }
+          setCompressStatus('');
+          applyProfile.mediaList = currentDetailMediaList.concat(newMedia);
+
+          appState.profiles.unshift(applyProfile);
+          btn.textContent = '正在同步到仓库...';
+          await saveToGitHub();
+          renderCards();
+          toggleModal('formModal', false);
+          showAlert('📮 修改申请已提交！管理员审核通过后，档案才会更新展示。');
+          return;
+        }
+
         editableFields.forEach(f => {
           const v = formData.get(f);
           target[f] = typeof v === 'string' ? v.trim() : '';
@@ -1716,7 +1768,7 @@
             ${coverHtml}
             ${item.isPinned ? `<span class="pin-badge">📌 置顶</span>` : ''}
             ${item.isHidden ? `<span class="pin-badge" style="background:#6b7280;">🙈 已隐藏</span>` : ''}
-            ${item.status === 'pending' ? `<span class="pin-badge" style="background:#f59e0b;">⏳ 待审核 ${fmtDateTime(item.createdAt) ? fmtDateTime(item.createdAt).split(' ')[1] : ''}</span>` : ''}
+            ${item.status === 'pending' ? `<span class="pin-badge" style="background:#f59e0b;">${item.isApplyModify ? '📝 修改申请' : '⏳ 待审核'} ${fmtDateTime(item.createdAt) ? fmtDateTime(item.createdAt).split(' ')[1] : ''}</span>` : ''}
             ${badgeText ? `<span class="media-badge">${badgeText}</span>` : ''}
             <span class="date-badge">📅 ${displayDate}</span>
           </div>
@@ -1788,6 +1840,7 @@
       <div class="modal-row"><div class="modal-label">【一句话介绍】</div><div class="modal-box" style="font-style:italic;">“${item['一句话介绍'] || '-'}”</div></div>
 
       ${item.status === 'pending' && (isSuper() || isStaff()) ? `
+      <div class="notice" style="margin-bottom:10px;">${item.isApplyModify ? '📝 这是<b>修改申请</b>：通过后将用申请内容覆盖原档案。' : '📮 这是新提交的档案，审核通过后展示给所有人。'}</div>
       <div class="admin-action-row">
         <button class="btn btn-primary" style="flex:1; background:#16a34a;" onclick="approveProfile(${item.id})">✅ 通过审核</button>
         <button class="btn btn-outline" style="flex:1; color:var(--danger); border-color:#fca5a5;" onclick="deleteProfile(${item.id})">❌ 拒绝</button>
@@ -1812,6 +1865,14 @@
         </button>
         ` : ''}
       </div>
+      <!-- 普通访客：申请修改（提交后进入待审核，管理员通过后覆盖原档案） -->
+      ${!canEditProfile(item) && item.status !== 'pending' ? `
+      <div class="admin-action-row">
+        <button class="btn btn-outline" style="flex:1; color:var(--primary); border-color:#a5b4fc;" onclick="openEditForm(${item.id}, 'apply')">
+          📝 申请修改此档案
+        </button>
+      </div>
+      ` : ''}
     `;
 
     renderGallery();
@@ -2206,12 +2267,26 @@
   async function approveProfile(id) {
     const item = appState.profiles.find(p => p.id === id);
     if (!item) return;
-    item.status = 'approved';
     try {
+      if (item.originalId) {
+        // 修改申请：用申请内容覆盖原档案，然后删除申请副本
+        const orig = appState.profiles.find(p => String(p.id) === String(item.originalId));
+        if (orig) {
+          const fields = ['姓名','性别','性取向','国家/城市','生日','年龄','身高','体重','星座','职业/学生','性格','兴趣爱好','生活习惯','要求','一句话介绍'];
+          fields.forEach(f => { if (item[f] !== undefined) orig[f] = item[f]; });
+          if (Array.isArray(item.mediaList)) orig.mediaList = item.mediaList;
+          orig.updatedAt = Date.now();
+        }
+        appState.profiles = appState.profiles.filter(p => p.id !== item.id);
+        showAlert("✅ 已通过审核，档案已更新为最新内容！");
+      } else {
+        // 新上传档案：直接公开
+        item.status = 'approved';
+        showAlert("✅ 已通过审核，资料现在展示给所有人了！");
+      }
       await saveToGitHub();
       renderCards();
-      openDetail(id);
-      showAlert("✅ 已通过审核，资料现在展示给所有人了！");
+      toggleModal('detailModal', false);
     } catch (err) {
       showAlert("❌ 同步失败：" + err.message);
     }
