@@ -576,6 +576,13 @@
               <option value="1500">1500kbps（高清）</option>
             </select>
           </div>
+          <div class="form-group">
+            <label>视频声音</label>
+            <select id="vidCompressAudio">
+              <option value="1">保留声音（推荐）</option>
+              <option value="0">静音（文件更小）</option>
+            </select>
+          </div>
           <div class="form-group full" id="compressStatus" style="font-size:12px; color:var(--primary); min-height:16px;"></div>
         </div>
         <div class="form-group full">
@@ -714,7 +721,8 @@
       imgWidth: parseInt(document.getElementById('imgCompressWidth').value, 10),
       imgQuality: parseFloat(document.getElementById('imgCompressQuality').value),
       vidWidth: parseInt(document.getElementById('vidCompressWidth').value, 10),
-      vidBitrate: parseInt(document.getElementById('vidCompressBitrate').value, 10) * 1024
+      vidBitrate: parseInt(document.getElementById('vidCompressBitrate').value, 10) * 1024,
+      vidAudio: document.getElementById('vidCompressAudio').value === '1'
     };
   }
 
@@ -746,7 +754,8 @@
   }
 
   // 视频压缩：canvas.captureStream + MediaRecorder 转码，降低分辨率/码率
-  async function compressVideoFile(file, maxWidth, bitrate) {
+  // keepAudio=true 时把原视频的音频轨道一并捕获（保留声音），false 则静音转码
+  async function compressVideoFile(file, maxWidth, bitrate, keepAudio) {
     if (!maxWidth || maxWidth <= 0) return file;
     if (!file.type.startsWith('video/')) return file;
     if (!window.MediaRecorder || !HTMLCanvasElement.prototype.captureStream) return file;
@@ -786,6 +795,26 @@
     canvas.width = w; canvas.height = h;
     const ctx = canvas.getContext('2d');
     const stream = canvas.captureStream(30);
+
+    // 保留声音：把原视频的音频轨道加入转码流
+    if (keepAudio) {
+      try {
+        if (video.captureStream) {
+          const vStream = video.captureStream();
+          vStream.getAudioTracks().forEach(t => stream.addTrack(t));
+        }
+        if (stream.getAudioTracks().length === 0 && window.AudioContext) {
+          const actx = new AudioContext();
+          const src = actx.createMediaElementSource(video);
+          const dest = actx.createMediaStreamDestination();
+          src.connect(dest);
+          dest.stream.getAudioTracks().forEach(t => stream.addTrack(t));
+        }
+      } catch (e) {
+        // 音频捕获失败则保持静音，不影响转码
+        console.warn('视频音频捕获失败，将静音：', e);
+      }
+    }
 
     const mimeCandidates = ['video/mp4;codecs=h264', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm'];
     const mimeType = mimeCandidates.find(m => MediaRecorder.isTypeSupported(m));
@@ -829,7 +858,7 @@
   async function autoCompress(file) {
     const s = getCompressSettings();
     if (file.type.startsWith('image/')) return compressImageFile(file, s.imgWidth, s.imgQuality);
-    if (file.type.startsWith('video/')) return compressVideoFile(file, s.vidWidth, s.vidBitrate);
+    if (file.type.startsWith('video/')) return compressVideoFile(file, s.vidWidth, s.vidBitrate, s.vidAudio);
     return file;
   }
 
@@ -1556,6 +1585,14 @@
     });
 
     filtered.sort((a, b) => {
+      // 自定义位置（sortOrder）优先：设置了位置的按序号升序排在最前
+      const hasOrderA = typeof a.sortOrder === 'number';
+      const hasOrderB = typeof b.sortOrder === 'number';
+      if (hasOrderA || hasOrderB) {
+        if (hasOrderA && hasOrderB) return a.sortOrder - b.sortOrder;
+        return hasOrderA ? -1 : 1;
+      }
+
       const isPinnedA = a.isPinned ? 1 : 0;
       const isPinnedB = b.isPinned ? 1 : 0;
       if (isPinnedA !== isPinnedB) return isPinnedB - isPinnedA;
@@ -1624,6 +1661,7 @@
             <div class="card-meta">${item['年龄'] ? item['年龄'] + '岁 · ' : ''}${item['身高'] || ''} · ${item['职业/学生'] || ''}</div>
             <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
               ${canSeeInternalTags() && (item.guestNo || item.profileNo) ? `<span class="uploader-tag">🔖 编号 ${item.guestNo || item.profileNo}</span>` : '<span></span>'}
+              ${canSeeInternalTags() && typeof item.sortOrder === 'number' ? `<span class="uploader-tag">📍 ${posText(item.sortOrder)}</span>` : ''}
               ${uploaderTag(item)}
             </div>
             <div class="card-quote">“${item['一句话介绍'] || '暂无一句话介绍'}”</div>
@@ -1662,6 +1700,7 @@
         </div>
         <div style="display:flex; gap:6px; margin-top:6px; flex-wrap:wrap;">
           ${canSeeInternalTags() && (item.guestNo || item.profileNo) ? `<span class="uploader-tag">🔖 编号 ${item.guestNo || item.profileNo}</span>` : ''}
+          ${canSeeInternalTags() && typeof item.sortOrder === 'number' ? `<span class="uploader-tag">📍 ${posText(item.sortOrder)}</span>` : ''}
           ${uploaderTag(item)}
         </div>
       </div>
@@ -1697,6 +1736,9 @@
         </button>
         <button class="btn btn-outline" style="flex:1; color:${item.isPinned ? '#4b5563' : 'var(--pin-gold)'}; border-color:${item.isPinned ? '#d1d5db' : 'var(--pin-gold)'};" onclick="togglePinProfile(${item.id})">
           ${item.isPinned ? '取消置顶' : '📌 置顶此档案'}
+        </button>
+        <button class="btn btn-outline" style="flex:1; color:#7c3aed; border-color:#c4b5fd;" onclick="setProfilePosition(${item.id})">
+          📍 设置位置
         </button>
         <button class="btn btn-outline" style="flex:1; color:var(--danger); border-color:#fca5a5;" onclick="deleteProfile(${item.id})">
           🗑️ 删除档案
@@ -1883,6 +1925,42 @@
     }
   }, { passive: true });
   document.getElementById('lightboxStage').addEventListener('touchend', () => { lbDragging = false; pinchDist = 0; }, { passive: true });
+
+  // 位置序号 → 第几页第几个（每页 PAGE_SIZE 个）
+  function posText(n) {
+    if (!n || n < 1) return '';
+    const page = Math.ceil(n / PAGE_SIZE);
+    const idx = ((n - 1) % PAGE_SIZE) + 1;
+    return '第' + page + '页第' + idx + '个';
+  }
+
+  // 管理员设置嘉宾在列表中的具体位置（全局序号）
+  async function setProfilePosition(id) {
+    const item = appState.profiles.find(p => p.id === id);
+    if (!item) return;
+    const cur = typeof item.sortOrder === 'number'
+      ? '当前位置：' + posText(item.sortOrder) + '（序号 ' + item.sortOrder + '）\n'
+      : '';
+    const hint = '输入嘉宾的位置序号：\n第1页第1个 = 1，第1页第' + PAGE_SIZE + '个 = ' + PAGE_SIZE + '\n第2页第5个 = ' + (PAGE_SIZE + 5) + '，第3页第2个 = ' + (PAGE_SIZE * 2 + 2) + '\n输入 0 或留空 = 取消自定义位置（恢复默认排序）';
+    const input = prompt(cur + hint, typeof item.sortOrder === 'number' ? item.sortOrder : '');
+    if (input === null) return;
+    const trimmed = String(input).trim();
+    if (trimmed === '' || parseInt(trimmed, 10) === 0) {
+      delete item.sortOrder;
+    } else {
+      const n = parseInt(trimmed, 10);
+      if (isNaN(n) || n < 1) { alert('请输入有效的序号（≥1）'); return; }
+      item.sortOrder = n;
+    }
+    try {
+      await saveToGitHub();
+      renderCards();
+      openDetail(id);
+      alert('✅ 位置已更新：' + (typeof item.sortOrder === 'number' ? posText(item.sortOrder) + '（序号 ' + item.sortOrder + '）' : '已取消自定义位置，恢复默认排序'));
+    } catch (err) {
+      alert('❌ 同步失败：' + err.message);
+    }
+  }
 
   async function togglePinProfile(id) {
     const item = appState.profiles.find(p => p.id === id);
