@@ -126,6 +126,14 @@
       width: 200px;
     }
 
+    .page-num {
+      min-width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border);
+      background: var(--card-bg); color: var(--text); font-size: 13px; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center; padding: 0 6px;
+    }
+    .page-num.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .page-num:hover:not(.active) { background: #e2e8f0; }
+
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -334,6 +342,14 @@
   </div>
 
   <div class="grid" id="cardsContainer"></div>
+
+  <!-- 分页控件 -->
+  <div class="pagination" id="pagination" style="display:none; justify-content:center; align-items:center; gap:8px; margin-top:24px; flex-wrap:wrap;">
+    <button class="btn btn-outline" id="pagePrev" style="font-size:13px; padding:6px 14px;" onclick="changePage(currentPage - 1)">← 上一页</button>
+    <div id="pageNumbers" style="display:flex; gap:6px; align-items:center;"></div>
+    <button class="btn btn-outline" id="pageNext" style="font-size:13px; padding:6px 14px;" onclick="changePage(currentPage + 1)">下一页 →</button>
+    <span id="pageInfo" style="font-size:12px; color:var(--text-muted);"></span>
+  </div>
 </div>
 
 <!-- 微信名片弹窗 -->
@@ -1477,6 +1493,48 @@
     }
   }
 
+  // ===== 分页 =====
+  const PAGE_SIZE = 10;         // 每页 10 个嘉宾
+  let currentPage = 1;          // 当前页码（从 1 开始）
+  let filteredTotal = 0;        // 当前过滤后的档案总数（分页用）
+
+  function changePage(page) {
+    const total = filteredTotal;  // 过滤后的总数（由 renderCards 记录）
+    const maxPage = Math.max(1, Math.ceil(total / PAGE_SIZE));
+    if (page < 1 || page > maxPage) return;
+    currentPage = page;
+    renderCards();
+  }
+
+  function renderPagination(total) {
+    const pag = document.getElementById('pagination');
+    const maxPage = Math.max(1, Math.ceil(total / PAGE_SIZE));
+    if (total <= PAGE_SIZE) {
+      pag.style.display = 'none';
+      return;
+    }
+    pag.style.display = 'flex';
+
+    // 页码数字：显示当前页附近最多 7 个
+    const nums = document.getElementById('pageNumbers');
+    let pages = [];
+    const start = Math.max(1, currentPage - 3);
+    const end = Math.min(maxPage, start + 6);
+    for (let i = start; i <= end; i++) pages.push(i);
+    if (start > 1) pages.unshift('...');
+    if (end < maxPage) pages.push('...');
+
+    nums.innerHTML = pages.map(p =>
+      p === '...'
+        ? `<span style="color:var(--text-muted); padding:0 4px;">…</span>`
+        : `<button class="page-num ${p === currentPage ? 'active' : ''}" onclick="changePage(${p})">${p}</button>`
+    ).join('');
+
+    document.getElementById('pagePrev').disabled = currentPage <= 1;
+    document.getElementById('pageNext').disabled = currentPage >= maxPage;
+    document.getElementById('pageInfo').textContent = `共 ${total} 位 · 第 ${currentPage}/${maxPage} 页`;
+  }
+
   function renderCards() {
     const keyword = document.getElementById('searchInput').value.toLowerCase().trim();
     const sortBy = document.getElementById('sortSelect').value;
@@ -1513,11 +1571,21 @@
       container.innerHTML = pendingReviewMode
         ? `<p style="grid-column: 1/-1; text-align:center; color: var(--text-muted); padding: 40px;">✅ 没有待审核的档案，全部处理完毕！</p>`
         : `<p style="grid-column: 1/-1; text-align:center; color: var(--text-muted); padding: 40px;">暂无匹配的嘉宾档案</p>`;
+      filteredTotal = 0;
+      renderPagination(0);
       updatePendingCount();
       return;
     }
 
-    container.innerHTML = filtered.map(item => {
+    // 记录过滤后总数（供分页用）
+    filteredTotal = filtered.length;
+    // 页码越界保护（如删除数据后当前页超出范围）
+    const maxPage = Math.max(1, Math.ceil(filteredTotal / PAGE_SIZE));
+    if (currentPage > maxPage) currentPage = maxPage;
+    // 按页切片
+    const pageItems = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+    container.innerHTML = pageItems.map(item => {
       const mediaList = item.mediaList || [];
       const firstMedia = mediaList[0];
       const imgCount = mediaList.filter(m => m.type && m.type.startsWith('image')).length;
@@ -1564,7 +1632,8 @@
       `;
     }).join('');
 
-    // 渲染完成后更新待审核计数
+    // 渲染分页控件 + 更新待审核计数
+    renderPagination(filteredTotal);
     updatePendingCount();
   }
 
