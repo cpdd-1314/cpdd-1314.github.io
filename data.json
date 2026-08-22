@@ -33,7 +33,8 @@
       "mediaList": [
         {
           "url": "./media/1787435858038_7988.jpg",
-          "type": "image/jpeg"
+          "type": "image/jpeg",
+          "isMain": true
         },
         {
           "url": "./media/1787435859306_7989.jpg",
@@ -86,9 +87,15 @@
         {
           "url": "./media/1787435953125_8025.mp4",
           "type": "video/mp4"
+        },
+        {
+          "url": "./media/1787438914412_Screenshot_20260823_001630.jpg",
+          "type": "image/jpeg"
         }
       ],
-      "sortOrder": 18
+      "sortOrder": 18,
+      "guestNo": "A025",
+      "updatedAt": 1787438914317
     },
     {
       "id": 1787422835777,
