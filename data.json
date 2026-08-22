@@ -5,6 +5,34 @@
   },
   "profiles": [
     {
+      "id": 1787415201147,
+      "姓名": "🇮🇹",
+      "性别": "男",
+      "性取向": "",
+      "国家/城市": "意大利",
+      "生日": "2012-2-6",
+      "年龄": "14",
+      "身高": "170",
+      "体重": "差不多50kg",
+      "星座": "水瓶",
+      "职业/学生": "",
+      "性格": "",
+      "兴趣爱好": "打游戏",
+      "生活习惯": "",
+      "要求": "",
+      "一句话介绍": "",
+      "uploadDate": "2026-08-22",
+      "createdAt": 1787415201147,
+      "isPinned": false,
+      "uploaderType": "public",
+      "uploaderName": "网友",
+      "uploaderCode": "",
+      "fromPublic": true,
+      "status": "pending",
+      "profileNo": "A022",
+      "mediaList": []
+    },
+    {
       "id": 1787412932269,
       "姓名": "余年",
       "guestNo": "A020",
@@ -457,5 +485,5 @@
     }
   ],
   "staffs": [],
-  "nextProfileNo": 22
+  "nextProfileNo": 23
 }
