@@ -408,8 +408,8 @@
       </div>
 
       <select id="sortSelect" class="select-control" onchange="renderCards()">
+        <option value="oldest" selected>最早上传</option>
         <option value="newest">最新上传</option>
-        <option value="oldest">最早上传</option>
         <option value="age_asc">年龄：从小到大</option>
         <option value="age_desc">年龄：从大到小</option>
       </select>
@@ -865,8 +865,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '4.6.1';
+  const APP_VERSION = '4.6.2';
   const CHANGELOG = [
+    { v: '4.6.2', d: '2026-08-22', note: '排序默认改为「最早上传」（从早到新）', type: 'fix' },
     { v: '4.6.1', d: '2026-08-22', note: '收起后的小圆球改小（38px）', type: 'fix' },
     { v: '4.6.0', d: '2026-08-22', note: '加微信/进微信群入口可收起为小圆球，点击动态弹出', type: 'feature' },
     { v: '4.5.0', d: '2026-08-22', note: '新增「进微信群」动态气泡，群二维码管理员可设置', type: 'feature' },
