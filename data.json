@@ -5,6 +5,35 @@
   },
   "profiles": [
     {
+      "id": 1787412550807,
+      "姓名": "林",
+      "guestNo": "",
+      "性别": "男",
+      "性取向": "女",
+      "国家/城市": "意大利",
+      "生日": "2010\\11/20",
+      "年龄": "15",
+      "身高": "175",
+      "体重": "55",
+      "星座": "天蝎座",
+      "职业/学生": "学生",
+      "性格": "",
+      "兴趣爱好": "",
+      "生活习惯": "",
+      "要求": "",
+      "一句话介绍": "",
+      "uploadDate": "2026-08-22",
+      "createdAt": 1787412550799,
+      "isPinned": false,
+      "uploaderType": "public",
+      "uploaderName": "网友",
+      "uploaderCode": "",
+      "fromPublic": true,
+      "status": "pending",
+      "profileNo": "A019",
+      "mediaList": []
+    },
+    {
       "id": 1787410859654,
       "姓名": "🇮🇹",
       "guestNo": "",
@@ -387,5 +416,5 @@
     }
   ],
   "staffs": [],
-  "nextProfileNo": 19
+  "nextProfileNo": 20
 }
