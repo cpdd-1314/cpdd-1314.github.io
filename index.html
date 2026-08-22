@@ -364,7 +364,32 @@
   <div id="versionWidget">
     <span class="ver-text" id="versionText"></span>
     <button class="btn btn-outline" style="font-size:11px; padding:2px 8px;" onclick="showChangelog()">📋 更新记录</button>
+    <button class="btn btn-outline super-only" style="font-size:11px; padding:2px 8px;" onclick="openVersionAdmin()" title="管理版本信息">⚙️ 管理版本</button>
     <span class="ver-text">© 2026 全球找对象</span>
+  </div>
+</div>
+
+<!-- 版本信息管理弹窗（仅超级管理员） -->
+<div class="modal-overlay" id="versionAdminModal" onclick="handleOverlayClick(event, 'versionAdminModal')">
+  <div class="modal" style="max-width:400px;">
+    <button class="close-btn" onclick="toggleModal('versionAdminModal', false)">×</button>
+    <h2 style="font-size:18px; margin-bottom:12px;">⚙️ 版本信息管理</h2>
+    <div class="notice">
+      修改版本号后所有访客可见；隐藏后版本信息只对<b>访客隐藏</b>，管理员登录后仍可管理。
+    </div>
+    <form onsubmit="handleVersionSave(event)">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>当前显示版本号</label>
+          <input type="text" id="verAdminInput" placeholder="如：4.3.1" value="4.3.1">
+        </div>
+        <div class="form-group" style="flex-direction:row; align-items:center; gap:8px; align-self:end;">
+          <input type="checkbox" id="verAdminHide" style="width:16px; height:16px;">
+          <label for="verAdminHide" style="font-size:13px; font-weight:500; margin:0;">对访客隐藏版本信息</label>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%;" id="verAdminBtn">保存设置</button>
+    </form>
   </div>
 </div>
 
@@ -727,8 +752,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '4.3.1';
+  const APP_VERSION = '4.3.2';
   const CHANGELOG = [
+    { v: '4.3.2', d: '2026-08-22', note: '超级管理员可修改版本号、对访客隐藏版本信息', type: 'feature' },
     { v: '4.3.1', d: '2026-08-22', note: '版本号支持超级大改动(1.0.0.0)；版本信息固定到页面底部', type: 'fix' },
     { v: '4.3.0', d: '2026-08-22', note: '右下角版本信息与更新记录；版本升级自动弹出更新提示', type: 'feature' },
     { v: '4.2.1', d: '2026-08-22', note: '提交弹窗红字强调：必须把编码发到管理员微信才能审核', type: 'fix' },
@@ -768,10 +794,53 @@
     showAlertHtml(html, '📋 版本更新记录');
   }
 
-  // 右下角版本号动态显示 + 每次更新自动弹出提示
-  (function () {
+  // 当前显示版本号（管理员可在 data.json 中覆盖）
+  function currentVersion() {
+    return appState.version || APP_VERSION;
+  }
+
+  // 更新版本信息浮层：显示版本号 + 按隐藏设置控制可见性（管理员登录始终可见以便管理）
+  function updateVersionWidget() {
+    const w = document.getElementById('versionWidget');
+    if (!w) return;
     const vt = document.getElementById('versionText');
-    if (vt) vt.textContent = 'v' + APP_VERSION;
+    if (vt) vt.textContent = 'v' + currentVersion();
+    const hiddenForGuest = !!appState.hideVersionInfo;
+    const isAdmin = isSuper() || isStaff();
+    w.style.display = (hiddenForGuest && !isAdmin) ? 'none' : 'flex';
+  }
+
+  // 打开版本管理弹窗（仅超级管理员）
+  function openVersionAdmin() {
+    if (!isSuper()) return;
+    document.getElementById('verAdminInput').value = currentVersion();
+    document.getElementById('verAdminHide').checked = !!appState.hideVersionInfo;
+    toggleModal('versionAdminModal', true);
+  }
+
+  // 保存版本设置
+  async function handleVersionSave(e) {
+    e.preventDefault();
+    const btn = document.getElementById('verAdminBtn');
+    btn.disabled = true;
+    try {
+      const ver = document.getElementById('verAdminInput').value.trim();
+      if (!ver) { showAlert('请输入版本号'); btn.disabled = false; return; }
+      appState.version = ver;
+      appState.hideVersionInfo = document.getElementById('verAdminHide').checked;
+      await saveToGitHub();
+      updateVersionWidget();
+      toggleModal('versionAdminModal', false);
+      showAlert('✅ 版本信息已更新：' + (appState.hideVersionInfo ? 'v' + ver + '（已对访客隐藏）' : 'v' + ver + '（访客可见）'));
+    } catch (err) {
+      showAlert('❌ 保存失败：' + err.message);
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  // 页面加载：每次更新自动弹出提示（版本号显示在底部初始化处执行）
+  (function () {
     // 检测版本变化：本机记录过旧版本且版本升级 → 自动弹出更新提示
     const KEY = 'seen_app_version';
     let prev = '';
@@ -782,7 +851,7 @@
         '🎉 网站已更新到 <b style="font-size:17px;">v' + APP_VERSION + '</b>！<br><br>' +
         '<div style="background:var(--bg); border-radius:8px; padding:10px 12px; font-size:12px;">' +
         '<b>本次更新：</b><br>' + latest.note + '</div>' +
-        '<br>点右下角「📋 更新记录」可查看全部历史版本。',
+        '<br>点「📋 更新记录」可查看全部历史版本。',
         '版本更新'
       );
     }
@@ -814,7 +883,9 @@
     wechat: { id: "xiaomaomiii777", qr: "" },
     profiles: [],
     staffs: [],          // 内部管理员列表
-    nextProfileNo: 1     // 档案编号计数器
+    nextProfileNo: 1,    // 档案编号计数器
+    version: '',         // 管理员自定义版本号（空 = 使用代码内置版本）
+    hideVersionInfo: false  // 管理员是否对访客隐藏版本信息
   };
 
   // 内置示例兜底：当取不到仓库 data.json（本地预览 / 分享链接 / 直接双击打开）时，
@@ -1473,6 +1544,8 @@
         appState.profiles = Array.isArray(data.profiles) ? data.profiles : [];
         appState.staffs = Array.isArray(data.staffs) ? data.staffs : [];
         if (typeof data.nextProfileNo === 'number') appState.nextProfileNo = data.nextProfileNo;
+        if (typeof data.version === 'string') appState.version = data.version;
+        if (typeof data.hideVersionInfo === 'boolean') appState.hideVersionInfo = data.hideVersionInfo;
         loaded = true;
       }
     } catch (err) {
@@ -1485,6 +1558,7 @@
     }
     updateWechatUI();
     renderCards();
+    updateVersionWidget();
     refreshIdentityUI();
   }
 
@@ -1526,6 +1600,8 @@
 
     // 身份变化后重绘卡片，刷新编号/上传者标签的可见性
     if (typeof renderCards === 'function') renderCards();
+    // 身份变化时同步刷新版本浮层可见性（管理员登录后即使被隐藏也显示）
+    if (typeof updateVersionWidget === 'function') updateVersionWidget();
   }
 
   function logoutStaff() {
@@ -2427,6 +2503,7 @@
     setCurrentIdentity({ type: 'super', name: '管理员', code: 'ADMIN' });
   }
   refreshIdentityUI();
+  updateVersionWidget();   // 显示版本号 + 按隐藏设置控制可见性
   loadData();
 </script>
 
