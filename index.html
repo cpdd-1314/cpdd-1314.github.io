@@ -874,8 +874,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '4.7.0';
+  const APP_VERSION = '4.8.0';
   const CHANGELOG = [
+    { v: '4.8.0', d: '2026-08-22', note: '省流量提速：数据条件请求、图片懒加载、视频只载首帧', type: 'feature' },
     { v: '4.7.0', d: '2026-08-22', note: '视频显示优化（封面首帧+播放按钮）；上传显示完成百分比', type: 'feature' },
     { v: '4.6.2', d: '2026-08-22', note: '排序默认改为「最早上传」（从早到新）', type: 'fix' },
     { v: '4.6.1', d: '2026-08-22', note: '收起后的小圆球改小（38px）', type: 'fix' },
@@ -1482,8 +1483,8 @@
     listEl.innerHTML = currentDetailMediaList.map((m, idx) => {
       const isVid = m.type && m.type.startsWith('video');
       const thumb = isVid
-        ? `<video src="${m.url}" muted></video><span style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#fff; font-size:14px; background:rgba(0,0,0,.3);">▶</span>`
-        : `<img src="${m.url}" style="width:100%; height:100%; object-fit:cover;">`;
+        ? `<video src="${m.url}" muted preload="metadata"></video><span style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#fff; font-size:14px; background:rgba(0,0,0,.3);">▶</span>`
+        : `<img src="${m.url}" loading="lazy" decoding="async" style="width:100%; height:100%; object-fit:cover;">`;
       return `<div style="position:relative; width:64px; height:64px; border-radius:8px; overflow:hidden; border:1px solid var(--border); background:#000;">
         ${thumb}
         <button type="button" onclick="removeExistingMedia(${idx})" style="position:absolute; top:2px; right:2px; width:18px; height:18px; border-radius:50%; border:none; background:rgba(239,68,68,.9); color:#fff; font-size:11px; line-height:1; cursor:pointer; padding:0;">×</button>
@@ -1767,7 +1768,8 @@
   async function loadData() {
     let loaded = false;
     try {
-      const res = await fetch('./data.json?t=' + Date.now(), { cache: 'no-store' });
+      // 条件请求：数据没变时服务器返回 304（几乎零流量），变了才下载新数据
+      const res = await fetch('./data.json', { cache: 'no-cache' });
       if (res.ok) {
         const data = await res.json();
         if (data.wechat) appState.wechat = data.wechat;
@@ -2169,7 +2171,7 @@
             </span>
           </div>`;
         } else {
-          coverHtml = `<img src="${firstMedia.url}" alt="${item['姓名']}">`;
+          coverHtml = `<img src="${firstMedia.url}" alt="${item['姓名']}" loading="lazy" decoding="async">`;
         }
       }
 
@@ -2305,7 +2307,7 @@
     thumbBar.style.display = 'flex';
     thumbBar.innerHTML = currentDetailMediaList.map((m, idx) => `
       <div class="thumb-item ${idx === 0 ? 'active' : ''}" onclick="switchMedia(${idx})" title="点击切换，再点大图放大全屏">
-        ${m.type && m.type.startsWith('video') ? `<video src="${m.url}"></video><div class="thumb-video-icon">▶</div>` : `<img src="${m.url}">`}
+        ${m.type && m.type.startsWith('video') ? `<video src="${m.url}" preload="metadata"></video><div class="thumb-video-icon">▶</div>` : `<img src="${m.url}" loading="lazy" decoding="async">`}
       </div>
     `).join('');
 
@@ -2326,7 +2328,7 @@
       </div>`;
     } else {
       viewer.innerHTML = `<div style="position:relative; width:100%; height:100%; display:flex; align-items:center; justify-content:center;">
-        <img src="${media.url}" alt="大图" style="max-width:100%; max-height:100%; object-fit:contain; cursor:zoom-in;" onclick="openLightbox(${idx})" title="点击放大全屏">
+        <img src="${media.url}" alt="大图" loading="lazy" decoding="async" style="max-width:100%; max-height:100%; object-fit:contain; cursor:zoom-in;" onclick="openLightbox(${idx})" title="点击放大全屏">
         <span style="position:absolute; bottom:8px; right:8px; background:rgba(0,0,0,0.55); color:#fff; font-size:11px; padding:3px 10px; border-radius:8px; pointer-events:none;">🔍 点击照片放大全屏</span>
       </div>`;
     }
@@ -2384,7 +2386,7 @@
     const isVid = media.type && media.type.startsWith('video');
     stage.innerHTML = isVid
       ? `<video src="${media.url}" controls autoplay playsinline preload="metadata" style="transform:scale(${lbZoom});"></video>`
-      : `<img src="${media.url}" alt="全屏照片" style="transform:scale(${lbZoom}) translate(${lbTx}px, ${lbTy}px);">`;
+      : `<img src="${media.url}" alt="全屏照片" decoding="async" style="transform:scale(${lbZoom}) translate(${lbTx}px, ${lbTy}px);">`;
 
     // 计数 + 描述
     document.getElementById('lightboxCounter').textContent = `${lightboxIndex + 1} / ${lightboxList.length}`;
