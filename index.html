@@ -181,6 +181,21 @@
       position: fixed; inset: 0; background: rgba(0,0,0,0.5);
       display: none; align-items: center; justify-content: center; padding: 16px; z-index: 100;
     }
+    /* 弹窗动态弹出动画（淡入 + 放大 + 上浮） */
+    .modal {
+      animation: modalPop .28s cubic-bezier(.34,1.3,.64,1);
+    }
+    @keyframes modalPop {
+      from { opacity: 0; transform: scale(.9) translateY(14px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .modal-overlay {
+      animation: overlayFade .2s ease;
+    }
+    @keyframes overlayFade {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
     .modal {
       background: var(--card-bg);
       max-width: 620px;
@@ -310,7 +325,7 @@
       <p>快速找到心目中的伴侣</p>
     </div>
     <div class="btn-group">
-      <button class="btn btn-wechat" onclick="toggleModal('wechatModal', true)">
+      <button class="btn btn-wechat" onclick="openWechatModal()">
         <svg class="wechat-icon" viewBox="0 0 24 24">
           <path d="M9.5 4C4.8 4 1 7.4 1 11.5c0 2.4 1.3 4.5 3.4 5.9l-.9 2.6 3.1-1.6c.9.3 2 .5 2.9.5.3 0 .7 0 1-.1-.3-.7-.4-1.5-.4-2.3 0-4.1 3.8-7.5 8.5-7.5.3 0 .7 0 1 .1C19.1 6.8 14.8 4 9.5 4zm-2.2 4.2c.7 0 1.2.6 1.2 1.2s-.6 1.2-1.2 1.2c-.7 0-1.2-.6-1.2-1.2s.5-1.2 1.2-1.2zm4.8 0c.7 0 1.2.6 1.2 1.2s-.6 1.2-1.2 1.2c-.7 0-1.2-.6-1.2-1.2s.5-1.2 1.2-1.2zm6.9 3.8c-3.9 0-7 2.7-7 6 0 3.3 3.1 6 7 6 .8 0 1.6-.1 2.4-.4l2.5 1.3-.7-2.1c1.7-1.1 2.8-2.8 2.8-4.8 0-3.3-3.1-6-7-6zm-2.5 3.5c.5 0 .9.4.9.9s-.4.9-.9.9-.9-.4-.9-.9.4-.9.9-.9zm4.2 0c.5 0 .9.4.9.9s-.4.9-.9.9-.9-.4-.9-.9.4-.9.9-.9z"/>
         </svg>
@@ -710,14 +725,14 @@
     document.getElementById('customDialog').style.display = 'flex';
   }
 
-  // 提示框（HTML 内容版，可加颜色/加粗强调）
-  function showAlertHtml(html, title) {
+  // 提示框（HTML 内容版，可加颜色/加粗强调；支持自定义按钮区）
+  function showAlertHtml(html, title, buttonsHtml) {
     const titleEl = document.getElementById('customDialogTitle');
     titleEl.textContent = title || '提示';
     titleEl.style.color = 'var(--text)';
     document.getElementById('customDialogMsg').innerHTML = html;
     document.getElementById('customDialogBtns').innerHTML =
-      '<button class="btn btn-primary" style="flex:1;" onclick="closeCustomDialog()">知道了</button>';
+      buttonsHtml || '<button class="btn btn-primary" style="flex:1;" onclick="closeCustomDialog()">知道了</button>';
     document.getElementById('customDialog').style.display = 'flex';
   }
 
@@ -752,8 +767,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '4.3.3';
+  const APP_VERSION = '4.3.4';
   const CHANGELOG = [
+    { v: '4.3.4', d: '2026-08-22', note: '加微信弹窗动态化：弹出动画、内容实时刷新、提交后一键跳转', type: 'feature' },
     { v: '4.3.3', d: '2026-08-22', note: '可隐藏任意一条更新记录；更新提示显示给每个用户', type: 'feature' },
     { v: '4.3.2', d: '2026-08-22', note: '超级管理员可修改版本号、对访客隐藏版本信息', type: 'feature' },
     { v: '4.3.1', d: '2026-08-22', note: '版本号支持超级大改动(1.0.0.0)；版本信息固定到页面底部', type: 'fix' },
@@ -1222,6 +1238,12 @@
     document.getElementById('cfgWechatId').value = appState.wechat.id || '';
   }
 
+  // 动态打开加微信弹窗：每次打开都实时刷新微信号/二维码，管理员修改后立即生效
+  function openWechatModal() {
+    updateWechatUI();
+    toggleModal('wechatModal', true);
+  }
+
   function copyWechatId() {
     const id = appState.wechat.id || '';
     if (!id) { showAlert('尚未设置微信号'); return; }
@@ -1501,7 +1523,9 @@
             '请添加管理员微信：<b>' + (wechatId || '(管理员微信待配置)') + '</b><br><br>' +
             '<div style="color:#dc2626; font-weight:800; font-size:14px; background:#fef2f2; border:1px solid #fecaca; border-radius:8px; padding:10px 12px; line-height:1.6;">' +
             '⚠️ 必须把上面的编码发到我的微信，<br>才能通过审核！！！</div>',
-            '提交成功'
+            '提交成功',
+            '<button class="btn btn-primary" style="flex:1;" onclick="closeCustomDialog(); openWechatModal();">📱 扫码添加微信</button>' +
+            '<button class="btn btn-outline" style="flex:1;" onclick="closeCustomDialog()">知道了</button>'
           );
         } else {
           showAlert("🎉 资料已保存到仓库，所有人刷新即可看到！");
