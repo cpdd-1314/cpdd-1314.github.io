@@ -1186,7 +1186,10 @@
         toggleModal('formModal', false);
         e.target.reset();
         if (newProfile.status === 'pending') {
-          alert("📮 资料已提交成功！正在等待管理员审核，审核通过后就会展示在网站上。");
+          const wechatId = (appState.wechat && appState.wechat.id) || '';
+          alert('📮 资料已提交成功！\n\n你的档案编码：' + (newProfile.profileNo || newProfile.guestNo || '') +
+            '\n\n请添加管理员微信：' + (wechatId || '(管理员微信待配置)') +
+            '\n\n添加时请备注你的编码「' + (newProfile.profileNo || newProfile.guestNo || '') + '」，管理员审核通过后资料就会展示在网站上。');
         } else {
           alert("🎉 资料已保存到仓库，所有人刷新即可看到！");
         }
@@ -1655,7 +1658,7 @@
             ${coverHtml}
             ${item.isPinned ? `<span class="pin-badge">📌 置顶</span>` : ''}
             ${item.isHidden ? `<span class="pin-badge" style="background:#6b7280;">🙈 已隐藏</span>` : ''}
-            ${item.status === 'pending' ? `<span class="pin-badge" style="background:#f59e0b;">⏳ 待审核</span>` : ''}
+            ${item.status === 'pending' ? `<span class="pin-badge" style="background:#f59e0b;">⏳ 待审核 ${fmtDateTime(item.createdAt) ? fmtDateTime(item.createdAt).split(' ')[1] : ''}</span>` : ''}
             ${badgeText ? `<span class="media-badge">${badgeText}</span>` : ''}
             <span class="date-badge">📅 ${displayDate}</span>
           </div>
@@ -1702,7 +1705,7 @@
         </h2>
         <div style="display:flex; justify-content:space-between; align-items:center; color:var(--text-muted); font-size:12px; margin-top:4px;">
           <span>📍 ${item['国家/城市'] || '未填'}</span>
-          <span>📅 上传日期：${item.uploadDate || '近期'}</span>
+          <span>⏰ 提交时间：${fmtDateTime(item.createdAt) || (item.uploadDate || '近期')}</span>
         </div>
         <div style="display:flex; gap:6px; margin-top:6px; flex-wrap:wrap;">
           ${canSeeInternalTags() && (item.guestNo || item.profileNo) ? `<span class="uploader-tag">🔖 编号 ${item.guestNo || item.profileNo}</span>` : ''}
@@ -1938,6 +1941,14 @@
     const page = Math.ceil(n / PAGE_SIZE);
     const idx = ((n - 1) % PAGE_SIZE) + 1;
     return '第' + page + '页第' + idx + '个';
+  }
+
+  // 时间戳 → 年月日 时分秒
+  function fmtDateTime(ts) {
+    if (!ts) return '';
+    const d = new Date(ts);
+    const p = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
   }
 
   // ===== 可视化设置嘉宾位置 =====
