@@ -247,6 +247,24 @@
     }
     #versionWidget .ver-text { white-space: nowrap; }
 
+    /* 左下角动态"加微信"浮动气泡 */
+    #wechatFloat {
+      position: fixed; left: 16px; bottom: 16px; z-index: 900;
+      display: flex; align-items: center; gap: 6px;
+      background: #07c160; color: #fff;
+      border-radius: 30px; padding: 11px 18px;
+      box-shadow: 0 4px 16px rgba(7,193,96,0.45);
+      cursor: pointer; user-select: none;
+      animation: wechatFloatY 2.8s ease-in-out infinite;
+      transition: transform .18s ease, box-shadow .18s ease;
+    }
+    #wechatFloat:hover { transform: scale(1.06); box-shadow: 0 6px 20px rgba(7,193,96,0.55); }
+    #wechatFloat:active { transform: scale(.95); }
+    @keyframes wechatFloatY {
+      0%, 100% { transform: translateY(0); }
+      50%      { transform: translateY(-9px); }
+    }
+
     .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 12px; }
     .form-group { display: flex; flex-direction: column; gap: 4px; }
     .form-group.full { grid-column: span 2; }
@@ -706,6 +724,14 @@
   </div>
 </div>
 
+<!-- 左下角动态"加微信"浮动气泡 -->
+<div id="wechatFloat" onclick="openWechatModal()" title="点击添加微信">
+  <svg viewBox="0 0 24 24" style="width:20px; height:20px; fill:#fff; flex-shrink:0;">
+    <path d="M9.5 4C4.8 4 1 7.4 1 11.5c0 2.4 1.3 4.5 3.4 5.9l-.9 2.6 3.1-1.6c.9.3 2 .5 2.9.5.3 0 .7 0 1-.1-.3-.7-.4-1.5-.4-2.3 0-4.1 3.8-7.5 8.5-7.5.3 0 .7 0 1 .1C19.1 6.8 14.8 4 9.5 4zm-2.2 4.2c.7 0 1.2.6 1.2 1.2s-.6 1.2-1.2 1.2c-.7 0-1.2-.6-1.2-1.2s.5-1.2 1.2-1.2zm4.8 0c.7 0 1.2.6 1.2 1.2s-.6 1.2-1.2 1.2c-.7 0-1.2-.6-1.2-1.2s.5-1.2 1.2-1.2zm6.9 3.8c-3.9 0-7 2.7-7 6 0 3.3 3.1 6 7 6 .8 0 1.6-.1 2.4-.4l2.5 1.3-.7-2.1c1.7-1.1 2.8-2.8 2.8-4.8 0-3.3-3.1-6-7-6zm-2.5 3.5c.5 0 .9.4.9.9s-.4.9-.9.9-.9-.4-.9-.9.4-.9.9-.9zm4.2 0c.5 0 .9.4.9.9s-.4.9-.9.9-.9-.4-.9-.9.4-.9.9-.9z"/>
+  </svg>
+  <span style="font-size:14px; font-weight:600; white-space:nowrap;">加微信</span>
+</div>
+
 <script>
   // ===== 站内弹窗组件（替代浏览器原生 alert/confirm/prompt） =====
   let __customOnConfirm = null;   // 确认框「确定」后的回调
@@ -767,8 +793,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '4.3.5';
+  const APP_VERSION = '4.4.0';
   const CHANGELOG = [
+    { v: '4.4.0', d: '2026-08-22', note: '左下角动态「加微信」浮动气泡（微信头像+文字，点击扫码）', type: 'feature' },
     { v: '4.3.5', d: '2026-08-22', note: '管理员保存弹窗也显示扫码加微信按钮；更新提示每浏览器只显示一次', type: 'fix' },
     { v: '4.3.4', d: '2026-08-22', note: '加微信弹窗动态化：弹出动画、内容实时刷新、提交后一键跳转', type: 'feature' },
     { v: '4.3.3', d: '2026-08-22', note: '可隐藏任意一条更新记录；更新提示显示给每个用户', type: 'feature' },
