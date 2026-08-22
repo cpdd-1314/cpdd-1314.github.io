@@ -247,9 +247,9 @@
     }
     #versionWidget .ver-text { white-space: nowrap; }
 
-    /* 左下角动态"加微信"浮动气泡 */
-    #wechatFloat {
-      position: fixed; left: 16px; bottom: 76px; z-index: 900;
+    /* 左下角动态浮动气泡：加微信（上）+ 进微信群（下） */
+    #wechatFloat, #floatGroup {
+      position: fixed; left: 16px; z-index: 900;
       display: flex; align-items: center; gap: 6px;
       background: #07c160; color: #fff;
       border-radius: 30px; padding: 11px 18px;
@@ -258,8 +258,14 @@
       animation: wechatFloatY 2.8s ease-in-out infinite;
       transition: transform .18s ease, box-shadow .18s ease;
     }
-    #wechatFloat:hover { transform: scale(1.06); box-shadow: 0 6px 20px rgba(7,193,96,0.55); }
-    #wechatFloat:active { transform: scale(.95); }
+    #wechatFloat { bottom: 148px; }
+    #floatGroup {
+      bottom: 76px;
+      background: #0091ff; box-shadow: 0 4px 16px rgba(0,145,255,0.4);
+      animation-delay: .9s;   /* 两个气泡错开浮动节奏 */
+    }
+    #wechatFloat:hover, #floatGroup:hover { transform: scale(1.06); }
+    #wechatFloat:active, #floatGroup:active { transform: scale(.95); }
     @keyframes wechatFloatY {
       0%, 100% { transform: translateY(0); }
       50%      { transform: translateY(-9px); }
@@ -458,8 +464,26 @@
         <input type="file" id="cfgWechatQrFile" accept="image/*">
         <div class="file-hint">留空则保持原二维码不变；图片会随资料一起提交到仓库</div>
       </div>
+      <div class="form-group" style="margin-bottom:16px;">
+        <label>微信群二维码（进微信群入口用）</label>
+        <input type="file" id="cfgGroupQrFile" accept="image/*">
+        <div class="file-hint" id="groupQrHint">留空则保持原群二维码不变</div>
+      </div>
       <button type="submit" class="btn btn-primary" style="width:100%; padding:10px;" id="saveWechatBtn">保存并同步</button>
     </form>
+  </div>
+</div>
+
+<!-- 微信群二维码弹窗 -->
+<div class="modal-overlay" id="groupModal" onclick="handleOverlayClick(event, 'groupModal')">
+  <div class="modal" style="max-width:340px; padding: 20px;">
+    <button class="close-btn" onclick="toggleModal('groupModal', false)">×</button>
+    <div class="wechat-modal-content">
+      <h2 style="font-size:17px; margin-bottom:2px;">进微信群</h2>
+      <p style="font-size:12px; color:var(--text-muted);">长按识别二维码加入交流群</p>
+      <img id="groupQrDisplay" src="" alt="微信群二维码" class="original-qr-img">
+      <div class="file-hint" style="text-align:center;">二维码由管理员维护，如已失效请联系管理员</div>
+    </div>
   </div>
 </div>
 
@@ -725,7 +749,13 @@
   </div>
 </div>
 
-<!-- 左下角动态"加微信"浮动气泡 -->
+<!-- 左下角动态浮动入口：上面加微信，下面进微信群 -->
+<div id="floatGroup" onclick="openGroupModal()" title="点击进微信群">
+  <svg viewBox="0 0 24 24" style="width:20px; height:20px; fill:#fff; flex-shrink:0;">
+    <path d="M16 11c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+  </svg>
+  <span style="font-size:14px; font-weight:600; white-space:nowrap;">进微信群</span>
+</div>
 <div id="wechatFloat" onclick="openWechatModal()" title="点击添加微信">
   <svg viewBox="0 0 24 24" style="width:20px; height:20px; fill:#fff; flex-shrink:0;">
     <path d="M9.5 4C4.8 4 1 7.4 1 11.5c0 2.4 1.3 4.5 3.4 5.9l-.9 2.6 3.1-1.6c.9.3 2 .5 2.9.5.3 0 .7 0 1-.1-.3-.7-.4-1.5-.4-2.3 0-4.1 3.8-7.5 8.5-7.5.3 0 .7 0 1 .1C19.1 6.8 14.8 4 9.5 4zm-2.2 4.2c.7 0 1.2.6 1.2 1.2s-.6 1.2-1.2 1.2c-.7 0-1.2-.6-1.2-1.2s.5-1.2 1.2-1.2zm4.8 0c.7 0 1.2.6 1.2 1.2s-.6 1.2-1.2 1.2c-.7 0-1.2-.6-1.2-1.2s.5-1.2 1.2-1.2zm6.9 3.8c-3.9 0-7 2.7-7 6 0 3.3 3.1 6 7 6 .8 0 1.6-.1 2.4-.4l2.5 1.3-.7-2.1c1.7-1.1 2.8-2.8 2.8-4.8 0-3.3-3.1-6-7-6zm-2.5 3.5c.5 0 .9.4.9.9s-.4.9-.9.9-.9-.4-.9-.9.4-.9.9-.9zm4.2 0c.5 0 .9.4.9.9s-.4.9-.9.9-.9-.4-.9-.9.4-.9.9-.9z"/>
@@ -794,8 +824,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '4.4.2';
+  const APP_VERSION = '4.5.0';
   const CHANGELOG = [
+    { v: '4.5.0', d: '2026-08-22', note: '新增「进微信群」动态气泡，群二维码管理员可设置', type: 'feature' },
     { v: '4.4.2', d: '2026-08-22', note: '加微信浮动气泡位置上移，避免贴地', type: 'fix' },
     { v: '4.4.1', d: '2026-08-22', note: '修复版本号不自动更新：手动版本已清空，留空即自动跟随最新', type: 'fix' },
     { v: '4.4.0', d: '2026-08-22', note: '左下角动态「加微信」浮动气泡（微信头像+文字，点击扫码）', type: 'feature' },
@@ -962,7 +993,7 @@
   const API = `https://api.github.com/repos/${_repo.owner}/${_repo.repo}/contents`;
 
   let appState = {
-    wechat: { id: "xiaomaomiii777", qr: "" },
+    wechat: { id: "xiaomaomiii777", qr: "", groupQr: "" },
     profiles: [],
     staffs: [],          // 内部管理员列表
     nextProfileNo: 1,    // 档案编号计数器
@@ -974,7 +1005,7 @@
   // 内置示例兜底：当取不到仓库 data.json（本地预览 / 分享链接 / 直接双击打开）时，
   // 用这份示例渲染，避免白屏。部署到 GitHub Pages 后会自动用仓库里的真实数据覆盖它。
   const DEFAULT_SAMPLE_DATA = {
-    wechat: { id: "xiaomaomiii777", qr: "" },
+    wechat: { id: "xiaomaomiii777", qr: "", groupQr: "" },
     profiles: [
       {
         id: 1700000000001,
@@ -1270,6 +1301,16 @@
     const qrImg = document.getElementById('wechatQrDisplay');
     qrImg.src = appState.wechat.qr || placeholderDataURI('微信二维码待设置');
     document.getElementById('cfgWechatId').value = appState.wechat.id || '';
+    // 群二维码状态提示
+    const hint = document.getElementById('groupQrHint');
+    if (hint) hint.textContent = appState.wechat.groupQr ? '✅ 已设置群二维码（重新选择可更换）' : '留空则保持原群二维码不变（未设置）';
+  }
+
+  // 动态打开进微信群弹窗（每次实时刷新群二维码）
+  function openGroupModal() {
+    const img = document.getElementById('groupQrDisplay');
+    img.src = appState.wechat.groupQr || placeholderDataURI('群二维码待设置');
+    toggleModal('groupModal', true);
   }
 
   // 动态打开加微信弹窗：每次打开都实时刷新微信号/二维码，管理员修改后立即生效
@@ -1596,6 +1637,15 @@
         const finalFile = await autoCompress(fileInput.files[0]);
         const uploaded = await uploadToRepo(finalFile);
         appState.wechat.qr = uploaded.url;
+      }
+
+      // 微信群二维码
+      const groupInput = document.getElementById('cfgGroupQrFile');
+      if (groupInput && groupInput.files.length > 0) {
+        setCompressStatus('⏳ 正在压缩群二维码图片...');
+        const finalFile = await autoCompress(groupInput.files[0]);
+        const uploaded = await uploadToRepo(finalFile);
+        appState.wechat.groupQr = uploaded.url;
       }
 
       await saveToGitHub();
