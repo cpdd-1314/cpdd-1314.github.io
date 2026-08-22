@@ -6,6 +6,39 @@
   },
   "profiles": [
     {
+      "id": 1787422835777,
+      "姓名": "小雨",
+      "性别": "男",
+      "性取向": "人",
+      "国家/城市": "",
+      "生日": "2013",
+      "年龄": "",
+      "身高": "156",
+      "体重": "",
+      "星座": "射手座",
+      "职业/学生": "",
+      "性格": "容易生气",
+      "兴趣爱好": "打和平圈钱",
+      "生活习惯": "美国作息",
+      "要求": "老抽",
+      "一句话介绍": "",
+      "uploadDate": "2026-08-23",
+      "createdAt": 1787422835777,
+      "isPinned": false,
+      "uploaderType": "public",
+      "uploaderName": "网友",
+      "uploaderCode": "",
+      "fromPublic": true,
+      "status": "pending",
+      "profileNo": "A024",
+      "mediaList": [
+        {
+          "url": "./media/1787422836034_retouch_2026082219013808.jpg",
+          "type": "image/jpeg"
+        }
+      ]
+    },
+    {
       "id": 1787422632090,
       "姓名": "a",
       "性别": "男",
@@ -485,7 +518,7 @@
     }
   ],
   "staffs": [],
-  "nextProfileNo": 24,
+  "nextProfileNo": 25,
   "version": "",
   "hideVersionInfo": false,
   "hiddenVersions": [
