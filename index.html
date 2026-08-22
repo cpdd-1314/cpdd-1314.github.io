@@ -223,6 +223,15 @@
     }
     .thumb-item.active { border-color: var(--primary); }
     .thumb-item img, .thumb-item video { width: 100%; height: 100%; object-fit: cover; }
+    /* 详情视频播放按钮 */
+    .video-play-btn {
+      position: absolute; width: 56px; height: 56px; border-radius: 50%;
+      border: 3px solid rgba(255,255,255,0.9); background: rgba(0,0,0,0.55);
+      color: #fff; font-size: 20px; cursor: pointer; padding: 0;
+      display: flex; align-items: center; justify-content: center;
+      transition: transform .15s ease, background .15s ease;
+    }
+    .video-play-btn:hover { transform: scale(1.1); background: rgba(7,193,96,0.8); }
     .thumb-video-icon {
       position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
       background: rgba(0,0,0,0.3); color: #fff; font-size: 14px;
@@ -865,8 +874,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '4.6.2';
+  const APP_VERSION = '4.7.0';
   const CHANGELOG = [
+    { v: '4.7.0', d: '2026-08-22', note: '视频显示优化（封面首帧+播放按钮）；上传显示完成百分比', type: 'feature' },
     { v: '4.6.2', d: '2026-08-22', note: '排序默认改为「最早上传」（从早到新）', type: 'fix' },
     { v: '4.6.1', d: '2026-08-22', note: '收起后的小圆球改小（38px）', type: 'fix' },
     { v: '4.6.0', d: '2026-08-22', note: '加微信/进微信群入口可收起为小圆球，点击动态弹出', type: 'feature' },
@@ -1530,12 +1540,15 @@
           // 新上传的媒体（自动压缩）
           const fileInput = document.getElementById('mediaInput');
           const newMedia = [];
-          for (let i = 0; i < fileInput.files.length; i++) {
+          const totalNew = fileInput.files.length;
+          for (let i = 0; i < totalNew; i++) {
             const rawFile = fileInput.files[i];
-            setCompressStatus(`⏳ 正在压缩第 ${i + 1}/${fileInput.files.length} 个新文件：${rawFile.name} (${formatSize(rawFile.size)})`);
-            btn.textContent = `正在压缩新文件 (${i + 1}/${fileInput.files.length})...`;
+            const pct = Math.round((i / totalNew) * 100);
+            setCompressStatus(`⏳ 正在压缩第 ${i + 1}/${totalNew} 个新文件：${rawFile.name} (${formatSize(rawFile.size)}) · 进度 ${pct}%`);
+            btn.textContent = `正在压缩 (${i + 1}/${totalNew}) · ${pct}%`;
             const finalFile = await autoCompress(rawFile);
-            btn.textContent = `正在上传新文件 (${i + 1}/${fileInput.files.length})...`;
+            const upPct = Math.round(((i + 1) / totalNew) * 100);
+            btn.textContent = `正在上传 (${i + 1}/${totalNew}) · 已完成 ${upPct}%`;
             newMedia.push(await uploadToRepo(finalFile));
           }
           setCompressStatus('');
@@ -1570,15 +1583,18 @@
         // 新上传的媒体
         const fileInput = document.getElementById('mediaInput');
         const newMedia = [];
-        for (let i = 0; i < fileInput.files.length; i++) {
+        const totalEdit = fileInput.files.length;
+        for (let i = 0; i < totalEdit; i++) {
           const rawFile = fileInput.files[i];
-          setCompressStatus(`⏳ 正在压缩第 ${i + 1}/${fileInput.files.length} 个新文件：${rawFile.name} (${formatSize(rawFile.size)})`);
-          btn.textContent = `正在压缩新文件 (${i + 1}/${fileInput.files.length})...`;
+          const pct = Math.round((i / totalEdit) * 100);
+          setCompressStatus(`⏳ 正在压缩第 ${i + 1}/${totalEdit} 个新文件：${rawFile.name} (${formatSize(rawFile.size)}) · 进度 ${pct}%`);
+          btn.textContent = `正在压缩 (${i + 1}/${totalEdit}) · ${pct}%`;
           const finalFile = await autoCompress(rawFile);
+          const upPct = Math.round(((i + 1) / totalEdit) * 100);
           if (finalFile.size < rawFile.size) {
-            setCompressStatus(`✅ ${rawFile.name}：${formatSize(rawFile.size)} → ${formatSize(finalFile.size)}，正在上传...`);
+            setCompressStatus(`✅ ${rawFile.name}：${formatSize(rawFile.size)} → ${formatSize(finalFile.size)}，正在上传... 进度 ${upPct}%`);
           }
-          btn.textContent = `正在上传新文件 (${i + 1}/${fileInput.files.length})...`;
+          btn.textContent = `正在上传 (${i + 1}/${totalEdit}) · 已完成 ${upPct}%`;
           newMedia.push(await uploadToRepo(finalFile));
         }
         setCompressStatus('');
@@ -1630,15 +1646,18 @@
 
         const fileInput = document.getElementById('mediaInput');
         const mediaList = [];
-        for (let i = 0; i < fileInput.files.length; i++) {
+        const totalFiles = fileInput.files.length;
+        for (let i = 0; i < totalFiles; i++) {
           const rawFile = fileInput.files[i];
-          setCompressStatus(`⏳ 正在压缩第 ${i + 1}/${fileInput.files.length} 个文件：${rawFile.name} (${formatSize(rawFile.size)})`);
-          btn.textContent = `正在压缩 (${i + 1}/${fileInput.files.length})...`;
+          const pct = Math.round((i / totalFiles) * 100);
+          setCompressStatus(`⏳ 正在压缩第 ${i + 1}/${totalFiles} 个文件：${rawFile.name} (${formatSize(rawFile.size)}) · 进度 ${pct}%`);
+          btn.textContent = `正在压缩 (${i + 1}/${totalFiles}) · ${pct}%`;
           const finalFile = await autoCompress(rawFile);
+          const upPct = Math.round(((i + 1) / totalFiles) * 100);
           if (finalFile.size < rawFile.size) {
-            setCompressStatus(`✅ ${rawFile.name}：${formatSize(rawFile.size)} → ${formatSize(finalFile.size)}，正在上传...`);
+            setCompressStatus(`✅ ${rawFile.name}：${formatSize(rawFile.size)} → ${formatSize(finalFile.size)}，正在上传... 进度 ${upPct}%`);
           }
-          btn.textContent = `正在上传第 (${i + 1}/${fileInput.files.length}) 个文件...`;
+          btn.textContent = `正在上传 (${i + 1}/${totalFiles}) · 已完成 ${upPct}%`;
           mediaList.push(await uploadToRepo(finalFile));
         }
         setCompressStatus('');
@@ -2142,7 +2161,13 @@
       let coverHtml = `<img src="${placeholderDataURI('暂无照片')}" alt="封面">`;
       if (firstMedia) {
         if (firstMedia.type && firstMedia.type.startsWith('video')) {
-          coverHtml = `<video src="${firstMedia.url}" muted playsinline loop onmouseover="this.play()" onmouseout="this.pause()"></video>`;
+          // 视频封面：快速加载首帧，悬停播放，带播放角标
+          coverHtml = `<div style="position:relative; width:100%; height:100%;">
+            <video src="${firstMedia.url}" preload="metadata" muted playsinline loop onmouseover="this.play()" onmouseout="this.pause()"></video>
+            <span style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none;">
+              <span style="width:40px; height:40px; border-radius:50%; background:rgba(0,0,0,0.55); color:#fff; display:flex; align-items:center; justify-content:center; font-size:16px; border:2px solid rgba(255,255,255,0.8);">▶</span>
+            </span>
+          </div>`;
         } else {
           coverHtml = `<img src="${firstMedia.url}" alt="${item['姓名']}">`;
         }
@@ -2293,7 +2318,12 @@
     if (!media) return;
 
     if (media.type && media.type.startsWith('video')) {
-      viewer.innerHTML = `<video src="${media.url}" controls autoplay playsinline></video>`;
+      // 视频显示：先展示首帧+播放按钮，点击播放（避免自动播放干扰）
+      viewer.innerHTML = `<div style="position:relative; width:100%; height:100%; display:flex; align-items:center; justify-content:center;">
+        <video id="detailVideo" src="${media.url}" preload="metadata" muted playsinline style="max-width:100%; max-height:100%; object-fit:contain;"></video>
+        <button class="video-play-btn" onclick="playDetailVideo()">▶</button>
+        <span style="position:absolute; bottom:8px; right:8px; background:rgba(0,0,0,0.55); color:#fff; font-size:11px; padding:3px 10px; border-radius:8px; pointer-events:none;">🎬 点击播放视频</span>
+      </div>`;
     } else {
       viewer.innerHTML = `<div style="position:relative; width:100%; height:100%; display:flex; align-items:center; justify-content:center;">
         <img src="${media.url}" alt="大图" style="max-width:100%; max-height:100%; object-fit:contain; cursor:zoom-in;" onclick="openLightbox(${idx})" title="点击放大全屏">
@@ -2304,6 +2334,17 @@
     document.querySelectorAll('.thumb-item').forEach((el, i) => {
       el.classList.toggle('active', i === idx);
     });
+  }
+
+  // 播放详情弹窗里的视频（点击播放按钮）
+  function playDetailVideo() {
+    const v = document.getElementById('detailVideo');
+    if (!v) return;
+    v.muted = false;
+    v.controls = true;
+    v.play();
+    const btn = v.parentElement && v.parentElement.querySelector('.video-play-btn');
+    if (btn) btn.style.display = 'none';
   }
 
   // 从卡片封面打开全屏（不触发打开详情）
@@ -2342,7 +2383,7 @@
 
     const isVid = media.type && media.type.startsWith('video');
     stage.innerHTML = isVid
-      ? `<video src="${media.url}" controls autoplay playsinline style="transform:scale(${lbZoom});"></video>`
+      ? `<video src="${media.url}" controls autoplay playsinline preload="metadata" style="transform:scale(${lbZoom});"></video>`
       : `<img src="${media.url}" alt="全屏照片" style="transform:scale(${lbZoom}) translate(${lbTx}px, ${lbTy}px);">`;
 
     // 计数 + 描述
