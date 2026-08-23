@@ -6,6 +6,40 @@
   },
   "profiles": [
     {
+      "id": 1787499885177,
+      "姓名": "吴明宣",
+      "性别": "男",
+      "性取向": "女",
+      "国家/城市": "意大利威尼斯",
+      "生日": "2010/09/27",
+      "年龄": "15",
+      "身高": "169",
+      "体重": "48kg",
+      "星座": "天秤",
+      "职业/学生": "学生",
+      "性格": "不知道不清楚",
+      "兴趣爱好": "玩二游",
+      "生活习惯": "随缘",
+      "要求": "我不说嘿嘿",
+      "一句话介绍": "不及岛",
+      "uploadDate": "2026-08-23",
+      "createdAt": 1787499885177,
+      "isPinned": false,
+      "uploaderType": "public",
+      "uploaderName": "网友",
+      "uploaderCode": "",
+      "fromPublic": true,
+      "status": "pending",
+      "profileNo": "A032",
+      "mediaList": [
+        {
+          "url": "./media/1787499885917_IMG20260726193849.jpg",
+          "type": "image/jpeg",
+          "isMain": true
+        }
+      ]
+    },
+    {
       "id": 1787499759448,
       "姓名": "吴明宣",
       "性别": "男",
@@ -820,7 +854,7 @@
     }
   ],
   "staffs": [],
-  "nextProfileNo": 32,
+  "nextProfileNo": 33,
   "version": "",
   "hideVersionInfo": false,
   "hiddenVersions": [
