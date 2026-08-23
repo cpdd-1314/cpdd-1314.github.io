@@ -896,8 +896,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '4.9.1';
+  const APP_VERSION = '4.9.2';
   const CHANGELOG = [
+    { v: '4.9.2', d: '2026-08-23', note: '修复视频转码声音延迟：改用同步时钟捕获音频，音画对齐', type: 'fix' },
     { v: '4.9.1', d: '2026-08-23', note: '刷新保持原位：刷新后回到之前的滚动位置和页码/搜索/筛选', type: 'fix' },
     { v: '4.9.0', d: '2026-08-23', note: '主照片功能：编辑档案可任选一张设为封面；可随时追加更多照片/视频', type: 'feature' },
     { v: '4.8.1', d: '2026-08-22', note: '翻页优化：点击上一页/下一页自动平滑滚回列表顶部', type: 'fix' },
@@ -1227,19 +1228,27 @@
     const ctx = canvas.getContext('2d');
     const stream = canvas.captureStream(30);
 
-    // 保留声音：把原视频的音频轨道加入转码流
+    // 保留声音：优先用 AudioContext 捕获原视频音频。
+    // 关键点：canvas.captureStream 的帧时间戳基于系统时钟，若音频用 video.captureStream()
+    // （基于原视频内部时钟，从 0 起），两者时钟基准不一致，会导致转码后音画偏移（声音延迟）。
+    // AudioContext 输出的音频时间戳同为系统时钟，与画布流对齐，可消除该偏差。
     if (keepAudio) {
       try {
-        if (video.captureStream) {
+        let audioAdded = false;
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (AC) {
+          const actx = new AC();
+          if (actx.state === 'suspended') { try { await actx.resume(); } catch (e) {} }
+          const srcNode = actx.createMediaElementSource(video);
+          const destNode = actx.createMediaStreamDestination();
+          srcNode.connect(destNode);
+          destNode.stream.getAudioTracks().forEach(t => stream.addTrack(t));
+          audioAdded = stream.getAudioTracks().length > 0;
+        }
+        if (!audioAdded && video.captureStream) {
+          // 兜底：AudioContext 不可用时才退回 captureStream 音频（极端情况可能略偏移）
           const vStream = video.captureStream();
           vStream.getAudioTracks().forEach(t => stream.addTrack(t));
-        }
-        if (stream.getAudioTracks().length === 0 && window.AudioContext) {
-          const actx = new AudioContext();
-          const src = actx.createMediaElementSource(video);
-          const dest = actx.createMediaStreamDestination();
-          src.connect(dest);
-          dest.stream.getAudioTracks().forEach(t => stream.addTrack(t));
         }
       } catch (e) {
         // 音频捕获失败则保持静音，不影响转码
@@ -1251,7 +1260,7 @@
     const mimeType = mimeCandidates.find(m => MediaRecorder.isTypeSupported(m));
     if (!mimeType) { URL.revokeObjectURL(url); return file; }
 
-    const rec = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: bitrate });
+    const rec = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: bitrate, audioBitsPerSecond: 128000 });
     const chunks = [];
     rec.ondataavailable = e => { if (e.data && e.data.size > 0) chunks.push(e.data); };
 
@@ -1262,13 +1271,17 @@
       requestAnimationFrame(drawLoop);
     };
 
-    const stopRec = () => { if (!ended) { ended = true; rec.stop(); } };
+    const stopRec = () => { if (!ended) { ended = true; if (rec.state !== 'inactive') rec.stop(); } };
 
     await new Promise((resolve, reject) => {
       rec.onstop = resolve;
       rec.onerror = reject;
-      rec.start(500);
-      video.play().then(drawLoop).catch(() => stopRec());
+      let recordingStarted = false;
+      video.play().then(() => {
+        // 播放真正开始后再开始录制，确保开头画面与声音从同一时刻起
+        if (!recordingStarted) { recordingStarted = true; rec.start(500); }
+        drawLoop();
+      }).catch(() => stopRec());
       video.onended = stopRec;
       video.ontimeupdate = () => { if (video.currentTime >= video.duration - 0.1) stopRec(); };
       // 兜底：最长等待 = 视频时长 * 1.5 + 10s
