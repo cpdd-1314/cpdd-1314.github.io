@@ -628,6 +628,10 @@
         <label>登录密码</label>
         <input type="password" id="staffPwdInput" placeholder="输入内部管理员密码">
       </div>
+      <label style="display:flex; align-items:center; gap:6px; font-size:13px; font-weight:500; color:var(--text); margin-bottom:12px; cursor:pointer;">
+        <input type="checkbox" id="rememberStaffMe" style="width:16px; height:16px;" checked>
+        记住我（下次免登录，本机保存）
+      </label>
       <button type="submit" class="btn btn-primary" style="width:100%;">进入内部管理</button>
     </form>
   </div>
@@ -919,8 +923,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '4.14.0';
+  const APP_VERSION = '4.14.1';
   const CHANGELOG = [
+    { v: '4.14.1', d: '2026-08-24', note: '内部管理员登录支持「记住我」，下次打开自动免登录', type: 'fix' },
     { v: '4.14.0', d: '2026-08-24', note: '管理员操作记录：审核/编辑/删除/隐藏/置顶/位置/配置等全部留档，仅超级管理员可查看', type: 'feature' },
     { v: '4.13.0', d: '2026-08-24', note: '加微信/进微信群弹窗始终置顶显示；内部管理员可修改微信名片与群二维码', type: 'feature' },
     { v: '4.12.0', d: '2026-08-23', note: '详情页右上角新增「转发」按钮，一键复制直达链接分享嘉宾', type: 'feature' },
@@ -1996,13 +2001,20 @@
 
   // ===== 身份系统 =====
   // 身份类型：super(超级管理员) / staff(内部管理员) / guest(临时用户)
-  // 当前身份存储在 sessionStorage.current_identity = JSON {type, name, code}
-  function setCurrentIdentity(identity) {
-    if (identity) sessionStorage.setItem('current_identity', JSON.stringify(identity));
-    else sessionStorage.removeItem('current_identity');
+  // 当前身份存储在 sessionStorage.current_identity（本次会话）；
+  // 勾选「记住我」时同步存 localStorage.saved_identity，下次打开自动恢复登录。
+  function setCurrentIdentity(identity, remember) {
+    if (identity) {
+      sessionStorage.setItem('current_identity', JSON.stringify(identity));
+      if (remember) localStorage.setItem('saved_identity', JSON.stringify(identity));
+      else localStorage.removeItem('saved_identity');
+    } else {
+      sessionStorage.removeItem('current_identity');
+      localStorage.removeItem('saved_identity');
+    }
   }
   function getCurrentIdentity() {
-    try { return JSON.parse(sessionStorage.getItem('current_identity') || 'null'); }
+    try { return JSON.parse(sessionStorage.getItem('current_identity') || localStorage.getItem('saved_identity') || 'null'); }
     catch (e) { return null; }
   }
   function isSuper() { return (getCurrentIdentity() || {}).type === 'super'; }
@@ -2053,7 +2065,8 @@
     if (staff.password !== pwd) { showAlert("❌ 密码错误"); return; }
     if (!GUEST_TOKEN) { showAlert("⚠️ 内部管理功能尚未配置完成（需要配置写入令牌）"); return; }
 
-    setCurrentIdentity({ type: 'staff', name: staff.name, code: staff.code });
+    const rememberStaff = document.getElementById('rememberStaffMe') && document.getElementById('rememberStaffMe').checked;
+    setCurrentIdentity({ type: 'staff', name: staff.name, code: staff.code }, rememberStaff);
     refreshIdentityUI();
     toggleModal('loginModal', false);
     document.getElementById('staffNameInput').value = '';
