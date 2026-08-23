@@ -143,7 +143,8 @@
       ],
       "sortOrder": 18,
       "guestNo": "A025",
-      "updatedAt": 1787438927608
+      "updatedAt": 1787438927608,
+      "isHidden": true
     },
     {
       "id": 1787422835777,
