@@ -896,8 +896,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '4.10.1';
+  const APP_VERSION = '4.10.2';
   const CHANGELOG = [
+    { v: '4.10.2', d: '2026-08-23', note: '复制通知文案增加更多嘉宾信息（身高/体重/星座/爱好/性格等）', type: 'fix' },
     { v: '4.10.1', d: '2026-08-23', note: '通知文案调整：仅保留微信群一键复制通知', type: 'fix' },
     { v: '4.10.0', d: '2026-08-23', note: '新嘉宾通知：企业微信群自动@所有人推送 + 审核通过一键复制通知文案', type: 'feature' },
     { v: '4.9.3', d: '2026-08-23', note: '翻页跳转改为直接显示顶部，取消平滑滚动动画', type: 'fix' },
@@ -2867,15 +2868,36 @@
     if (!p) return;
     const name = p['姓名'] || '神秘嘉宾';
     const gender = p['性别'] || '？';
-    const city = p['国家/城市'] || '未知城市';
-    const age = p['年龄'] || '？';
+    const orient = p['性取向'] || '';
+    const city = p['国家/城市'] || '';
+    const birthday = p['生日'] || '';
+    const age = p['年龄'] || '';
+    const height = p['身高'] || '';
+    const weight = p['体重'] || '';
+    const star = p['星座'] || '';
     const job = p['职业/学生'] || '';
+    const personality = p['性格'] || '';
+    const hobby = p['兴趣爱好'] || '';
+    const habit = p['生活习惯'] || '';
+    const requirement = p['要求'] || '';
     const intro = (p['一句话介绍'] || '').trim();
+
     let text = '🎉 新嘉宾加入「全球找对象」！\n';
-    text += '👤 ' + name + '（' + gender + '）· ' + city + ' · ' + age + '岁';
-    if (job) text += ' · ' + job;
-    text += '\n💬 “' + (intro || '暂无介绍') + '”';
-    text += '\n\n🔗 网站：https://cpdd-1314.github.io/';
+    text += '👤 ' + name + '（' + gender + (orient ? ' · ' + orient : '') + '）\n';
+    const info = [];
+    if (city) info.push('📍 ' + city);
+    if (age) info.push('🎂 ' + age + '岁' + (birthday ? '（' + birthday + '）' : ''));
+    if (height) info.push('📏 ' + height + (weight ? ' · ' + weight : ''));
+    else if (weight) info.push('⚖️ ' + weight);
+    if (star) info.push('⭐ ' + star);
+    if (job) info.push('💼 ' + job);
+    if (info.length) text += info.join('\n') + '\n';
+    if (personality) text += '❤️ 性格：' + personality + '\n';
+    if (hobby) text += '🎨 爱好：' + hobby + '\n';
+    if (habit) text += '🛏 生活：' + habit + '\n';
+    if (requirement) text += '💍 要求：' + requirement + '\n';
+    if (intro) text += '💬 “' + intro + '”\n';
+    text += '\n🔗 网站：https://cpdd-1314.github.io/';
     const done = function() {
       const btn = document.querySelector('#customDialog button[onclick*="copyGuestNotice"]');
       if (btn) btn.textContent = '✅ 已复制，去群里粘贴吧！';
