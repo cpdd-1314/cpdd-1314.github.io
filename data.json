@@ -887,7 +887,13 @@
       "isHidden": true
     }
   ],
-  "staffs": [],
+  "staffs": [
+    {
+      "code": "ST001",
+      "name": "小安不受束缚",
+      "password": "12345678Ovo"
+    }
+  ],
   "nextProfileNo": 34,
   "version": "",
   "hideVersionInfo": false,
