@@ -896,8 +896,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '4.9.3';
+  const APP_VERSION = '4.10.0';
   const CHANGELOG = [
+    { v: '4.10.0', d: '2026-08-23', note: '新嘉宾通知：企业微信群自动@所有人推送 + 审核通过一键复制通知文案', type: 'feature' },
     { v: '4.9.3', d: '2026-08-23', note: '翻页跳转改为直接显示顶部，取消平滑滚动动画', type: 'fix' },
     { v: '4.9.2', d: '2026-08-23', note: '修复视频转码声音延迟：改用同步时钟捕获音频，音画对齐', type: 'fix' },
     { v: '4.9.1', d: '2026-08-23', note: '刷新保持原位：刷新后回到之前的滚动位置和页码/搜索/筛选', type: 'fix' },
@@ -2835,11 +2836,21 @@
           orig.updatedAt = Date.now();
         }
         appState.profiles = appState.profiles.filter(p => p.id !== item.id);
-        showAlert("✅ 已通过审核，档案已更新为最新内容！");
+        showAlertHtml(
+          '✅ 已通过审核，档案已更新为最新内容！<br><br>📋 点下方按钮复制更新文案，<b>粘贴到微信群</b>即可通知大家（企业微信群会自动 @所有人）。',
+          '审核通过',
+          '<button class="btn btn-outline" style="flex:1;" onclick="copyGuestNotice(' + (item.originalId || item.id) + ')">📋 复制通知文案</button>' +
+          '<button class="btn btn-primary" style="flex:1;" onclick="closeCustomDialog()">知道了</button>'
+        );
       } else {
         // 新上传档案：直接公开
         item.status = 'approved';
-        showAlert("✅ 已通过审核，资料现在展示给所有人了！");
+        showAlertHtml(
+          '✅ 已通过审核，资料现在展示给所有人了！<br><br>📋 点下方按钮复制通知文案，<b>粘贴到微信群</b>即可通知大家（企业微信群会自动 @所有人）。',
+          '审核通过',
+          '<button class="btn btn-outline" style="flex:1;" onclick="copyGuestNotice(' + item.id + ')">📋 复制通知文案</button>' +
+          '<button class="btn btn-primary" style="flex:1;" onclick="closeCustomDialog()">知道了</button>'
+        );
       }
       await saveToGitHub();
       renderCards();
@@ -2849,14 +2860,54 @@
     }
   }
 
+  // 复制新嘉宾通知文案（用于粘贴到微信群发布）
+  function copyGuestNotice(profileId) {
+    const p = appState.profiles.find(x => String(x.id) === String(profileId));
+    if (!p) return;
+    const name = p['姓名'] || '神秘嘉宾';
+    const gender = p['性别'] || '？';
+    const city = p['国家/城市'] || '未知城市';
+    const age = p['年龄'] || '？';
+    const job = p['职业/学生'] || '';
+    const intro = (p['一句话介绍'] || '').trim();
+    let text = '🎉 新嘉宾加入「全球找对象」！\n';
+    text += '👤 ' + name + '（' + gender + '）· ' + city + ' · ' + age + '岁';
+    if (job) text += ' · ' + job;
+    text += '\n💬 “' + (intro || '暂无介绍') + '”';
+    text += '\n\n🔗 网站：https://cpdd-1314.github.io/';
+    const done = function() {
+      const btn = document.querySelector('#customDialog button[onclick*="copyGuestNotice"]');
+      if (btn) btn.textContent = '✅ 已复制，去群里粘贴吧！';
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done).catch(function() { fallbackCopyText(text, done); });
+    } else {
+      fallbackCopyText(text, done);
+    }
+  }
+  function fallbackCopyText(text, done) {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      done();
+    } catch (e) {
+      showAlert('❌ 复制失败，请手动复制文案');
+    }
+  }
+
   function toggleModal(id, show) {
     const modal = document.getElementById(id);
     modal.style.display = show ? 'flex' : 'none';
     if (!show && id === 'detailModal') {
       const video = modal.querySelector('video');
       if (video) video.pause();
-    }
-    if (!show && id === 'formModal') {
+    }    if (!show && id === 'formModal') {
       // 关闭编辑表单时清理编辑状态，避免下次误入编辑模式
       const editingInput = document.getElementById('editingProfileId');
       if (editingInput) editingInput.value = '';
