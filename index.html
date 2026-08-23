@@ -896,8 +896,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '4.9.2';
+  const APP_VERSION = '4.9.3';
   const CHANGELOG = [
+    { v: '4.9.3', d: '2026-08-23', note: '翻页跳转改为直接显示顶部，取消平滑滚动动画', type: 'fix' },
     { v: '4.9.2', d: '2026-08-23', note: '修复视频转码声音延迟：改用同步时钟捕获音频，音画对齐', type: 'fix' },
     { v: '4.9.1', d: '2026-08-23', note: '刷新保持原位：刷新后回到之前的滚动位置和页码/搜索/筛选', type: 'fix' },
     { v: '4.9.0', d: '2026-08-23', note: '主照片功能：编辑档案可任选一张设为封面；可随时追加更多照片/视频', type: 'feature' },
@@ -2189,11 +2190,11 @@
     if (page < 1 || page > maxPage) return;
     currentPage = page;
     renderCards();
-    // 翻页后平滑滚回列表顶部，方便直接查看新一页内容
+    // 翻页后直接跳回列表顶部（无动画，立即显示新一页最上面）
     const topEl = document.querySelector('.toolbar') || document.getElementById('cardsContainer');
     if (topEl) {
       const y = topEl.getBoundingClientRect().top + window.pageYOffset - 8;
-      window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+      window.scrollTo(0, Math.max(0, y));
     }
   }
 
