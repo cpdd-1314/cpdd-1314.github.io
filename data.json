@@ -897,6 +897,11 @@
       "code": "ST002",
       "name": "瑾瑜",
       "password": "714956"
+    },
+    {
+      "code": "ST003",
+      "name": "j",
+      "password": "j"
     }
   ],
   "nextProfileNo": 34,
@@ -905,5 +910,13 @@
   "hiddenVersions": [
     "4.3.3",
     "4.3.2"
+  ],
+  "adminLogs": [
+    {
+      "time": 1787526451024,
+      "actor": "超级管理员",
+      "op": "管理员",
+      "desc": "创建内部管理员「j」（ST003）"
+    }
   ]
 }
