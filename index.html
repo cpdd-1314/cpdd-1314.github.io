@@ -434,6 +434,7 @@
       <span class="staff-badge" id="staffBadge">👤 内部管理员 <span style="cursor:pointer; text-decoration:underline;" onclick="logoutStaff()">退出</span></span>
 
       <button class="btn btn-outline super-only" onclick="toggleModal('staffAdminModal', true)">👥 内部管理员</button>
+      <button class="btn btn-outline super-only" onclick="openAdminLogs()">📋 操作记录</button>
       <button class="btn btn-outline admin-only" onclick="toggleModal('wechatConfigModal', true)">⚙️ 修改微信名片</button>
       <button class="btn btn-outline admin-only" onclick="logoutAdmin()">🚪 退出管理</button>
       <button class="btn btn-primary admin-only" onclick="openAddForm('admin')">➕ 添加新嘉宾</button>
@@ -505,6 +506,16 @@
       </div>
       <button type="submit" class="btn btn-primary" style="width:100%;" id="verAdminBtn">保存设置</button>
     </form>
+  </div>
+</div>
+
+<!-- 管理员操作记录弹窗（仅超级管理员可查看） -->
+<div class="modal-overlay" id="adminLogsModal" onclick="handleOverlayClick(event, 'adminLogsModal')">
+  <div class="modal" style="max-width:540px;">
+    <button class="close-btn" onclick="toggleModal('adminLogsModal', false)">×</button>
+    <h2 style="font-size:18px; margin-bottom:4px;">📋 管理员操作记录</h2>
+    <div style="font-size:11px; color:var(--text-muted); margin-bottom:10px;">审核、编辑、删除、隐藏、置顶、位置、微信配置等管理操作自动留档（最多保留 200 条，仅超级管理员可见）</div>
+    <div id="adminLogsList" style="max-height:60vh; overflow-y:auto;"></div>
   </div>
 </div>
 
@@ -908,8 +919,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '4.13.0';
+  const APP_VERSION = '4.14.0';
   const CHANGELOG = [
+    { v: '4.14.0', d: '2026-08-24', note: '管理员操作记录：审核/编辑/删除/隐藏/置顶/位置/配置等全部留档，仅超级管理员可查看', type: 'feature' },
     { v: '4.13.0', d: '2026-08-24', note: '加微信/进微信群弹窗始终置顶显示；内部管理员可修改微信名片与群二维码', type: 'feature' },
     { v: '4.12.0', d: '2026-08-23', note: '详情页右上角新增「转发」按钮，一键复制直达链接分享嘉宾', type: 'feature' },
     { v: '4.11.0', d: '2026-08-23', note: '通知链接直达：链接打开即自动弹出该嘉宾资料，可分享地址栏直达链接', type: 'feature' },
@@ -1040,6 +1052,7 @@
       // 留空 = 清空手动版本号，恢复自动跟随代码里的最新版本
       appState.version = ver || '';
       appState.hideVersionInfo = document.getElementById('verAdminHide').checked;
+      addAdminLog('版本', '更新版本设置' + (ver ? '（显示 v' + ver + '）' : '（恢复自动版本）') + (appState.hideVersionInfo ? '，对访客隐藏版本' : ''));
       await saveToGitHub();
       updateVersionWidget();
       toggleModal('versionAdminModal', false);
@@ -1051,6 +1064,44 @@
     } finally {
       btn.disabled = false;
     }
+  }
+
+  // ===== 管理员操作记录（仅超级管理员可查看）=====
+  // 记录一条管理操作日志：自动带上操作者身份与时间，持久化到 data.json
+  function addAdminLog(op, desc) {
+    try {
+      const ident = getCurrentIdentity();
+      let actor = '管理员';
+      if (ident) {
+        actor = ident.type === 'super' ? '超级管理员' : (ident.name || '内部管理员');
+      }
+      if (!Array.isArray(appState.adminLogs)) appState.adminLogs = [];
+      appState.adminLogs.unshift({ time: Date.now(), actor, op, desc });
+      if (appState.adminLogs.length > 200) appState.adminLogs.length = 200;
+    } catch (e) {}
+  }
+
+  // 打开操作记录弹窗（仅超级管理员）
+  function openAdminLogs() {
+    if (!isSuper()) return;
+    const list = document.getElementById('adminLogsList');
+    const logs = appState.adminLogs || [];
+    if (logs.length === 0) {
+      list.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:30px;">暂无操作记录</div>';
+    } else {
+      list.innerHTML = logs.map(function(l) {
+        const t = new Date(l.time);
+        const pad = n => String(n).padStart(2, '0');
+        const ts = t.getFullYear() + '-' + pad(t.getMonth() + 1) + '-' + pad(t.getDate()) +
+          ' ' + pad(t.getHours()) + ':' + pad(t.getMinutes()) + ':' + pad(t.getSeconds());
+        return '<div style="display:flex; gap:8px; padding:8px 0; border-bottom:1px dashed var(--border); align-items:flex-start;">' +
+          '<span style="flex-shrink:0; background:var(--primary); color:#fff; font-size:10px; padding:2px 8px; border-radius:10px; height:fit-content; white-space:nowrap;">' + l.op + '</span>' +
+          '<div style="flex:1; font-size:12px; line-height:1.5;">' + l.desc +
+          '<div style="font-size:10px; color:var(--text-muted); margin-top:2px;">' + ts + ' · ' + l.actor + '</div></div>' +
+          '</div>';
+      }).join('');
+    }
+    toggleModal('adminLogsModal', true);
   }
 
   // 页面加载：更新提示每个浏览器只显示一次（记录在本机；版本升级后再次显示）
@@ -1099,7 +1150,8 @@
     nextProfileNo: 1,    // 档案编号计数器
     version: '',         // 管理员自定义版本号（空 = 使用代码内置版本）
     hideVersionInfo: false,  // 管理员是否对访客隐藏版本信息
-    hiddenVersions: []   // 管理员隐藏的更新记录版本号列表
+    hiddenVersions: [],  // 管理员隐藏的更新记录版本号列表
+    adminLogs: []        // 管理员操作记录（仅超级管理员可查看）
   };
 
   // 内置示例兜底：当取不到仓库 data.json（本地预览 / 分享链接 / 直接双击打开）时，
@@ -1680,6 +1732,7 @@
         }
         target.updatedAt = now.getTime();
         target.uploadDate = target.uploadDate || `${year}-${month}-${day}`;
+        addAdminLog('编辑', '编辑「' + (target['姓名'] || '未填') + '」的资料');
 
         btn.textContent = '正在同步到仓库...';
         await saveToGitHub();
@@ -1743,6 +1796,9 @@
         // 第一张自动成为主照片（封面），之后可在编辑时更换
         if (mediaList.length && !mediaList.some(m => m && m.isMain)) mediaList[0].isMain = true;
         appState.profiles.unshift(newProfile);
+        if (newProfile.status === 'approved') {
+          addAdminLog('新增', '添加新嘉宾「' + (newProfile['姓名'] || '未填') + '」');
+        }
 
         btn.textContent = '正在同步到仓库...';
         await saveToGitHub();
@@ -1808,6 +1864,8 @@
         const uploaded = await uploadToRepo(finalFile);
         appState.wechat.groupQr = uploaded.url;
       }
+
+      addAdminLog('配置', '更新微信名片' + (groupInput && groupInput.files.length > 0 ? '及群二维码' : ''));
 
       await saveToGitHub();
       updateWechatUI();
@@ -1893,6 +1951,7 @@
         if (typeof data.version === 'string') appState.version = data.version;
         if (typeof data.hideVersionInfo === 'boolean') appState.hideVersionInfo = data.hideVersionInfo;
         if (Array.isArray(data.hiddenVersions)) appState.hiddenVersions = data.hiddenVersions;
+        if (Array.isArray(data.adminLogs)) appState.adminLogs = data.adminLogs;
         loaded = true;
       }
     } catch (err) {
@@ -2044,6 +2103,7 @@
       const code = 'ST' + String(maxNo + 1).padStart(3, '0');
       appState.staffs = appState.staffs || [];
       appState.staffs.push({ code, name, password });
+      addAdminLog('管理员', '创建内部管理员「' + name + '」（' + code + '）');
       await saveToGitHub();
       renderStaffList();
       document.getElementById('staffNameNew').value = '';
@@ -2057,7 +2117,9 @@
   }
   async function deleteStaff(code) {
     confirmAction("确定删除该内部管理员吗？", async () => {
+      const s = (appState.staffs || []).find(x => x.code === code);
       appState.staffs = (appState.staffs || []).filter(s => s.code !== code);
+      addAdminLog('管理员', '删除内部管理员「' + ((s && s.name) || code) + '」（' + code + '）');
       try {
         await saveToGitHub();
         renderStaffList();
@@ -2805,10 +2867,11 @@
     }
 
     try {
+      const swapped = M && M.id !== C.id;
+      addAdminLog('位置', (C['姓名'] || '未填') + (swapped ? ' 与 ' + (M['姓名'] || '对方') + ' 交换位置（→第' + order + '位）' : ' 放置到第' + order + '位'));
       await saveToGitHub();
       renderCards();
       toggleModal('positionModal', false);
-      const swapped = M && M.id !== C.id;
       showAlert('✅ ' + (C['姓名'] || '该嘉宾') + (swapped ? ' 已与 ' + (M['姓名'] || '对方') + ' 交换位置，现在位于' : ' 已放置到') + posText(order) + '！');
     } catch (err) {
       showAlert('❌ 同步失败：' + err.message);
@@ -2821,6 +2884,7 @@
     if (!item) return;
     confirmAction('确定取消该嘉宾的自定义位置，恢复默认排序吗？', async () => {
       delete item.sortOrder;
+      addAdminLog('位置', '取消「' + (item['姓名'] || '未填') + '」的自定义位置，恢复默认排序');
       try {
         await saveToGitHub();
         renderCards();
@@ -2836,6 +2900,7 @@
     const item = appState.profiles.find(p => p.id === id);
     if (!item) return;
     item.isPinned = !item.isPinned;
+    addAdminLog('置顶', (item.isPinned ? '置顶' : '取消置顶') + '「' + (item['姓名'] || '未填') + '」');
     try {
       await saveToGitHub();
       renderCards();
@@ -2850,6 +2915,7 @@
     const item = appState.profiles.find(p => p.id === id);
     if (!item) return;
     item.isHidden = !item.isHidden;
+    addAdminLog('隐藏', (item.isHidden ? '隐藏档案' : '恢复显示') + '「' + (item['姓名'] || '未填') + '」');
     try {
       await saveToGitHub();
       renderCards();
@@ -2861,7 +2927,9 @@
 
   function deleteProfile(id) {
     confirmAction("确定要删除这份嘉宾档案吗？", async () => {
+      const victim = appState.profiles.find(p => p.id === id);
       appState.profiles = appState.profiles.filter(p => p.id !== id);
+      addAdminLog('删除', '删除档案「' + ((victim && victim['姓名']) || '未填') + '」');
       try {
         await saveToGitHub();
         renderCards();
@@ -2888,6 +2956,7 @@
           orig.updatedAt = Date.now();
         }
         appState.profiles = appState.profiles.filter(p => p.id !== item.id);
+        addAdminLog('审核', '通过「' + (orig ? orig['姓名'] : item['姓名']) + '」的修改申请，档案已更新');
         showAlertHtml(
           '✅ 已通过审核，档案已更新为最新内容！<br><br>📋 点下方按钮复制更新文案，<b>粘贴到微信群</b>通知大家吧。',
           '审核通过',
@@ -2897,6 +2966,7 @@
       } else {
         // 新上传档案：直接公开
         item.status = 'approved';
+        addAdminLog('审核', '通过新嘉宾「' + (item['姓名'] || '未填') + '」的审核，已公开显示');
         showAlertHtml(
           '✅ 已通过审核，资料现在展示给所有人了！<br><br>📋 点下方按钮复制通知文案，<b>粘贴到微信群</b>通知大家吧。',
           '审核通过',
