@@ -896,8 +896,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '4.10.0';
+  const APP_VERSION = '4.10.1';
   const CHANGELOG = [
+    { v: '4.10.1', d: '2026-08-23', note: '通知文案调整：仅保留微信群一键复制通知', type: 'fix' },
     { v: '4.10.0', d: '2026-08-23', note: '新嘉宾通知：企业微信群自动@所有人推送 + 审核通过一键复制通知文案', type: 'feature' },
     { v: '4.9.3', d: '2026-08-23', note: '翻页跳转改为直接显示顶部，取消平滑滚动动画', type: 'fix' },
     { v: '4.9.2', d: '2026-08-23', note: '修复视频转码声音延迟：改用同步时钟捕获音频，音画对齐', type: 'fix' },
@@ -2837,7 +2838,7 @@
         }
         appState.profiles = appState.profiles.filter(p => p.id !== item.id);
         showAlertHtml(
-          '✅ 已通过审核，档案已更新为最新内容！<br><br>📋 点下方按钮复制更新文案，<b>粘贴到微信群</b>即可通知大家（企业微信群会自动 @所有人）。',
+          '✅ 已通过审核，档案已更新为最新内容！<br><br>📋 点下方按钮复制更新文案，<b>粘贴到微信群</b>通知大家吧。',
           '审核通过',
           '<button class="btn btn-outline" style="flex:1;" onclick="copyGuestNotice(' + (item.originalId || item.id) + ')">📋 复制通知文案</button>' +
           '<button class="btn btn-primary" style="flex:1;" onclick="closeCustomDialog()">知道了</button>'
@@ -2846,7 +2847,7 @@
         // 新上传档案：直接公开
         item.status = 'approved';
         showAlertHtml(
-          '✅ 已通过审核，资料现在展示给所有人了！<br><br>📋 点下方按钮复制通知文案，<b>粘贴到微信群</b>即可通知大家（企业微信群会自动 @所有人）。',
+          '✅ 已通过审核，资料现在展示给所有人了！<br><br>📋 点下方按钮复制通知文案，<b>粘贴到微信群</b>通知大家吧。',
           '审核通过',
           '<button class="btn btn-outline" style="flex:1;" onclick="copyGuestNotice(' + item.id + ')">📋 复制通知文案</button>' +
           '<button class="btn btn-primary" style="flex:1;" onclick="closeCustomDialog()">知道了</button>'
