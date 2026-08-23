@@ -209,6 +209,15 @@
     .close-btn {
       position: absolute; top: 14px; right: 14px; font-size: 22px; cursor: pointer; border: none; background: none; color: var(--text-muted); z-index: 10;
     }
+    /* 详情右上角「转发」按钮：复制直达链接 */
+    .share-btn {
+      position: absolute; top: 13px; right: 52px; z-index: 10;
+      border: 1px solid var(--border); background: var(--bg); color: var(--primary);
+      font-size: 12px; padding: 3px 11px; border-radius: 999px; cursor: pointer;
+      transition: background .15s ease, color .15s ease;
+    }
+    .share-btn:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .share-btn.copied { background: #16a34a; color: #fff; border-color: #16a34a; }
 
     .media-gallery { margin-bottom: 16px; }
     .media-viewer {
@@ -555,6 +564,7 @@
 <div class="modal-overlay" id="detailModal" onclick="handleOverlayClick(event, 'detailModal')">
   <div class="modal">
     <button class="close-btn" onclick="toggleModal('detailModal', false)">×</button>
+    <button class="share-btn" id="detailShareBtn" onclick="shareGuestLink()" title="复制直达链接，发给朋友直接看到TA的资料">🔗 转发</button>
     <div id="modalBody"></div>
   </div>
 </div>
@@ -896,8 +906,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '4.11.0';
+  const APP_VERSION = '4.12.0';
   const CHANGELOG = [
+    { v: '4.12.0', d: '2026-08-23', note: '详情页右上角新增「转发」按钮，一键复制直达链接分享嘉宾', type: 'feature' },
     { v: '4.11.0', d: '2026-08-23', note: '通知链接直达：链接打开即自动弹出该嘉宾资料，可分享地址栏直达链接', type: 'feature' },
     { v: '4.10.2', d: '2026-08-23', note: '复制通知文案增加更多嘉宾信息（身高/体重/星座/爱好/性格等）', type: 'fix' },
     { v: '4.10.1', d: '2026-08-23', note: '通知文案调整：仅保留微信群一键复制通知', type: 'fix' },
@@ -1828,6 +1839,7 @@
 
   let currentGender = '全部';
   let currentDetailMediaList = [];
+  let currentDetailId = null;   // 当前详情弹窗打开的档案 id（转发链接用）
 
   // ===== 刷新状态记忆：刷新后回到刚才的滚动位置与页面（页码/搜索/筛选/排序）=====
   let __saveTimer = null;
@@ -2349,10 +2361,30 @@
     savePageState();
   }
 
+  // 转发按钮：复制当前嘉宾的直达链接（朋友打开即弹出该嘉宾资料）
+  function shareGuestLink() {
+    if (!currentDetailId) return;
+    const link = location.origin + location.pathname + '?guest=' + currentDetailId;
+    const btn = document.getElementById('detailShareBtn');
+    const done = function() {
+      if (btn) {
+        btn.textContent = '✅ 已复制，去发吧';
+        btn.classList.add('copied');
+        setTimeout(function() { btn.textContent = '🔗 转发'; btn.classList.remove('copied'); }, 2000);
+      }
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(link).then(done).catch(function() { fallbackCopyText(link, done); });
+    } else {
+      fallbackCopyText(link, done);
+    }
+  }
+
   function openDetail(id) {
     const item = appState.profiles.find(p => p.id === id);
     if (!item) return;
 
+    currentDetailId = item.id;
     currentDetailMediaList = item.mediaList || [];
 
     const modalBody = document.getElementById('modalBody');
