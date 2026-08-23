@@ -6,6 +6,40 @@
   },
   "profiles": [
     {
+      "id": 1787481710878,
+      "姓名": "佳佳",
+      "性别": "女",
+      "性取向": "同性恋",
+      "国家/城市": "意大利 米兰",
+      "生日": "2007-12",
+      "年龄": "18",
+      "身高": "168",
+      "体重": "60",
+      "星座": "射手座",
+      "职业/学生": "学生",
+      "性格": "情绪相对稳定，开朗",
+      "兴趣爱好": "听音乐",
+      "生活习惯": "不抽烟，不喝酒",
+      "要求": "性格开朗，爱笑，恋爱脑",
+      "一句话介绍": "",
+      "uploadDate": "2026-08-23",
+      "createdAt": 1787481710877,
+      "isPinned": false,
+      "uploaderType": "public",
+      "uploaderName": "网友",
+      "uploaderCode": "",
+      "fromPublic": true,
+      "status": "pending",
+      "profileNo": "A028",
+      "mediaList": [
+        {
+          "url": "./media/1787481710976_IMG_0313.jpg",
+          "type": "image/jpeg",
+          "isMain": true
+        }
+      ]
+    },
+    {
       "id": 1787479763617,
       "姓名": "佳佳",
       "性别": "男",
@@ -690,7 +724,7 @@
     }
   ],
   "staffs": [],
-  "nextProfileNo": 28,
+  "nextProfileNo": 29,
   "version": "",
   "hideVersionInfo": false,
   "hiddenVersions": [
