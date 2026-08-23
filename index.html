@@ -896,8 +896,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '4.10.2';
+  const APP_VERSION = '4.11.0';
   const CHANGELOG = [
+    { v: '4.11.0', d: '2026-08-23', note: '通知链接直达：链接打开即自动弹出该嘉宾资料，可分享地址栏直达链接', type: 'feature' },
     { v: '4.10.2', d: '2026-08-23', note: '复制通知文案增加更多嘉宾信息（身高/体重/星座/爱好/性格等）', type: 'fix' },
     { v: '4.10.1', d: '2026-08-23', note: '通知文案调整：仅保留微信群一键复制通知', type: 'fix' },
     { v: '4.10.0', d: '2026-08-23', note: '新嘉宾通知：企业微信群自动@所有人推送 + 审核通过一键复制通知文案', type: 'feature' },
@@ -1900,6 +1901,18 @@
       setTimeout(function() { window.scrollTo(0, sy); }, 350);
       setTimeout(function() { window.scrollTo(0, sy); }, 1000);
     }
+    // 直达链接：?guest=档案id（或编号）时自动打开该嘉宾资料
+    try {
+      const g = new URLSearchParams(location.search).get('guest');
+      if (g) {
+        const target = (appState.profiles || []).find(p =>
+          String(p.id) === String(g) ||
+          String(p.guestNo || '') === String(g) ||
+          String(p.profileNo || '') === String(g)
+        );
+        if (target) setTimeout(function() { openDetail(target.id); }, 120);
+      }
+    } catch (e) {}
   }
 
   function checkAdminState() {
@@ -2418,6 +2431,8 @@
     `;
 
     renderGallery();
+    // 同步 URL 直达参数，方便直接复制地址栏分享给朋友
+    try { history.replaceState(null, '', '?guest=' + item.id); } catch (e) {}
     toggleModal('detailModal', true);
   }
 
@@ -2897,7 +2912,7 @@
     if (habit) text += '🛏 生活：' + habit + '\n';
     if (requirement) text += '💍 要求：' + requirement + '\n';
     if (intro) text += '💬 “' + intro + '”\n';
-    text += '\n🔗 网站：https://cpdd-1314.github.io/';
+    text += '\n🔗 点开直达TA的资料：https://cpdd-1314.github.io/?guest=' + p.id;
     const done = function() {
       const btn = document.querySelector('#customDialog button[onclick*="copyGuestNotice"]');
       if (btn) btn.textContent = '✅ 已复制，去群里粘贴吧！';
@@ -2930,6 +2945,12 @@
     if (!show && id === 'detailModal') {
       const video = modal.querySelector('video');
       if (video) video.pause();
+      // 关闭详情时移除直达参数，恢复干净地址
+      try {
+        if (new URLSearchParams(location.search).has('guest')) {
+          history.replaceState(null, '', location.pathname + location.hash);
+        }
+      } catch (e) {}
     }    if (!show && id === 'formModal') {
       // 关闭编辑表单时清理编辑状态，避免下次误入编辑模式
       const editingInput = document.getElementById('editingProfileId');
