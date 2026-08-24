@@ -923,8 +923,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '4.14.1';
+  const APP_VERSION = '4.14.2';
   const CHANGELOG = [
+    { v: '4.14.2', d: '2026-08-24', note: '内部管理员也可编辑、隐藏所有嘉宾资料', type: 'fix' },
     { v: '4.14.1', d: '2026-08-24', note: '内部管理员登录支持「记住我」，下次打开自动免登录', type: 'fix' },
     { v: '4.14.0', d: '2026-08-24', note: '管理员操作记录：审核/编辑/删除/隐藏/置顶/位置/配置等全部留档，仅超级管理员可查看', type: 'feature' },
     { v: '4.13.0', d: '2026-08-24', note: '加微信/进微信群弹窗始终置顶显示；内部管理员可修改微信名片与群二维码', type: 'feature' },
@@ -2153,7 +2154,8 @@
       return profile.uploaderType === 'guest' && profile.uploaderCode === ident.code;
     }
     if (ident.type === 'staff') {
-      return profile.uploaderType === 'staff' && profile.uploaderCode === ident.code;
+      // 内部管理员可编辑、隐藏所有嘉宾档案
+      return true;
     }
     return false;
   }
@@ -2515,10 +2517,12 @@
         <button class="btn btn-outline" style="flex:1; color:var(--primary); border-color:#a5b4fc;" onclick="openEditForm(${item.id})">
           ✏️ 编辑档案
         </button>
-        ${isSuper() ? `
+        ${(isSuper() || isStaff()) ? `
         <button class="btn btn-outline" style="flex:1; color:${item.isHidden ? '#047857' : '#6b7280'}; border-color:${item.isHidden ? '#a7f3d0' : '#d1d5db'};" onclick="toggleHideProfile(${item.id})">
           ${item.isHidden ? '👁️ 取消隐藏' : '🙈 隐藏档案'}
         </button>
+        ` : ''}
+        ${isSuper() ? `
         <button class="btn btn-outline" style="flex:1; color:${item.isPinned ? '#4b5563' : 'var(--pin-gold)'}; border-color:${item.isPinned ? '#d1d5db' : 'var(--pin-gold)'};" onclick="togglePinProfile(${item.id})">
           ${item.isPinned ? '取消置顶' : '📌 置顶此档案'}
         </button>
