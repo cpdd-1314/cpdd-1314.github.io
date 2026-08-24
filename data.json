@@ -163,7 +163,7 @@
       "uploaderName": "网友",
       "uploaderCode": "",
       "fromPublic": true,
-      "status": "pending",
+      "status": "approved",
       "profileNo": "A027",
       "mediaList": []
     },
@@ -843,6 +843,12 @@
     "4.3.2"
   ],
   "adminLogs": [
+    {
+      "time": 1787577543259,
+      "actor": "小安不受束缚",
+      "op": "审核",
+      "desc": "通过新嘉宾「佳佳」的审核，已公开显示"
+    },
     {
       "time": 1787577535358,
       "actor": "小安不受束缚",
