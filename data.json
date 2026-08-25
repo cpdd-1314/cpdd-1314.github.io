@@ -29,7 +29,7 @@
       "uploaderName": "网友",
       "uploaderCode": "",
       "fromPublic": true,
-      "status": "pending",
+      "status": "approved",
       "profileNo": "A035",
       "mediaList": [
         {
@@ -772,6 +772,12 @@
     "4.3.2"
   ],
   "adminLogs": [
+    {
+      "time": 1787644304758,
+      "actor": "超级管理员",
+      "op": "审核",
+      "desc": "通过新嘉宾「金可馨」的审核，已公开显示"
+    },
     {
       "time": 1787610779587,
       "actor": "小安不受束缚",
