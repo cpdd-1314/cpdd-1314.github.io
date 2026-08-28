@@ -421,9 +421,15 @@
     .form-group label { font-size: 12px; font-weight: 600; color: var(--text-muted); }
     .form-group input, .form-group textarea, .form-group select {
       padding: 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; outline: none; font-family: inherit;
+      width: 100%; box-sizing: border-box;
     }
     .form-group textarea { height: 45px; resize: vertical; }
     .file-hint { font-size: 11px; color: var(--text-muted); }
+    /* 窄屏（手机）表单单列布局，避免字段挤到右边看不见 */
+    @media (max-width: 600px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .form-group.full { grid-column: span 1; }
+    }
 
     .wechat-modal-content { text-align: center; padding: 4px 0; }
     .original-qr-img {
@@ -1135,8 +1141,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.0.4';
+  const APP_VERSION = '6.0.5';
   const CHANGELOG = [
+    { v: '6.0.5', d: '2026-08-29', note: '手机端表单优化：窄屏改为单列布局，字段不再挤到右边', type: 'fix' },
     { v: '6.0.4', d: '2026-08-28', note: '点「我的」「收件箱」不再弹窗登录，直接显示页面内的登录提示', type: 'fix' },
     { v: '6.0.3', d: '2026-08-28', note: '版权/版本信息和使用条款移到「我的」页底部', type: 'fix' },
     { v: '6.0.2', d: '2026-08-28', note: '上传入口移到底部➕：可选择登录提交或访客提交', type: 'fix' },
