@@ -208,6 +208,16 @@
       padding: 24px;
       position: relative;
     }
+    /* 嘉宾资料详情：全屏展示 */
+    #detailModal { padding: 0; }
+    #detailModal .modal {
+      width: 100%; height: 100%; max-width: 100%; max-height: 100%;
+      border-radius: 0; overflow-y: auto; padding: 28px 24px 60px;
+    }
+    #detailModal .media-viewer { height: min(44vh, 520px); }
+    /* 详情操作栏（点赞/收藏/留言）按钮 */
+    .action-bar .btn { padding: 8px 6px; }
+    .user-chip { background: var(--primary); color: #fff; font-size: 12px; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
     .close-btn {
       position: absolute; top: 14px; right: 14px; font-size: 22px; cursor: pointer; border: none; background: none; color: var(--text-muted); z-index: 10;
     }
@@ -433,6 +443,10 @@
 
       <span class="staff-badge" id="staffBadge">👤 内部管理员 <span style="cursor:pointer; text-decoration:underline;" onclick="logoutStaff()">退出</span></span>
 
+      <span id="userArea" style="display:inline-flex; gap:6px; align-items:center; flex-wrap:wrap;">
+        <button class="btn btn-outline" id="userLoginBtn" style="font-size:12px; padding:6px 12px;" onclick="toggleModal('userModal', true)">👤 登录 / 注册</button>
+      </span>
+
       <button class="btn btn-outline super-only" onclick="toggleModal('staffAdminModal', true)">👥 内部管理员</button>
       <button class="btn btn-outline super-only" onclick="openAdminLogs()">📋 操作记录</button>
       <button class="btn btn-outline admin-only" onclick="toggleModal('wechatConfigModal', true)">⚙️ 修改微信名片</button>
@@ -634,6 +648,54 @@
       </label>
       <button type="submit" class="btn btn-primary" style="width:100%;">进入内部管理</button>
     </form>
+  </div>
+</div>
+
+<!-- 用户登录/注册弹窗 -->
+<div class="modal-overlay" id="userModal" onclick="handleOverlayClick(event, 'userModal')">
+  <div class="modal" style="max-width:380px;">
+    <button class="close-btn" onclick="toggleModal('userModal', false)">×</button>
+    <h2 style="font-size:18px; margin-bottom:4px;">👤 用户登录 / 注册</h2>
+    <div style="font-size:11px; color:var(--text-muted); margin-bottom:12px;">注册后可留言、点赞、收藏嘉宾资料</div>
+    <div style="display:flex; gap:8px; margin-bottom:12px;">
+      <button type="button" id="userTabLogin" class="btn btn-primary" style="flex:1; padding:6px;" onclick="switchUserTab('login')">登录</button>
+      <button type="button" id="userTabReg" class="btn btn-outline" style="flex:1; padding:6px;" onclick="switchUserTab('reg')">注册</button>
+    </div>
+    <form onsubmit="handleUserLogin(event)" id="userFormLogin">
+      <div class="form-group" style="margin-bottom:10px;">
+        <label>昵称</label>
+        <input type="text" id="userNameInput" placeholder="你的昵称">
+      </div>
+      <div class="form-group" style="margin-bottom:14px;">
+        <label>密码</label>
+        <input type="password" id="userPwdInput" placeholder="登录密码">
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%;">登 录</button>
+    </form>
+    <form onsubmit="handleUserRegister(event)" id="userFormReg" style="display:none;">
+      <div class="form-group" style="margin-bottom:10px;">
+        <label>昵称</label>
+        <input type="text" id="regNameInput" placeholder="取一个昵称（用于留言/点赞显示）">
+      </div>
+      <div class="form-group" style="margin-bottom:10px;">
+        <label>密码</label>
+        <input type="password" id="regPwdInput" placeholder="设置登录密码（至少 4 位）">
+      </div>
+      <div class="form-group" style="margin-bottom:14px;">
+        <label>确认密码</label>
+        <input type="password" id="regPwd2Input" placeholder="再输一遍密码">
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%;">注册并登录</button>
+    </form>
+  </div>
+</div>
+
+<!-- 我的收藏弹窗 -->
+<div class="modal-overlay" id="favoritesModal" onclick="handleOverlayClick(event, 'favoritesModal')">
+  <div class="modal" style="max-width:560px;">
+    <button class="close-btn" onclick="toggleModal('favoritesModal', false)">×</button>
+    <h2 style="font-size:18px; margin-bottom:10px;">❤️ 我的收藏</h2>
+    <div id="favoritesList" style="max-height:60vh; overflow-y:auto;"></div>
   </div>
 </div>
 
@@ -923,8 +985,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '4.14.2';
+  const APP_VERSION = '5.0.0';
   const CHANGELOG = [
+    { v: '5.0.0', d: '2026-08-28', note: '用户系统上线：注册登录、嘉宾留言、点赞收藏、资料详情全屏展示', type: 'major' },
     { v: '4.14.2', d: '2026-08-24', note: '内部管理员也可编辑、隐藏所有嘉宾资料', type: 'fix' },
     { v: '4.14.1', d: '2026-08-24', note: '内部管理员登录支持「记住我」，下次打开自动免登录', type: 'fix' },
     { v: '4.14.0', d: '2026-08-24', note: '管理员操作记录：审核/编辑/删除/隐藏/置顶/位置/配置等全部留档，仅超级管理员可查看', type: 'feature' },
@@ -1157,7 +1220,8 @@
     version: '',         // 管理员自定义版本号（空 = 使用代码内置版本）
     hideVersionInfo: false,  // 管理员是否对访客隐藏版本信息
     hiddenVersions: [],  // 管理员隐藏的更新记录版本号列表
-    adminLogs: []        // 管理员操作记录（仅超级管理员可查看）
+    adminLogs: [],       // 管理员操作记录（仅超级管理员可查看）
+    users: []            // 注册用户列表 [{id, name, password, createdAt, favorites:[]}]
   };
 
   // 内置示例兜底：当取不到仓库 data.json（本地预览 / 分享链接 / 直接双击打开）时，
@@ -1958,6 +2022,7 @@
         if (typeof data.hideVersionInfo === 'boolean') appState.hideVersionInfo = data.hideVersionInfo;
         if (Array.isArray(data.hiddenVersions)) appState.hiddenVersions = data.hiddenVersions;
         if (Array.isArray(data.adminLogs)) appState.adminLogs = data.adminLogs;
+        if (Array.isArray(data.users)) appState.users = data.users;
         loaded = true;
       }
     } catch (err) {
@@ -1974,6 +2039,7 @@
     renderCards();
     updateVersionWidget();
     refreshIdentityUI();
+    refreshUserUI();
     // 恢复滚动位置（图片懒加载会让高度变化，分几次校正到位）
     const sy = window.__restoreScrollY || 0;
     if (sy > 0) {
@@ -2022,6 +2088,129 @@
   function isStaff() { return (getCurrentIdentity() || {}).type === 'staff'; }
   function isGuestIdentity() { return false; }  // 已移除凭证嘉宾身份，保留函数避免报错
 
+  // ===== 用户系统（注册/登录 + 留言/点赞/收藏）=====
+  function escapeHtml(str) {
+    return String(str == null ? '' : str).replace(/[&<>"']/g, function(c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  // 当前登录用户存 localStorage：{id, name}
+  function getCurrentUser() {
+    try { return JSON.parse(localStorage.getItem('current_user') || 'null'); }
+    catch (e) { return null; }
+  }
+  function setCurrentUser(user) {
+    if (user) localStorage.setItem('current_user', JSON.stringify({ id: user.id, name: user.name }));
+    else localStorage.removeItem('current_user');
+  }
+
+  // 刷新 header 用户区（登录/注册按钮 或 收藏+昵称+退出）
+  function refreshUserUI() {
+    const area = document.getElementById('userArea');
+    if (!area) return;
+    const user = getCurrentUser();
+    if (!user) {
+      area.innerHTML = '<button class="btn btn-outline" style="font-size:12px; padding:6px 12px;" onclick="toggleModal(\'userModal\', true)">👤 登录 / 注册</button>';
+      return;
+    }
+    area.innerHTML =
+      '<button class="btn btn-outline" style="font-size:12px; padding:6px 10px;" onclick="openMyFavorites()">❤️ 我的收藏</button>' +
+      '<span style="background:var(--primary); color:#fff; font-size:12px; padding:4px 10px; border-radius:999px; white-space:nowrap;">👤 ' + escapeHtml(user.name) + '</span>' +
+      '<button class="btn btn-outline" style="font-size:12px; padding:6px 10px;" onclick="logoutUser()">退出</button>';
+  }
+
+  // 用户弹窗 Tab 切换
+  function switchUserTab(tab) {
+    const isLogin = tab === 'login';
+    document.getElementById('userFormLogin').style.display = isLogin ? 'block' : 'none';
+    document.getElementById('userFormReg').style.display = isLogin ? 'none' : 'block';
+    document.getElementById('userTabLogin').className = isLogin ? 'btn btn-primary' : 'btn btn-outline';
+    document.getElementById('userTabReg').className = isLogin ? 'btn btn-outline' : 'btn btn-primary';
+  }
+
+  // 注册并登录
+  async function handleUserRegister(e) {
+    e.preventDefault();
+    const name = document.getElementById('regNameInput').value.trim();
+    const pwd = document.getElementById('regPwdInput').value;
+    const pwd2 = document.getElementById('regPwd2Input').value;
+    if (!name) { showAlert('请填写昵称'); return; }
+    if (name.length > 16) { showAlert('昵称最长 16 个字'); return; }
+    if (pwd.length < 4) { showAlert('密码至少 4 位'); return; }
+    if (pwd !== pwd2) { showAlert('两次密码不一致'); return; }
+    if ((appState.users || []).some(u => u.name === name)) { showAlert('昵称「' + name + '」已被注册，换一个吧'); return; }
+    const user = { id: Date.now(), name: name, password: pwd, createdAt: Date.now(), favorites: [] };
+    if (!Array.isArray(appState.users)) appState.users = [];
+    appState.users.push(user);
+    try {
+      await saveToGitHub();
+      setCurrentUser(user);
+      refreshUserUI();
+      toggleModal('userModal', false);
+      document.getElementById('regNameInput').value = '';
+      document.getElementById('regPwdInput').value = '';
+      document.getElementById('regPwd2Input').value = '';
+      showAlert('✅ 注册成功，已自动登录「' + name + '」！现在可以留言、点赞、收藏啦。');
+    } catch (err) {
+      appState.users = appState.users.filter(u => u.id !== user.id);
+      showAlert('❌ 注册失败：' + err.message);
+    }
+  }
+
+  // 登录
+  async function handleUserLogin(e) {
+    e.preventDefault();
+    const name = document.getElementById('userNameInput').value.trim();
+    const pwd = document.getElementById('userPwdInput').value;
+    const user = (appState.users || []).find(u => u.name === name);
+    if (!user) { showAlert('❌ 没有昵称「' + name + '」，请先注册'); return; }
+    if (user.password !== pwd) { showAlert('❌ 密码错误'); return; }
+    setCurrentUser(user);
+    refreshUserUI();
+    toggleModal('userModal', false);
+    document.getElementById('userNameInput').value = '';
+    document.getElementById('userPwdInput').value = '';
+    showAlert('✅ 欢迎回来：' + name + '！');
+  }
+
+  // 退出登录
+  function logoutUser() {
+    setCurrentUser(null);
+    refreshUserUI();
+    showAlert('已退出登录。');
+  }
+
+  // 我的收藏弹窗
+  function openMyFavorites() {
+    const user = getCurrentUser();
+    if (!user) { showAlert('请先登录，才能查看收藏'); toggleModal('userModal', true); return; }
+    const freshUser = (appState.users || []).find(u => u.id === user.id) || user;
+    const ids = freshUser.favorites || [];
+    const items = ids.map(function(id) {
+      return appState.profiles.find(p => String(p.id) === String(id));
+    }).filter(Boolean);
+    const list = document.getElementById('favoritesList');
+    if (items.length === 0) {
+      list.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:30px; line-height:1.8;">还没有收藏任何嘉宾<br>打开嘉宾资料，点「⭐ 收藏」即可加入这里</div>';
+    } else {
+      list.innerHTML = items.map(function(p) {
+        const main = getMainMedia(p.mediaList || []);
+        const thumb = main
+          ? (main.type && main.type.startsWith('video')
+              ? '<video src="' + main.url + '" muted preload="metadata" style="width:100%; height:100%; object-fit:cover;"></video>'
+              : '<img src="' + main.url + '" loading="lazy" decoding="async" style="width:100%; height:100%; object-fit:cover;">')
+          : '<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:16px;">📷</div>';
+        return '<div style="display:flex; align-items:center; gap:10px; padding:10px; border:1px solid var(--border); border-radius:10px; margin-bottom:8px; cursor:pointer;" onclick="toggleModal(\'favoritesModal\', false); openDetail(' + p.id + ');">' +
+          '<div style="width:46px; height:46px; border-radius:8px; overflow:hidden; flex-shrink:0; background:#000;">' + thumb + '</div>' +
+          '<div style="flex:1;">' +
+          '<div style="font-weight:700;">' + escapeHtml(p['姓名'] || '未填') + ' <small style="color:var(--text-muted); font-weight:normal;">(' + escapeHtml(p['性别'] || '-') + ')</small></div>' +
+          '<div style="font-size:12px; color:var(--text-muted);">' + escapeHtml(p['国家/城市'] || '') + ' · ' + escapeHtml(p['年龄'] || '') + '岁</div>' +
+          '</div><span style="color:var(--primary); font-size:18px;">›</span></div>';
+      }).join('');
+    }
+    toggleModal('favoritesModal', true);
+  }
+
   // 刷新所有身份相关 UI 状态
   function refreshIdentityUI() {
     const ident = getCurrentIdentity();
@@ -2042,6 +2231,143 @@
     if (typeof renderCards === 'function') renderCards();
     // 身份变化时同步刷新版本浮层可见性（管理员登录后即使被隐藏也显示）
     if (typeof updateVersionWidget === 'function') updateVersionWidget();
+  }
+
+  // ===== 点赞 / 收藏 / 留言（详情页）=====
+  function isLikedByMe(item) {
+    const user = getCurrentUser();
+    if (!user || !item) return false;
+    return (item.likes || []).some(function(uid) { return String(uid) === String(user.id); });
+  }
+  function isFavoritedByMe(item) {
+    const user = getCurrentUser();
+    if (!user || !item) return false;
+    const fresh = (appState.users || []).find(u => u.id === user.id);
+    return ((fresh ? (fresh.favorites || []) : [])).some(function(fid) { return String(fid) === String(item.id); });
+  }
+
+  // 渲染详情页操作栏（点赞/收藏/留言入口）
+  function renderActionBar(item) {
+    const bar = document.getElementById('actionBar');
+    if (!bar) return;
+    const liked = isLikedByMe(item);
+    const faved = isFavoritedByMe(item);
+    const likeCount = (item.likes || []).length;
+    const commentCount = (item.comments || []).length;
+    bar.innerHTML =
+      '<button class="btn ' + (liked ? 'btn-primary' : 'btn-outline') + '" style="flex:1; font-size:13px;" onclick="toggleLike(' + item.id + ')">' + (liked ? '👍 已赞' : '👍 点赞') + ' <span id="likeCount">' + likeCount + '</span></button>' +
+      '<button class="btn ' + (faved ? 'btn-primary' : 'btn-outline') + '" style="flex:1; font-size:13px;" onclick="toggleFavorite(' + item.id + ')">' + (faved ? '⭐ 已收藏' : '⭐ 收藏') + '</button>' +
+      '<button class="btn btn-outline" style="flex:1; font-size:13px;" onclick="scrollToComments()">💬 留言 ' + commentCount + '</button>';
+  }
+
+  async function toggleLike(id) {
+    const user = getCurrentUser();
+    if (!user) { showAlert('请先登录，才能点赞'); toggleModal('userModal', true); return; }
+    const item = appState.profiles.find(p => p.id === id);
+    if (!item) return;
+    if (!Array.isArray(item.likes)) item.likes = [];
+    const idx = item.likes.findIndex(function(uid) { return String(uid) === String(user.id); });
+    if (idx >= 0) item.likes.splice(idx, 1);
+    else item.likes.push(user.id);
+    try {
+      await saveToGitHub();
+      renderActionBar(item);
+    } catch (err) {
+      showAlert('❌ 同步失败：' + err.message);
+    }
+  }
+
+  async function toggleFavorite(id) {
+    const user = getCurrentUser();
+    if (!user) { showAlert('请先登录，才能收藏'); toggleModal('userModal', true); return; }
+    const item = appState.profiles.find(p => p.id === id);
+    if (!item) return;
+    const freshUser = (appState.users || []).find(u => u.id === user.id);
+    if (!freshUser) { showAlert('用户数据异常，请重新登录'); return; }
+    if (!Array.isArray(freshUser.favorites)) freshUser.favorites = [];
+    const idx = freshUser.favorites.findIndex(function(fid) { return String(fid) === String(id); });
+    if (idx >= 0) freshUser.favorites.splice(idx, 1);
+    else freshUser.favorites.push(id);
+    setCurrentUser(freshUser);
+    try {
+      await saveToGitHub();
+      renderActionBar(item);
+    } catch (err) {
+      showAlert('❌ 同步失败：' + err.message);
+    }
+  }
+
+  // 留言区渲染
+  function renderComments(item) {
+    const area = document.getElementById('commentsArea');
+    if (!area) return;
+    const comments = item.comments || [];
+    let html = '<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">' +
+      '<div class="modal-label" style="font-size:14px; font-weight:700; color:var(--text);">💬 留言（' + comments.length + '）</div></div>';
+    if (comments.length === 0) {
+      html += '<div style="color:var(--text-muted); font-size:12px; padding:6px 0 12px;">还没有留言，来抢沙发～</div>';
+    } else {
+      html += comments.map(function(c) {
+        const t = new Date(c.time);
+        const pad = function(n) { return String(n).padStart(2, '0'); };
+        const ts = t.getFullYear() + '-' + pad(t.getMonth() + 1) + '-' + pad(t.getDate()) + ' ' + pad(t.getHours()) + ':' + pad(t.getMinutes());
+        const cu = getCurrentUser();
+        const canDel = (cu && String(cu.id) === String(c.uid)) || isSuper() || isStaff();
+        return '<div style="padding:8px 0; border-bottom:1px dashed var(--border);">' +
+          '<div style="display:flex; align-items:center; gap:8px;">' +
+          '<span style="background:var(--primary); color:#fff; width:22px; height:22px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:11px; flex-shrink:0;">' + escapeHtml((c.name || '?').charAt(0)) + '</span>' +
+          '<span style="font-weight:700; font-size:12px;">' + escapeHtml(c.name) + '</span>' +
+          '<span style="font-size:10px; color:var(--text-muted);">' + ts + '</span>' +
+          (canDel ? '<span style="margin-left:auto;"><button class="btn btn-outline" style="font-size:10px; padding:2px 8px; color:var(--danger); border-color:#fca5a5;" onclick="deleteComment(' + item.id + ', ' + c.id + ')">删除</button></span>' : '') +
+          '</div>' +
+          '<div style="font-size:13px; margin:4px 0 0 30px; word-break:break-word; color:var(--text);">' + escapeHtml(c.text) + '</div></div>';
+      }).join('');
+    }
+    html += '<div style="display:flex; gap:8px; margin-top:10px;">' +
+      '<input type="text" id="commentInput" maxlength="200" placeholder="写下你的留言..." style="flex:1; padding:8px 10px; border:1px solid var(--border); border-radius:8px; font-size:13px; background:var(--bg); color:var(--text);">' +
+      '<button class="btn btn-primary" style="flex-shrink:0; padding:8px 14px;" onclick="submitComment(' + item.id + ')">发送</button></div>';
+    area.innerHTML = html;
+  }
+
+  async function submitComment(profileId) {
+    const user = getCurrentUser();
+    if (!user) { showAlert('请先登录，才能留言'); toggleModal('userModal', true); return; }
+    const input = document.getElementById('commentInput');
+    const text = (input ? input.value : '').trim();
+    if (!text) { showAlert('留言内容不能为空'); return; }
+    const item = appState.profiles.find(p => p.id === profileId);
+    if (!item) return;
+    if (!Array.isArray(item.comments)) item.comments = [];
+    item.comments.push({ id: Date.now() + Math.floor(Math.random() * 1000), uid: user.id, name: user.name, text: text, time: Date.now() });
+    try {
+      await saveToGitHub();
+      renderComments(item);
+      renderActionBar(item);
+    } catch (err) {
+      showAlert('❌ 同步失败：' + err.message);
+    }
+  }
+
+  function deleteComment(profileId, commentId) {
+    const item = appState.profiles.find(p => p.id === profileId);
+    if (!item) return;
+    confirmAction('确定删除这条留言吗？', async () => {
+      if (Array.isArray(item.comments)) item.comments = item.comments.filter(function(c) { return c.id !== commentId; });
+      try {
+        await saveToGitHub();
+        renderComments(item);
+        renderActionBar(item);
+      } catch (err) {
+        showAlert('❌ 同步失败：' + err.message);
+      }
+    });
+  }
+
+  function scrollToComments() {
+    const el = document.getElementById('commentsArea');
+    if (!el) return;
+    const m = document.getElementById('detailModal') ? document.getElementById('detailModal').querySelector('.modal') : null;
+    if (m) m.scrollTo({ top: el.offsetTop - 10, behavior: 'smooth' });
   }
 
   function logoutStaff() {
@@ -2500,6 +2826,8 @@
         <div><strong>职业/学生：</strong>${item['职业/学生'] || '-'}</div>
       </div>
 
+      <div class="action-bar" id="actionBar" style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;"></div>
+
       <div class="modal-row"><div class="modal-label">【性格】</div><div class="modal-box">${item['性格'] || '-'}</div></div>
       <div class="modal-row"><div class="modal-label">【兴趣爱好】</div><div class="modal-box">${item['兴趣爱好'] || '-'}</div></div>
       <div class="modal-row"><div class="modal-label">【生活习惯】</div><div class="modal-box">${item['生活习惯'] || '-'}</div></div>
@@ -2542,9 +2870,14 @@
         </button>
       </div>
       ` : ''}
+
+      <!-- 留言区 -->
+      <div id="commentsArea" style="margin-top:18px;"></div>
     `;
 
     renderGallery();
+    renderActionBar(item);
+    renderComments(item);
     // 同步 URL 直达参数，方便直接复制地址栏分享给朋友
     try { history.replaceState(null, '', '?guest=' + item.id); } catch (e) {}
     toggleModal('detailModal', true);
