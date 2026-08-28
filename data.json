@@ -68,42 +68,6 @@
       "mediaList": []
     },
     {
-      "id": 1787901168600,
-      "姓名": "馨",
-      "性别": "女",
-      "性取向": "异性恋",
-      "国家/城市": "中国",
-      "生日": "2009 9.19",
-      "年龄": "17",
-      "身高": "167",
-      "体重": "100斤",
-      "星座": "处女座♍",
-      "职业/学生": "学生",
-      "性格": "社恐 半i半e",
-      "兴趣爱好": "跳舞 唱歌",
-      "生活习惯": "熬夜",
-      "要求": "性格开朗好沟通 不聊黄 高帅(本人比较卡颜)",
-      "一句话介绍": "",
-      "uploadDate": "2026-08-25",
-      "createdAt": 1787901168600,
-      "isPinned": false,
-      "uploaderType": "public",
-      "uploaderName": "网友",
-      "uploaderCode": "",
-      "fromPublic": true,
-      "status": "pending",
-      "profileNo": "A035",
-      "mediaList": [
-        {
-          "url": "./media/1787632275261_HnVideoEditor_2026_08_12_205441848.mp4",
-          "type": "video/mp4",
-          "isMain": true
-        }
-      ],
-      "originalId": 1787632261236,
-      "isApplyModify": true
-    },
-    {
       "id": 1787876777457,
       "姓名": "陈康",
       "性别": "男",
@@ -182,7 +146,7 @@
     },
     {
       "id": 1787632261236,
-      "姓名": "金可馨",
+      "姓名": "馨",
       "性别": "女",
       "性取向": "异性恋",
       "国家/城市": "中国",
@@ -211,21 +175,9 @@
           "url": "./media/1787632275261_HnVideoEditor_2026_08_12_205441848.mp4",
           "type": "video/mp4",
           "isMain": true
-        },
-        {
-          "url": "./media/1787877221050_synthesis_21d107cd-41da-4a2b-8df9-87eccbd1806e_image_save_local1784984897112.jpg",
-          "type": "image/jpeg"
-        },
-        {
-          "url": "./media/1787877223590_IMG_20260417_215312.jpg",
-          "type": "image/jpeg"
-        },
-        {
-          "url": "./media/1787877226988_synthesis_28a0e4c6-4eea-49ab-9637-4909befb1140_image_save_local1786538964356.jpg",
-          "type": "image/jpeg"
         }
       ],
-      "updatedAt": 1787912723186
+      "updatedAt": 1787912749882
     },
     {
       "id": 1787562565474,
@@ -952,6 +904,12 @@
     "4.3.2"
   ],
   "adminLogs": [
+    {
+      "time": 1787912749882,
+      "actor": "超级管理员",
+      "op": "审核",
+      "desc": "通过「馨」的修改申请，档案已更新"
+    },
     {
       "time": 1787912745770,
       "actor": "超级管理员",
