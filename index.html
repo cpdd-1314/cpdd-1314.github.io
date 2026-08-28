@@ -406,6 +406,14 @@
     .notif-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--primary); flex-shrink: 0; margin-top: 8px; }
     .tab-page { max-width: 720px; margin: 0 auto; }
     .tab-page h2 { font-size: 18px; margin-bottom: 14px; }
+    /* 发布 tab 提交方式选项卡片 */
+    .publish-option {
+      display: flex; align-items: center; gap: 14px;
+      background: var(--card-bg); border: 1px solid var(--border);
+      border-radius: 12px; padding: 16px; cursor: pointer;
+      transition: box-shadow .15s ease, transform .15s ease;
+    }
+    .publish-option:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); transform: translateY(-1px); }
 
     .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 12px; }
     .form-group { display: flex; flex-direction: column; gap: 4px; }
@@ -496,8 +504,6 @@
       <span id="userArea" style="display:inline-flex; gap:6px; align-items:center; flex-wrap:wrap;">
         <button class="btn btn-outline" id="userLoginBtn" style="font-size:12px; padding:6px 12px;" onclick="toggleModal('userModal', true)">👤 登录 / 注册</button>
       </span>
-
-      <button class="btn btn-primary" onclick="openAddForm('public')">📝 上传我的资料</button>
     </div>
   </header>
 
@@ -544,12 +550,26 @@
 <!-- ===== 发布 Tab ===== -->
 <main id="tab-publish" class="tab-page" style="display:none;">
   <h2>📤 发布我的资料</h2>
-  <div class="notice">注册用户可发布自己的嘉宾资料，提交后经管理员审核通过即展示给所有人。被赞/评论/收藏时你会收到通知。</div>
-  <div style="margin: 16px 0;">
-    <button class="btn btn-primary" onclick="openAddForm('public')">＋ 上传我的资料</button>
-    <span id="publishNeedLoginHint" style="display:none; margin-left:12px; color:var(--danger); font-size:13px;">请先登录 → <a href="javascript:void(0)" onclick="switchTab('home'); toggleModal('userModal', true);" style="color:var(--primary); text-decoration:underline;">去登录/注册</a></span>
+  <div class="notice">发布后经管理员审核通过即展示给所有人。两种方式任选：</div>
+  <div style="display:flex; flex-direction:column; gap:12px; margin-top:14px;">
+    <div class="publish-option" onclick="publishAsUser()">
+      <div style="font-size:24px;">👤</div>
+      <div style="flex:1;">
+        <b>登录提交</b>
+        <div style="font-size:12px; color:var(--text-muted); line-height:1.5;">已注册用户发布资料，被点赞/评论/收藏时你会收到站内通知；可在「我的」管理自己的资料</div>
+      </div>
+      <span style="color:var(--primary); font-size:18px;">›</span>
+    </div>
+    <div class="publish-option" onclick="publishAsGuest()">
+      <div style="font-size:24px;">👋</div>
+      <div style="flex:1;">
+        <b>访客提交</b>
+        <div style="font-size:12px; color:var(--text-muted); line-height:1.5;">无需注册直接提交，提交后需添加管理员微信完成审核</div>
+      </div>
+      <span style="color:var(--primary); font-size:18px;">›</span>
+    </div>
   </div>
-  <h3 style="font-size:14px; margin: 20px 0 10px; color:var(--text-muted);">我发过的资料</h3>
+  <h3 style="font-size:14px; margin: 24px 0 10px; color:var(--text-muted);">我发过的资料</h3>
   <div id="myPublishedList"></div>
 </main>
 
@@ -1114,8 +1134,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.0.1';
+  const APP_VERSION = '6.0.2';
   const CHANGELOG = [
+    { v: '6.0.2', d: '2026-08-28', note: '上传入口移到底部➕：可选择登录提交或访客提交', type: 'fix' },
     { v: '6.0.1', d: '2026-08-28', note: '优化：管理员按钮全部移到「我的」页管理面板，顶部界面更简洁', type: 'fix' },
     { v: '6.0.0', d: '2026-08-28', note: '社交化大改版：底部Tab导航（首页/发布/收件箱/我的）、注册加群名、用户可发资料、站内通知中心（被赞/评论/收藏收到通知）', type: 'major' },
     { v: '5.0.0', d: '2026-08-28', note: '用户系统上线：注册登录、嘉宾留言、点赞收藏、资料详情全屏展示', type: 'major' },
@@ -1718,6 +1739,21 @@
   // ===== 添加/编辑档案 =====
   // 打开"添加新档案"表单（重置所有状态）
   // mode: 'admin' 管理员直接添加（立即显示）；'public' 访客公开上传（提交后进入待审核）
+  // ➕ 发布 tab 两种提交方式入口
+  function publishAsUser() {
+    const u = getCurrentUser();
+    const isAdmin = isSuper() || isStaff();
+    if (!u && !isAdmin) {
+      showAlert('请先登录（或注册）再提交资料，这样被点赞/评论/收藏时能收到通知');
+      toggleModal('userModal', true);
+      return;
+    }
+    openAddForm('public');
+  }
+  function publishAsGuest() {
+    openAddForm('public');
+  }
+
   function openAddForm(mode) {
     document.getElementById('editingProfileId').value = '';
     document.getElementById('formModalTitle').textContent = mode === 'public' ? '上传我的资料' : '添加新嘉宾档案';
