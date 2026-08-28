@@ -537,13 +537,6 @@
     <button class="btn btn-outline" id="pageNext" style="font-size:13px; padding:6px 14px;" onclick="changePage(currentPage + 1)">下一页 →</button>
     <span id="pageInfo" style="font-size:12px; color:var(--text-muted);"></span>
   </div>
-
-  <!-- 版本信息（固定在页面底部，随页面滚动，与内容同流） -->
-  <div id="versionWidget">
-    <span class="ver-text" id="versionText"></span>
-    <button class="btn btn-outline" style="font-size:11px; padding:2px 8px;" onclick="showChangelog()">📋 更新记录</button>
-    <span class="ver-text">© 2026 全球找对象</span>
-  </div>
 </div>
 </main>
 
@@ -623,6 +616,14 @@
         <button class="btn btn-outline admin-only" onclick="logoutAdmin()">🚪 退出管理</button>
       </div>
     </div>
+  </div>
+
+  <!-- 我的页底部：版本/版权/使用条款 -->
+  <div id="versionWidget" style="margin-top: 28px; padding-top: 16px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap;">
+    <span class="ver-text" id="versionText"></span>
+    <button class="btn btn-outline" style="font-size:11px; padding:2px 8px;" onclick="showChangelog()">📋 更新记录</button>
+    <button class="btn btn-outline" style="font-size:11px; padding:2px 8px;" onclick="showTerms()">📄 使用条款</button>
+    <span class="ver-text">© 2026 全球找对象</span>
   </div>
 </main>
 
@@ -1134,8 +1135,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.0.2';
+  const APP_VERSION = '6.0.3';
   const CHANGELOG = [
+    { v: '6.0.3', d: '2026-08-28', note: '版权/版本信息和使用条款移到「我的」页底部', type: 'fix' },
     { v: '6.0.2', d: '2026-08-28', note: '上传入口移到底部➕：可选择登录提交或访客提交', type: 'fix' },
     { v: '6.0.1', d: '2026-08-28', note: '优化：管理员按钮全部移到「我的」页管理面板，顶部界面更简洁', type: 'fix' },
     { v: '6.0.0', d: '2026-08-28', note: '社交化大改版：底部Tab导航（首页/发布/收件箱/我的）、注册加群名、用户可发资料、站内通知中心（被赞/评论/收藏收到通知）', type: 'major' },
@@ -1193,6 +1195,23 @@
     { v: '1.0.1', d: '2026-08-21', note: '记住登录状态，免重复输入令牌', type: 'fix' },
     { v: '1.0.0', d: '2026-08-21', note: '网站正式上线：嘉宾卡片、搜索筛选、详情展示、微信名片', type: 'major' }
   ];
+
+  // 使用条款弹窗
+  function showTerms() {
+    showAlertHtml(
+      '欢迎使用「全球找对象」！<br><br>' +
+      '1️⃣ 本站为交友资料展示平台，所有资料由用户自愿提交。<br>' +
+      '2️⃣ 提交资料即表示同意公开展示姓名、照片、个人介绍等信息，供他人浏览联系。<br>' +
+      '3️⃣ 请勿发布虚假、侵权、违法违规或涉及他人隐私的信息，违者将被隐藏或删除。<br>' +
+      '4️⃣ 请通过嘉宾资料展示的方式联系对方，注意保护个人隐私与财产安全。<br>' +
+      '5️⃣ 管理员有权对资料进行审核、修改、隐藏或删除，无需另行通知。<br>' +
+      '6️⃣ 本站不保证信息真实性，交友请谨慎。<br>' +
+      '7️⃣ 如有问题或投诉，请联系管理员微信。<br><br>' +
+      '<b>使用本网站即表示你已阅读并同意以上条款。</b>',
+      '📄 使用条款',
+      '<button class="btn btn-primary" style="flex:1;" onclick="closeCustomDialog()">知道了</button>'
+    );
+  }
 
   function showChangelog() {
     const hidden = appState.hiddenVersions || [];
