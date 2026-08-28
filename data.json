@@ -1014,6 +1014,15 @@
       "desc": "创建内部管理员「j」（ST003）"
     }
   ],
-  "users": [],
+  "users": [
+    {
+      "id": 1787938757949,
+      "name": "奶茶",
+      "password": "wang120206",
+      "groupName": "奶茶🇮🇹2.6",
+      "createdAt": 1787938757950,
+      "favorites": []
+    }
+  ],
   "notifications": []
 }
