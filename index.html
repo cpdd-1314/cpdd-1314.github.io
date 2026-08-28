@@ -23,9 +23,10 @@
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", sans-serif;
       background: var(--bg);
       color: var(--text);
-      padding: 24px 16px;
+      padding: 24px 16px 80px;
       line-height: 1.5;
     }
+    @media (max-width: 768px) { body { padding: 16px 12px 72px; } }
     .container { max-width: 1100px; margin: 0 auto; }
 
     header {
@@ -301,7 +302,8 @@
 
     /* 左下角动态浮动入口（可收起/展开） */
     #floatWrap {
-      position: fixed; left: 16px; bottom: 76px; z-index: 900;
+      position: fixed; left: 16px; bottom: 132px; z-index: 900;
+      transition: bottom .2s ease;
       display: flex; flex-direction: column; gap: 10px; align-items: flex-start;
       animation: floatSlideIn .35s cubic-bezier(.34,1.3,.64,1);
     }
@@ -342,7 +344,8 @@
     }
     /* 收起后的小圆球 */
     #floatBall {
-      position: fixed; left: 16px; bottom: 76px; z-index: 900;
+      position: fixed; left: 16px; bottom: 132px; z-index: 900;
+      transition: bottom .2s ease;
       display: none; align-items: center; justify-content: center;
       width: 38px; height: 38px; border-radius: 50%;
       background: #07c160; color: #fff; cursor: pointer;
@@ -355,6 +358,54 @@
       0%, 100% { transform: scale(1); }
       50%      { transform: scale(1.12); }
     }
+
+    /* ===== 底部 Tab 栏（社交化主导航） ===== */
+    .bottom-tab {
+      position: fixed; left: 0; right: 0; bottom: 0;
+      background: var(--card-bg);
+      border-top: 1px solid var(--border);
+      display: flex; justify-content: space-around; align-items: center;
+      padding: 6px 0 8px;
+      z-index: 800;
+      box-shadow: 0 -2px 12px rgba(0,0,0,0.05);
+    }
+    .tab-btn {
+      background: none; border: none; cursor: pointer;
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+      padding: 4px 8px; color: var(--text-muted); font-size: 11px;
+      position: relative; flex: 1;
+    }
+    .tab-btn.active { color: var(--primary); }
+    .tab-icon { font-size: 22px; line-height: 1; }
+    .add-icon {
+      background: #000; color: #fff; width: 46px; height: 34px;
+      border-radius: 10px; display: flex; align-items: center; justify-content: center;
+      font-size: 26px; font-weight: 300; margin-top: -2px;
+      border: 2px solid #ff2d55; box-shadow: 0 0 0 1px #00f2ea;
+    }
+    .tab-btn.active .add-icon { color: #00f2ea; }
+    .tab-label { font-size: 10px; }
+    .tab-badge {
+      position: absolute; top: 0; right: 18%;
+      background: #ef4444; color: #fff; font-size: 9px; font-weight: 700;
+      padding: 1px 5px; border-radius: 999px; min-width: 16px; text-align: center;
+      line-height: 1.3;
+    }
+    /* 个人主页/通知卡片样式 */
+    .profile-section {
+      background: var(--card-bg); border: 1px solid var(--border);
+      border-radius: 12px; padding: 16px; margin-bottom: 12px;
+      max-width: 720px; margin-left: auto; margin-right: auto;
+    }
+    .profile-section h3 { font-size: 14px; margin-bottom: 10px; color: var(--text); }
+    .notif-item {
+      display: flex; gap: 10px; padding: 10px 0; border-bottom: 1px dashed var(--border);
+      align-items: flex-start; cursor: pointer;
+    }
+    .notif-item:hover { background: rgba(79,70,229,0.04); }
+    .notif-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--primary); flex-shrink: 0; margin-top: 8px; }
+    .tab-page { max-width: 720px; margin: 0 auto; }
+    .tab-page h2 { font-size: 18px; margin-bottom: 14px; }
 
     .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 12px; }
     .form-group { display: flex; flex-direction: column; gap: 4px; }
@@ -427,6 +478,7 @@
 </head>
 <body>
 
+<main id="tab-home">
 <div class="container">
   <header>
     <div class="title-group">
@@ -497,6 +549,71 @@
     <span class="ver-text">© 2026 全球找对象</span>
   </div>
 </div>
+</main>
+
+<!-- ===== 发布 Tab ===== -->
+<main id="tab-publish" class="tab-page" style="display:none;">
+  <h2>📤 发布我的资料</h2>
+  <div class="notice">注册用户可发布自己的嘉宾资料，提交后经管理员审核通过即展示给所有人。被赞/评论/收藏时你会收到通知。</div>
+  <div style="margin: 16px 0;">
+    <button class="btn btn-primary" onclick="openAddForm('public')">＋ 上传我的资料</button>
+    <span id="publishNeedLoginHint" style="display:none; margin-left:12px; color:var(--danger); font-size:13px;">请先登录 → <a href="javascript:void(0)" onclick="switchTab('home'); toggleModal('userModal', true);" style="color:var(--primary); text-decoration:underline;">去登录/注册</a></span>
+  </div>
+  <h3 style="font-size:14px; margin: 20px 0 10px; color:var(--text-muted);">我发过的资料</h3>
+  <div id="myPublishedList"></div>
+</main>
+
+<!-- ===== 收件箱 Tab ===== -->
+<main id="tab-inbox" class="tab-page" style="display:none;">
+  <h2>💬 收件箱</h2>
+  <div id="inboxNeedLogin" style="display:none; text-align:center; color:var(--text-muted); padding:30px;">
+    请先登录才能查看通知<br><br>
+    <a href="javascript:void(0)" onclick="switchTab('home'); toggleModal('userModal', true);" style="color:var(--primary); text-decoration:underline;">去登录/注册</a>
+  </div>
+  <div id="inboxList"></div>
+</main>
+
+<!-- ===== 我的主页 Tab ===== -->
+<main id="tab-profile" class="tab-page" style="display:none;">
+  <h2>👤 我的</h2>
+  <div id="profileNeedLogin" style="display:none; text-align:center; color:var(--text-muted); padding:30px;">
+    请先登录才能查看个人主页<br><br>
+    <a href="javascript:void(0)" onclick="switchTab('home'); toggleModal('userModal', true);" style="color:var(--primary); text-decoration:underline;">去登录/注册</a>
+  </div>
+  <div id="profileLoggedIn" style="display:none;">
+    <div id="profileHeader"></div>
+    <div class="profile-section">
+      <h3>📤 我发布的资料</h3>
+      <div id="myPublishedSection"></div>
+    </div>
+    <div class="profile-section">
+      <h3>❤️ 我的收藏</h3>
+      <button class="btn btn-outline" onclick="openMyFavorites()">查看全部收藏</button>
+    </div>
+    <div class="profile-section">
+      <h3>💬 我的留言</h3>
+      <div id="myCommentsSection"></div>
+    </div>
+    <button class="btn btn-outline" style="color:var(--danger); border-color:#fca5a5; width:100%;" onclick="logoutUser()">退出登录</button>
+  </div>
+</main>
+
+<!-- 底部 Tab 导航（固定在视口底部） -->
+<nav id="bottomTab" class="bottom-tab" style="display:none;">
+  <button class="tab-btn active" data-tab="home" onclick="switchTab('home')">
+    <span class="tab-icon">🏠</span><span class="tab-label">首页</span>
+  </button>
+  <button class="tab-btn" data-tab="publish" onclick="switchTab('publish')">
+    <span class="tab-icon add-icon">＋</span>
+  </button>
+  <button class="tab-btn" data-tab="inbox" onclick="switchTab('inbox')">
+    <span class="tab-icon">💬</span><span class="tab-label">收件箱</span>
+    <span class="tab-badge" id="inboxBadge" style="display:none;">0</span>
+  </button>
+  <button class="tab-btn" data-tab="profile" onclick="switchTab('profile')">
+    <span class="tab-icon">👤</span><span class="tab-label">我的</span>
+  </button>
+</nav>
 
 <!-- 版本信息管理弹窗（仅超级管理员） -->
 <div class="modal-overlay" id="versionAdminModal" onclick="handleOverlayClick(event, 'versionAdminModal')">
@@ -676,6 +793,10 @@
       <div class="form-group" style="margin-bottom:10px;">
         <label>昵称</label>
         <input type="text" id="regNameInput" placeholder="取一个昵称（用于留言/点赞显示）">
+      </div>
+      <div class="form-group" style="margin-bottom:10px;">
+        <label>群名（你在群里的名字）</label>
+        <input type="text" id="regGroupNameInput" maxlength="20" placeholder="如：相亲群-小红">
       </div>
       <div class="form-group" style="margin-bottom:10px;">
         <label>密码</label>
@@ -985,8 +1106,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '5.0.0';
+  const APP_VERSION = '6.0.0';
   const CHANGELOG = [
+    { v: '6.0.0', d: '2026-08-28', note: '社交化大改版：底部Tab导航（首页/发布/收件箱/我的）、注册加群名、用户可发资料、站内通知中心（被赞/评论/收藏收到通知）', type: 'major' },
     { v: '5.0.0', d: '2026-08-28', note: '用户系统上线：注册登录、嘉宾留言、点赞收藏、资料详情全屏展示', type: 'major' },
     { v: '4.14.2', d: '2026-08-24', note: '内部管理员也可编辑、隐藏所有嘉宾资料', type: 'fix' },
     { v: '4.14.1', d: '2026-08-24', note: '内部管理员登录支持「记住我」，下次打开自动免登录', type: 'fix' },
@@ -1221,7 +1343,8 @@
     hideVersionInfo: false,  // 管理员是否对访客隐藏版本信息
     hiddenVersions: [],  // 管理员隐藏的更新记录版本号列表
     adminLogs: [],       // 管理员操作记录（仅超级管理员可查看）
-    users: []            // 注册用户列表 [{id, name, password, createdAt, favorites:[]}]
+    users: [],           // 注册用户列表 [{id, name, password, groupName, createdAt, favorites:[]}]
+    notifications: []    // 站内通知 [{id, toUid, type, profileId, actorUid, actorName, text, time, read}]
   };
 
   // 内置示例兜底：当取不到仓库 data.json（本地预览 / 分享链接 / 直接双击打开）时，
@@ -1819,23 +1942,30 @@
         newProfile.createdAt = now.getTime();
         newProfile.isPinned = false;
 
-        // 记录上传者身份（超级管理员/内部管理员/嘉宾/公开访客）
+        // 记录上传者身份（超级管理员/内部管理员/注册用户/公开访客）
         const ident = getCurrentIdentity();
         const formMode = window.__formMode;
+        const regUser = getCurrentUser();
         if (ident && ident.type === 'staff') {
           newProfile.uploaderType = 'staff';
           newProfile.uploaderName = ident.name;
           newProfile.uploaderCode = ident.code;
-        } else if (formMode === 'public' || !isSuper()) {
-          // 公开上传（访客直接提交）
+        } else if (ident && ident.type === 'super') {
+          newProfile.uploaderType = 'super';
+          newProfile.uploaderName = '管理员';
+          newProfile.uploaderCode = 'ADMIN';
+        } else if (regUser && !ident) {
+          // 注册用户（用 getCurrentUser 判定，无管理员身份时）
+          newProfile.uploaderType = 'user';
+          newProfile.uploaderName = regUser.name + (regUser.groupName ? '（' + regUser.groupName + '）' : '');
+          newProfile.uploaderCode = '';
+          newProfile.uploaderUid = regUser.id;
+        } else {
+          // 公开上传（未登录访客）
           newProfile.uploaderType = 'public';
           newProfile.uploaderName = '网友';
           newProfile.uploaderCode = '';
           newProfile.fromPublic = true;
-        } else {
-          newProfile.uploaderType = 'super';
-          newProfile.uploaderName = '管理员';
-          newProfile.uploaderCode = 'ADMIN';
         }
         // 审核状态：公开上传(或访客)默认待审核，管理员添加立即通过
         const isPublicUpload = formMode === 'public' || (!isSuper() && !isStaff());
@@ -2023,6 +2153,7 @@
         if (Array.isArray(data.hiddenVersions)) appState.hiddenVersions = data.hiddenVersions;
         if (Array.isArray(data.adminLogs)) appState.adminLogs = data.adminLogs;
         if (Array.isArray(data.users)) appState.users = data.users;
+        if (Array.isArray(data.notifications)) appState.notifications = data.notifications;
         loaded = true;
       }
     } catch (err) {
@@ -2040,6 +2171,10 @@
     updateVersionWidget();
     refreshIdentityUI();
     refreshUserUI();
+    updateInboxBadge();
+    // 底部 Tab 栏显示（首次访问即可见）
+    const bottomTab = document.getElementById('bottomTab');
+    if (bottomTab) bottomTab.style.display = 'flex';
     // 恢复滚动位置（图片懒加载会让高度变化，分几次校正到位）
     const sy = window.__restoreScrollY || 0;
     if (sy > 0) {
@@ -2094,13 +2229,13 @@
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
   }
-  // 当前登录用户存 localStorage：{id, name}
+  // 当前登录用户存 localStorage：{id, name, groupName}
   function getCurrentUser() {
     try { return JSON.parse(localStorage.getItem('current_user') || 'null'); }
     catch (e) { return null; }
   }
   function setCurrentUser(user) {
-    if (user) localStorage.setItem('current_user', JSON.stringify({ id: user.id, name: user.name }));
+    if (user) localStorage.setItem('current_user', JSON.stringify({ id: user.id, name: user.name, groupName: user.groupName || '' }));
     else localStorage.removeItem('current_user');
   }
 
@@ -2115,8 +2250,9 @@
     }
     area.innerHTML =
       '<button class="btn btn-outline" style="font-size:12px; padding:6px 10px;" onclick="openMyFavorites()">❤️ 我的收藏</button>' +
-      '<span style="background:var(--primary); color:#fff; font-size:12px; padding:4px 10px; border-radius:999px; white-space:nowrap;">👤 ' + escapeHtml(user.name) + '</span>' +
+      '<span title="' + (user.groupName ? '群名：' + escapeHtml(user.groupName) : '未设置群名') + '" style="background:var(--primary); color:#fff; font-size:12px; padding:4px 10px; border-radius:999px; white-space:nowrap; max-width:140px; overflow:hidden; text-overflow:ellipsis;">👤 ' + escapeHtml(user.name) + (user.groupName ? ' · ' + escapeHtml(user.groupName) : '') + '</span>' +
       '<button class="btn btn-outline" style="font-size:12px; padding:6px 10px;" onclick="logoutUser()">退出</button>';
+    if (typeof updateInboxBadge === 'function') updateInboxBadge();
   }
 
   // 用户弹窗 Tab 切换
@@ -2132,25 +2268,32 @@
   async function handleUserRegister(e) {
     e.preventDefault();
     const name = document.getElementById('regNameInput').value.trim();
+    const groupName = document.getElementById('regGroupNameInput').value.trim();
     const pwd = document.getElementById('regPwdInput').value;
     const pwd2 = document.getElementById('regPwd2Input').value;
     if (!name) { showAlert('请填写昵称'); return; }
     if (name.length > 16) { showAlert('昵称最长 16 个字'); return; }
+    if (!groupName) { showAlert('请填写「群名」（你在群里的名字）'); return; }
+    if (groupName.length > 20) { showAlert('群名最长 20 个字'); return; }
     if (pwd.length < 4) { showAlert('密码至少 4 位'); return; }
     if (pwd !== pwd2) { showAlert('两次密码不一致'); return; }
     if ((appState.users || []).some(u => u.name === name)) { showAlert('昵称「' + name + '」已被注册，换一个吧'); return; }
-    const user = { id: Date.now(), name: name, password: pwd, createdAt: Date.now(), favorites: [] };
+    const user = { id: Date.now(), name: name, password: pwd, groupName: groupName, createdAt: Date.now(), favorites: [] };
     if (!Array.isArray(appState.users)) appState.users = [];
     appState.users.push(user);
     try {
       await saveToGitHub();
       setCurrentUser(user);
       refreshUserUI();
+      updateInboxBadge();
       toggleModal('userModal', false);
       document.getElementById('regNameInput').value = '';
+      document.getElementById('regGroupNameInput').value = '';
       document.getElementById('regPwdInput').value = '';
       document.getElementById('regPwd2Input').value = '';
-      showAlert('✅ 注册成功，已自动登录「' + name + '」！现在可以留言、点赞、收藏啦。');
+      // 注册后自动跳到"我的"tab
+      switchTab('profile');
+      showAlert('✅ 注册成功，已自动登录「' + name + '」（群名：' + groupName + '）！现在可以发资料、留言、点赞、收藏啦。');
     } catch (err) {
       appState.users = appState.users.filter(u => u.id !== user.id);
       showAlert('❌ 注册失败：' + err.message);
@@ -2272,6 +2415,8 @@
     try {
       await saveToGitHub();
       renderActionBar(item);
+      pushNotification(item.uploaderUid, 'like', item.id, user.id, user.name,
+        '赞了你的嘉宾资料「' + (item['姓名'] || '未填') + '」');
     } catch (err) {
       showAlert('❌ 同步失败：' + err.message);
     }
@@ -2292,6 +2437,8 @@
     try {
       await saveToGitHub();
       renderActionBar(item);
+      pushNotification(item.uploaderUid, 'favorite', item.id, user.id, user.name,
+        '收藏了你的嘉宾资料「' + (item['姓名'] || '未填') + '」');
     } catch (err) {
       showAlert('❌ 同步失败：' + err.message);
     }
@@ -2338,11 +2485,14 @@
     const item = appState.profiles.find(p => p.id === profileId);
     if (!item) return;
     if (!Array.isArray(item.comments)) item.comments = [];
-    item.comments.push({ id: Date.now() + Math.floor(Math.random() * 1000), uid: user.id, name: user.name, text: text, time: Date.now() });
+    const newComment = { id: Date.now() + Math.floor(Math.random() * 1000), uid: user.id, name: user.name, text: text, time: Date.now() };
+    item.comments.push(newComment);
     try {
       await saveToGitHub();
       renderComments(item);
       renderActionBar(item);
+      pushNotification(item.uploaderUid, 'comment', item.id, user.id, user.name,
+        '在你的嘉宾资料《' + (item['姓名'] || '未填') + '》留言：' + (text.length > 20 ? text.slice(0, 20) + '…' : text));
     } catch (err) {
       showAlert('❌ 同步失败：' + err.message);
     }
@@ -2368,6 +2518,196 @@
     if (!el) return;
     const m = document.getElementById('detailModal') ? document.getElementById('detailModal').querySelector('.modal') : null;
     if (m) m.scrollTo({ top: el.offsetTop - 10, behavior: 'smooth' });
+  }
+
+  // ===== 站内通知系统 =====
+  // 添加一条通知（被点赞/评论/收藏时通知该资料上传者）
+  function pushNotification(toUid, type, profileId, actorUid, actorName, text) {
+    if (!toUid || toUid === actorUid) return;  // 不通知自己
+    if (!Array.isArray(appState.notifications)) appState.notifications = [];
+    // 24h 内同 actor+profile+type 去重
+    const recent = appState.notifications.find(function(n) {
+      return n.toUid === toUid && n.profileId === profileId && n.type === type &&
+        n.actorUid === actorUid && (Date.now() - n.time) < 86400000;
+    });
+    if (recent) return;
+    appState.notifications.unshift({
+      id: Date.now() + Math.floor(Math.random() * 1000),
+      toUid: toUid, type: type, profileId: profileId,
+      actorUid: actorUid, actorName: actorName, text: text,
+      time: Date.now(), read: false
+    });
+    if (appState.notifications.length > 500) appState.notifications.length = 500;
+    updateInboxBadge();
+  }
+
+  function getMyUnreadCount() {
+    const u = getCurrentUser();
+    if (!u) return 0;
+    return (appState.notifications || []).filter(function(n) { return n.toUid === u.id && !n.read; }).length;
+  }
+
+  function updateInboxBadge() {
+    const badge = document.getElementById('inboxBadge');
+    if (!badge) return;
+    const n = getMyUnreadCount();
+    if (n > 0) {
+      badge.style.display = 'inline-block';
+      badge.textContent = n > 99 ? '99+' : n;
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+
+  // 渲染收件箱通知列表
+  function renderInbox() {
+    const u = getCurrentUser();
+    const list = document.getElementById('inboxList');
+    const needLogin = document.getElementById('inboxNeedLogin');
+    if (!u) {
+      if (needLogin) needLogin.style.display = 'block';
+      if (list) list.innerHTML = '';
+      return;
+    }
+    if (needLogin) needLogin.style.display = 'none';
+    const notifs = (appState.notifications || []).filter(function(n) { return n.toUid === u.id; });
+    if (notifs.length === 0) {
+      list.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:40px; line-height:1.8;">📭 收件箱空空如也<br><br>当别人点赞/评论/收藏你发布的嘉宾资料时，会收到通知</div>';
+      return;
+    }
+    list.innerHTML = notifs.map(function(n) {
+      const t = new Date(n.time);
+      const pad = function(x) { return String(x).padStart(2, '0'); };
+      const ts = (t.getMonth() + 1) + '月' + t.getDate() + '日 ' + t.getHours() + ':' + pad(t.getMinutes());
+      const icon = n.type === 'like' ? '👍' : n.type === 'favorite' ? '⭐' : n.type === 'comment' ? '💬' : '🔔';
+      const profileExists = (appState.profiles || []).some(function(p) { return p.id === n.profileId; });
+      // 进入即标记为已读
+      if (!n.read) n.read = true;
+      return '<div class="notif-item" onclick="notifOpenProfile(' + n.profileId + ')">' +
+        '<span class="notif-dot"></span>' +
+        '<span style="font-size:20px; line-height:1.2;">' + icon + '</span>' +
+        '<div style="flex:1;">' +
+        '<div><b>' + escapeHtml(n.actorName) + '</b> <span style="color:var(--text);">' + escapeHtml(n.text) + '</span></div>' +
+        '<div style="font-size:11px; color:var(--text-muted); margin-top:2px;">' + ts + (profileExists ? '' : '（档案已删除）') + '</div>' +
+        '</div></div>';
+    }).join('');
+    // 标记已读后同步角标
+    updateInboxBadge();
+  }
+
+  function notifOpenProfile(profileId) {
+    if (!(appState.profiles || []).some(function(p) { return p.id === profileId; })) {
+      showAlert('该嘉宾资料已删除');
+      return;
+    }
+    switchTab('home');
+    setTimeout(function() { openDetail(profileId); }, 200);
+  }
+
+  // 渲染个人主页
+  function renderProfilePage() {
+    const u = getCurrentUser();
+    const needLogin = document.getElementById('profileNeedLogin');
+    const loggedIn = document.getElementById('profileLoggedIn');
+    if (!u) {
+      if (needLogin) needLogin.style.display = 'block';
+      if (loggedIn) loggedIn.style.display = 'none';
+      return;
+    }
+    if (needLogin) needLogin.style.display = 'none';
+    if (loggedIn) loggedIn.style.display = 'block';
+    // 头部
+    const fresh = (appState.users || []).find(function(x) { return x.id === u.id; }) || u;
+    document.getElementById('profileHeader').innerHTML =
+      '<div style="display:flex; align-items:center; gap:14px; padding:20px; background:var(--card-bg); border:1px solid var(--border); border-radius:12px; margin-bottom:12px;">' +
+      '<div style="width:64px; height:64px; border-radius:50%; background:var(--primary); color:#fff; display:flex; align-items:center; justify-content:center; font-size:26px; font-weight:700; flex-shrink:0;">' + escapeHtml((fresh.name || '?').charAt(0)) + '</div>' +
+      '<div style="flex:1;">' +
+      '<div style="font-size:18px; font-weight:700;">' + escapeHtml(fresh.name) + '</div>' +
+      (fresh.groupName ? '<div style="font-size:12px; color:var(--text-muted);">群名：' + escapeHtml(fresh.groupName) + '</div>' : '<div style="font-size:12px; color:var(--text-muted);">（注册时未填群名）</div>') +
+      '</div></div>';
+    // 我发布的资料
+    const myProfiles = (appState.profiles || []).filter(function(p) { return p.uploaderUid === u.id; })
+      .sort(function(a, b) { return (b.createdAt || 0) - (a.createdAt || 0); });
+    document.getElementById('myPublishedSection').innerHTML = myProfiles.length === 0
+      ? '<div style="color:var(--text-muted); font-size:13px; padding:8px 0;">还没有发布过资料。点底部「＋」发一条吧！</div>'
+      : myProfiles.map(function(p) {
+        const statusText = p.status === 'approved' ? '✅ 已公开' : p.status === 'pending' ? '⏳ 待审核' : '';
+        return '<div style="display:flex; align-items:center; gap:10px; padding:10px; border:1px solid var(--border); border-radius:8px; margin-bottom:6px; cursor:pointer;" onclick="notifOpenProfile(' + p.id + ')">' +
+          '<div style="flex:1;"><b>' + escapeHtml(p['姓名'] || '未填') + '</b>' +
+          '<span style="font-size:11px; color:var(--text-muted); margin-left:6px;">' + statusText + '</span>' +
+          '<div style="font-size:11px; color:var(--text-muted);">' + escapeHtml(p['国家/城市'] || '') + ' · ' + escapeHtml(String(p['年龄'] || '')) + '岁</div>' +
+          '</div><span style="color:var(--text-muted);">›</span></div>';
+      }).join('');
+    // 我的留言
+    const myComments = [];
+    (appState.profiles || []).forEach(function(p) {
+      (p.comments || []).forEach(function(c) {
+        if (c.uid === u.id) myComments.push({ c: c, p: p });
+      });
+    });
+    myComments.sort(function(a, b) { return b.c.time - a.c.time; });
+    document.getElementById('myCommentsSection').innerHTML = myComments.length === 0
+      ? '<div style="color:var(--text-muted); font-size:13px; padding:8px 0;">还没有留言过</div>'
+      : myComments.slice(0, 30).map(function(x) {
+        const t = new Date(x.c.time);
+        const ts = (t.getMonth() + 1) + '/' + t.getDate() + ' ' + t.getHours() + ':' + String(t.getMinutes()).padStart(2, '0');
+        return '<div style="padding:8px 0; border-bottom:1px dashed var(--border); cursor:pointer;" onclick="notifOpenProfile(' + x.p.id + ')">' +
+          '<div style="font-size:12px; color:var(--text-muted);">在《' + escapeHtml(x.p['姓名'] || '未填') + '》的留言 · ' + ts + '</div>' +
+          '<div style="font-size:13px;">' + escapeHtml(x.c.text) + '</div></div>';
+      }).join('');
+  }
+
+  // 渲染"我发过的资料"列表（发布 tab 用）
+  function renderMyPublished() {
+    const u = getCurrentUser();
+    const list = document.getElementById('myPublishedList');
+    const hint = document.getElementById('publishNeedLoginHint');
+    if (!u) {
+      if (list) list.innerHTML = '';
+      if (hint) hint.style.display = 'inline';
+      return;
+    }
+    if (hint) hint.style.display = 'none';
+    const myProfiles = (appState.profiles || []).filter(function(p) { return p.uploaderUid === u.id; })
+      .sort(function(a, b) { return (b.createdAt || 0) - (a.createdAt || 0); });
+    list.innerHTML = myProfiles.length === 0
+      ? '<div style="color:var(--text-muted); font-size:13px; padding:8px 0;">还没有发布过资料</div>'
+      : myProfiles.map(function(p) {
+        const statusText = p.status === 'approved' ? '✅ 已公开' : p.status === 'pending' ? '⏳ 待审核' : '';
+        return '<div style="display:flex; align-items:center; gap:10px; padding:10px; border:1px solid var(--border); border-radius:8px; margin-bottom:6px; cursor:pointer;" onclick="notifOpenProfile(' + p.id + ')">' +
+          '<div style="flex:1;"><b>' + escapeHtml(p['姓名'] || '未填') + '</b>' +
+          '<span style="font-size:11px; color:var(--text-muted); margin-left:6px;">' + statusText + '</span>' +
+          '<div style="font-size:11px; color:var(--text-muted);">' + escapeHtml(p['国家/城市'] || '') + ' · ' + escapeHtml(String(p['年龄'] || '')) + '岁</div>' +
+          '</div><span style="color:var(--text-muted);">›</span></div>';
+      }).join('');
+  }
+
+  // 切换底部 Tab
+  function switchTab(name) {
+    if (!name) return;
+    // 未登录访问 inbox/profile/publish → 切到 home（避免误点）
+    const u = getCurrentUser();
+    if ((name === 'inbox' || name === 'profile' || name === 'publish') && !u) {
+      // publish 未登录也允许访问（看引导提示登录）
+      if (name === 'publish') {
+        // 允许
+      } else {
+        showAlert('请先登录');
+        toggleModal('userModal', true);
+        return;
+      }
+    }
+    ['home', 'publish', 'inbox', 'profile'].forEach(function(t) {
+      const el = document.getElementById('tab-' + t);
+      if (el) el.style.display = (t === name) ? 'block' : 'none';
+    });
+    document.querySelectorAll('.tab-btn').forEach(function(b) {
+      b.classList.toggle('active', b.dataset.tab === name);
+    });
+    if (name === 'inbox') renderInbox();
+    if (name === 'profile') renderProfilePage();
+    if (name === 'publish') renderMyPublished();
+    if (name !== 'home') window.scrollTo(0, 0);
   }
 
   function logoutStaff() {
