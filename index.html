@@ -493,17 +493,10 @@
         <span>上传后请添加微信完成审核</span>
       </button>
 
-      <span class="staff-badge" id="staffBadge">👤 内部管理员 <span style="cursor:pointer; text-decoration:underline;" onclick="logoutStaff()">退出</span></span>
-
       <span id="userArea" style="display:inline-flex; gap:6px; align-items:center; flex-wrap:wrap;">
         <button class="btn btn-outline" id="userLoginBtn" style="font-size:12px; padding:6px 12px;" onclick="toggleModal('userModal', true)">👤 登录 / 注册</button>
       </span>
 
-      <button class="btn btn-outline super-only" onclick="toggleModal('staffAdminModal', true)">👥 内部管理员</button>
-      <button class="btn btn-outline super-only" onclick="openAdminLogs()">📋 操作记录</button>
-      <button class="btn btn-outline admin-only" onclick="toggleModal('wechatConfigModal', true)">⚙️ 修改微信名片</button>
-      <button class="btn btn-outline admin-only" onclick="logoutAdmin()">🚪 退出管理</button>
-      <button class="btn btn-primary admin-only" onclick="openAddForm('admin')">➕ 添加新嘉宾</button>
       <button class="btn btn-primary" onclick="openAddForm('public')">📝 上传我的资料</button>
     </div>
   </header>
@@ -525,8 +518,6 @@
     </div>
 
     <div class="toolbar-right">
-      <button class="btn btn-outline admin-only" id="pendingReviewBtn" style="font-size:12px; padding:5px 10px; color:var(--pin-gold); border-color:var(--pin-gold);" onclick="togglePendingReview()">⏳ 待审核 (0)</button>
-      <button class="btn btn-outline admin-only" id="showHiddenBtn" style="font-size:12px; padding:5px 10px;" onclick="toggleShowHidden()">🙈 显示已隐藏</button>
       <input type="text" id="searchInput" class="search-input" placeholder="搜索姓名/城市/职业/日期..." oninput="renderCards()">
     </div>
   </div>
@@ -545,7 +536,6 @@
   <div id="versionWidget">
     <span class="ver-text" id="versionText"></span>
     <button class="btn btn-outline" style="font-size:11px; padding:2px 8px;" onclick="showChangelog()">📋 更新记录</button>
-    <button class="btn btn-outline super-only" style="font-size:11px; padding:2px 8px;" onclick="openVersionAdmin()" title="管理版本信息">⚙️ 管理版本</button>
     <span class="ver-text">© 2026 全球找对象</span>
   </div>
 </div>
@@ -595,6 +585,24 @@
       <div id="myCommentsSection"></div>
     </div>
     <button class="btn btn-outline" style="color:var(--danger); border-color:#fca5a5; width:100%;" onclick="logoutUser()">退出登录</button>
+  </div>
+
+  <!-- 管理员管理面板（按钮全部集中在这里） -->
+  <div id="adminPanel" style="display:none; margin-top:16px;">
+    <div class="profile-section">
+      <h3>🔧 管理面板</h3>
+      <span class="staff-badge" id="staffBadge" style="margin-bottom:10px;">👤 内部管理员 <span style="cursor:pointer; text-decoration:underline;" onclick="logoutStaff()">退出</span></span>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <button class="btn btn-outline admin-only" id="pendingReviewBtn" style="color:var(--pin-gold); border-color:var(--pin-gold);" onclick="togglePendingReview()">⏳ 待审核 (0)</button>
+        <button class="btn btn-outline admin-only" id="showHiddenBtn" onclick="toggleShowHidden()">🙈 显示已隐藏</button>
+        <button class="btn btn-primary admin-only" onclick="openAddForm('admin')">➕ 添加新嘉宾</button>
+        <button class="btn btn-outline super-only" onclick="toggleModal('staffAdminModal', true)">👥 内部管理员</button>
+        <button class="btn btn-outline super-only" onclick="openAdminLogs()">📋 操作记录</button>
+        <button class="btn btn-outline admin-only" onclick="toggleModal('wechatConfigModal', true)">⚙️ 修改微信名片</button>
+        <button class="btn btn-outline super-only" onclick="openVersionAdmin()">⚙️ 版本管理</button>
+        <button class="btn btn-outline admin-only" onclick="logoutAdmin()">🚪 退出管理</button>
+      </div>
+    </div>
   </div>
 </main>
 
@@ -1106,8 +1114,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.0.0';
+  const APP_VERSION = '6.0.1';
   const CHANGELOG = [
+    { v: '6.0.1', d: '2026-08-28', note: '优化：管理员按钮全部移到「我的」页管理面板，顶部界面更简洁', type: 'fix' },
     { v: '6.0.0', d: '2026-08-28', note: '社交化大改版：底部Tab导航（首页/发布/收件箱/我的）、注册加群名、用户可发资料、站内通知中心（被赞/评论/收藏收到通知）', type: 'major' },
     { v: '5.0.0', d: '2026-08-28', note: '用户系统上线：注册登录、嘉宾留言、点赞收藏、资料详情全屏展示', type: 'major' },
     { v: '4.14.2', d: '2026-08-24', note: '内部管理员也可编辑、隐藏所有嘉宾资料', type: 'fix' },
@@ -2607,10 +2616,17 @@
   // 渲染个人主页
   function renderProfilePage() {
     const u = getCurrentUser();
+    const isAdmin = isSuper() || isStaff();
     const needLogin = document.getElementById('profileNeedLogin');
     const loggedIn = document.getElementById('profileLoggedIn');
+    // 管理面板：管理员（超级/内部）可见
+    const adminPanel = document.getElementById('adminPanel');
+    if (adminPanel) {
+      adminPanel.style.display = isAdmin ? 'block' : 'none';
+      if (isAdmin) updatePendingCount();
+    }
     if (!u) {
-      if (needLogin) needLogin.style.display = 'block';
+      if (needLogin) needLogin.style.display = isAdmin ? 'none' : 'block';
       if (loggedIn) loggedIn.style.display = 'none';
       return;
     }
@@ -2685,17 +2701,12 @@
   // 切换底部 Tab
   function switchTab(name) {
     if (!name) return;
-    // 未登录访问 inbox/profile/publish → 切到 home（避免误点）
+    // 未登录访问 inbox/profile → 弹登录（管理员身份允许进入 profile 查看管理面板）
     const u = getCurrentUser();
-    if ((name === 'inbox' || name === 'profile' || name === 'publish') && !u) {
-      // publish 未登录也允许访问（看引导提示登录）
-      if (name === 'publish') {
-        // 允许
-      } else {
-        showAlert('请先登录');
-        toggleModal('userModal', true);
-        return;
-      }
+    if ((name === 'inbox' || name === 'profile') && !u && !(isSuper() || isStaff())) {
+      showAlert('请先登录');
+      toggleModal('userModal', true);
+      return;
     }
     ['home', 'publish', 'inbox', 'profile'].forEach(function(t) {
       const el = document.getElementById('tab-' + t);
@@ -2911,6 +2922,7 @@
     const btn = document.getElementById('showHiddenBtn');
     if (btn) btn.classList.toggle('active', showHidden);
     renderCards();
+    switchTab('home');   // 切回首页查看效果
   }
 
   // 待审核模式：管理员一键筛选出所有待审核档案
@@ -2924,6 +2936,7 @@
       btn.style.color = pendingReviewMode ? '#fff' : '';
     }
     renderCards();
+    switchTab('home');   // 切回首页查看待审核列表
   }
 
   // 更新待审核计数（管理员可见）
