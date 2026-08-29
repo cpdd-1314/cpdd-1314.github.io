@@ -2,7 +2,12 @@
   "wechat": {
     "id": "xiaomaomiii777",
     "qr": "./media/1787335501942_13291.png",
-    "groupQr": "./media/1787524662383_mmqrcode1787522361080.jpg"
+    "groupQr": "./media/1787524662383_mmqrcode1787522361080.jpg",
+    "sponsor": {
+      "enabled": true,
+      "text": "",
+      "qr": ""
+    }
   },
   "profiles": [
     {
@@ -926,6 +931,12 @@
     "4.3.2"
   ],
   "adminLogs": [
+    {
+      "time": 1787964522985,
+      "actor": "超级管理员",
+      "op": "配置",
+      "desc": "更新微信名片，启用赞助"
+    },
     {
       "time": 1787957782186,
       "actor": "超级管理员",
