@@ -1167,8 +1167,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.1.0';
+  const APP_VERSION = '6.1.1';
   const CHANGELOG = [
+    { v: '6.1.1', d: '2026-08-29', note: '登录状态加固：刷新/重开自动恢复登录（含管理员身份），不再需要重新登录', type: 'fix' },
     { v: '6.1.0', d: '2026-08-29', note: '管理员即用户（登录自动关联账号）；新增动态赞助按钮（管理员可设文案/收款码/开关）', type: 'feature' },
     { v: '6.0.5', d: '2026-08-29', note: '手机端表单优化：窄屏改为单列布局，字段不再挤到右边', type: 'fix' },
     { v: '6.0.4', d: '2026-08-28', note: '点「我的」「收件箱」不再弹窗登录，直接显示页面内的登录提示', type: 'fix' },
@@ -3028,7 +3029,7 @@
     sessionStorage.setItem('is_match_admin', 'true');
     sessionStorage.setItem('gh_token', token);
     if (rememberMe) setRemember(true);
-    setCurrentIdentity({ type: 'super', name: '管理员', code: 'ADMIN' });
+    setCurrentIdentity({ type: 'super', name: '管理员', code: 'ADMIN' }, rememberMe);
     // 管理员本身就是用户：自动建立/关联用户账号并登录
     const adminUser = ensureAdminUser('super', '超级管理员');
     setCurrentUser(adminUser);
@@ -3931,7 +3932,20 @@
   if (!getCurrentIdentity() && getToken()) {
     setCurrentIdentity({ type: 'super', name: '管理员', code: 'ADMIN' });
   }
+  // 管理员即用户：身份恢复时同步恢复/校正用户账号登录（避免刷新后回到未登录态）
+  try {
+    const idt = getCurrentIdentity();
+    if (idt && (idt.type === 'super' || idt.type === 'staff')) {
+      const key = idt.type === 'super' ? 'super' : 'staff-' + (idt.code || '');
+      const cu = getCurrentUser();
+      if (!cu || cu.id !== key) {
+        const au = ensureAdminUser(key, idt.name || (idt.type === 'super' ? '超级管理员' : '内部管理员'));
+        setCurrentUser(au);
+      }
+    }
+  } catch (e) {}
   refreshIdentityUI();
+  refreshUserUI();
   updateVersionWidget();   // 显示版本号 + 按隐藏设置控制可见性
   loadData();
 </script>
