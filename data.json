@@ -1134,7 +1134,9 @@
           "type": "image/jpeg"
         }
       ],
-      "likes": [],
+      "likes": [
+        "super"
+      ],
       "comments": [
         {
           "id": 1788020048339,
