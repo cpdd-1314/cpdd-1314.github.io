@@ -725,28 +725,10 @@
     <button class="btn btn-outline" style="color:var(--danger); border-color:#fca5a5; width:100%;" onclick="logoutUser()">退出登录</button>
   </div>
 
-  <!-- 网站作者（所有访客可见） -->
-  <div class="profile-section" style="margin-top:16px;">
-    <h3>🌐 网站作者</h3>
-    <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-      <div style="width:52px; height:52px; border-radius:50%; background:linear-gradient(135deg,#4f46e5,#7c3aed); color:#fff; display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:700; flex-shrink:0;">作</div>
-      <div style="flex:1; min-width:130px;">
-        <div style="font-size:16px; font-weight:700;">xiaomaomiii777</div>
-        <div style="font-size:12px; color:var(--text-muted); line-height:1.6;">本站作者兼管理员 · 资料审核、问题反馈、合作都可以加这个微信</div>
-      </div>
-      <button class="btn btn-wechat" onclick="copyWechatId()">
-        <svg class="wechat-icon" viewBox="0 0 24 24">
-          <path d="M9.5 4C4.8 4 1 7.4 1 11.5c0 2.4 1.3 4.5 3.4 5.9l-.9 2.6 3.1-1.6c.9.3 2 .5 2.9.5.3 0 .7 0 1-.1-.3-.7-.4-1.5-.4-2.3 0-4.1 3.8-7.5 8.5-7.5.3 0 .7 0 1 .1C19.1 6.8 14.8 4 9.5 4zm-2.2 4.2c.7 0 1.2.6 1.2 1.2s-.6 1.2-1.2 1.2c-.7 0-1.2-.6-1.2-1.2s.5-1.2 1.2-1.2zm4.8 0c.7 0 1.2.6 1.2 1.2s-.6 1.2-1.2 1.2c-.7 0-1.2-.6-1.2-1.2s.5-1.2 1.2-1.2zm6.9 3.8c-3.9 0-7 2.7-7 6 0 3.3 3.1 6 7 6 .8 0 1.6-.1 2.4-.4l2.5 1.3-.7-2.1c1.7-1.1 2.8-2.8 2.8-4.8 0-3.3-3.1-6-7-6zm-2.5 3.5c.5 0 .9.4.9.9s-.4.9-.9.9-.9-.4-.9-.9.4-.9.9-.9zm4.2 0c.5 0 .9.4.9.9s-.4.9-.9.9-.9-.4-.9-.9.4-.9.9-.9z"/>
-        </svg>
-        复制微信号
-      </button>
-    </div>
-  </div>
-
-  <!-- 全球找对象 · 品牌介绍（所有访客可见） -->
-  <div class="profile-section" style="margin-top:16px;">
+  <!-- 全球找对象 · 品牌介绍（所有访客可见；内容与底部「🌟 品牌介绍」弹窗共用同一份） -->
+  <div class="profile-section" id="brandSection" style="margin-top:16px;">
     <h3>🌍 关于「全球找对象」</h3>
-
+    <div id="brandIntroInner">
     <div class="brand-hero">
       <div class="brand-name">🌍 全球找对象</div>
       <div class="brand-slogan">把认真找对象的人，清清楚楚地展示给同样认真的人。<br>全球华人的公开交友资料展示平台。</div>
@@ -803,6 +785,7 @@
       本站为公益性质的资料展示平台，赞助仅用于服务器与运营维护<br>
       有任何问题、建议或投诉，请加作者微信 <b>xiaomaomiii777</b>
     </div>
+    </div>
   </div>
 
   <!-- 管理员管理面板（按钮全部集中在这里） -->
@@ -823,12 +806,36 @@
     </div>
   </div>
 
-  <!-- 我的页底部：版本/版权/使用条款 -->
+  <!-- 我的页底部：版本 + 更新记录 / 使用条款 / 品牌介绍 -->
   <div id="versionWidget" style="margin-top: 28px; padding-top: 16px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap;">
     <span class="ver-text" id="versionText"></span>
     <button class="btn btn-outline" style="font-size:11px; padding:2px 8px;" onclick="showChangelog()">📋 更新记录</button>
     <button class="btn btn-outline" style="font-size:11px; padding:2px 8px;" onclick="showTerms()">📄 使用条款</button>
-    <span class="ver-text">© 2026 全球找对象</span>
+    <button class="btn btn-outline" style="font-size:11px; padding:2px 8px;" onclick="showBrandIntro()">🌟 品牌介绍</button>
+  </div>
+
+  <!-- 版权信息 -->
+  <div id="copyrightLine" style="margin-top: 14px; text-align: center; font-size: 11px; color: var(--text-muted); line-height: 1.8;">
+    © 2026 全球找对象 · All Rights Reserved<br>
+    <span style="opacity:.85;">本站为个人运营的公益交友资料展示平台，赞助仅用于服务器与运营维护</span>
+  </div>
+
+  <!-- 网站作者（所有访客可见） -->
+  <div class="profile-section" style="margin-top:14px;">
+    <h3 style="text-align:center;">🌐 网站作者</h3>
+    <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; justify-content:center;">
+      <div style="width:52px; height:52px; border-radius:50%; background:linear-gradient(135deg,#4f46e5,#7c3aed); color:#fff; display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:700; flex-shrink:0;">作</div>
+      <div style="flex:1; min-width:130px; text-align:center;">
+        <div style="font-size:16px; font-weight:700;">xiaomaomiii777</div>
+        <div style="font-size:12px; color:var(--text-muted); line-height:1.6;">本站作者兼管理员 · 资料审核、问题反馈、合作都可以加这个微信</div>
+      </div>
+      <button class="btn btn-wechat" onclick="copyWechatId()">
+        <svg class="wechat-icon" viewBox="0 0 24 24">
+          <path d="M9.5 4C4.8 4 1 7.4 1 11.5c0 2.4 1.3 4.5 3.4 5.9l-.9 2.6 3.1-1.6c.9.3 2 .5 2.9.5.3 0 .7 0 1-.1-.3-.7-.4-1.5-.4-2.3 0-4.1 3.8-7.5 8.5-7.5.3 0 .7 0 1 .1C19.1 6.8 14.8 4 9.5 4zm-2.2 4.2c.7 0 1.2.6 1.2 1.2s-.6 1.2-1.2 1.2c-.7 0-1.2-.6-1.2-1.2s.5-1.2 1.2-1.2zm4.8 0c.7 0 1.2.6 1.2 1.2s-.6 1.2-1.2 1.2c-.7 0-1.2-.6-1.2-1.2s.5-1.2 1.2-1.2zm6.9 3.8c-3.9 0-7 2.7-7 6 0 3.3 3.1 6 7 6 .8 0 1.6-.1 2.4-.4l2.5 1.3-.7-2.1c1.7-1.1 2.8-2.8 2.8-4.8 0-3.3-3.1-6-7-6zm-2.5 3.5c.5 0 .9.4.9.9s-.4.9-.9.9-.9-.4-.9-.9.4-.9.9-.9zm4.2 0c.5 0 .9.4.9.9s-.4.9-.9.9-.9-.4-.9-.9.4-.9.9-.9z"/>
+        </svg>
+        复制微信号
+      </button>
+    </div>
   </div>
 </main>
 
@@ -1383,7 +1390,7 @@
     const modal = dlg ? dlg.querySelector('.modal') : null;
     if (modal) modal.style.maxWidth = '380px';
     const msg = document.getElementById('customDialogMsg');
-    if (msg) msg.style.maxHeight = '52vh';
+    if (msg) { msg.style.maxHeight = '52vh'; msg.style.background = ''; }
   }
 
   // 打开提示框：根据消息内容自动配色标题
@@ -1446,8 +1453,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.3.0';
+  const APP_VERSION = '6.3.1';
   const CHANGELOG = [
+    { v: '6.3.1', d: '2026-08-29', note: '「我的」页底部新增品牌介绍入口（紧挨使用条款）；底部顺序改为：版本入口 → Copyright → 网站作者', type: 'fix' },
     { v: '6.3.0', d: '2026-08-29', note: '「我的」页新增全球找对象品牌介绍；使用条款扩充为完整版（十八章 Terms & Conditions）', type: 'feature' },
     { v: '6.2.1', d: '2026-08-29', note: '修复「登录提交」漏洞：未登录不再能提交；登录后发布页自动刷新，登录成功直接继续填资料', type: 'fix' },
     { v: '6.2.0', d: '2026-08-29', note: '赞助升级为整页（底部☕直达）；发布页新增游客提交入口；打字时底部导航自动隐藏；「我的」页显示网站作者', type: 'feature' },
@@ -1706,6 +1714,23 @@
     if (modal) modal.style.maxWidth = '560px';
     const msg = document.getElementById('customDialogMsg');
     if (msg) { msg.style.maxHeight = '68vh'; msg.style.scrollBehavior = 'smooth'; }
+  }
+
+  // 品牌介绍弹窗：内容直接取自「我的」页品牌板块，只维护一份
+  function showBrandIntro() {
+    const inner = document.getElementById('brandIntroInner');
+    const html = inner ? inner.innerHTML : '';
+    showAlertHtml(
+      html || '<div style="text-align:center; color:var(--text-muted); padding:20px;">品牌介绍暂时无法显示</div>',
+      '🌟 品牌介绍 · 全球找对象',
+      '<button class="btn btn-outline" style="flex:1;" onclick="copyWechatId()">💬 联系作者</button>' +
+      '<button class="btn btn-primary" style="flex:1;" onclick="closeCustomDialog()">知道了</button>'
+    );
+    const dlg = document.getElementById('customDialog');
+    const modal = dlg ? dlg.querySelector('.modal') : null;
+    if (modal) modal.style.maxWidth = '560px';
+    const msg = document.getElementById('customDialogMsg');
+    if (msg) { msg.style.maxHeight = '68vh'; msg.style.background = '#ffffff'; }
   }
 
   function showChangelog() {
