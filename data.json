@@ -11,6 +11,40 @@
   },
   "profiles": [
     {
+      "id": 1788020818392,
+      "姓名": "小非洲人",
+      "性别": "男",
+      "性取向": "3取向",
+      "国家/城市": "非洲",
+      "生日": "2/31",
+      "年龄": "69",
+      "身高": "130",
+      "体重": "123",
+      "星座": "双鱼",
+      "职业/学生": "摄影师",
+      "性格": "不处",
+      "兴趣爱好": "钱",
+      "生活习惯": "随机",
+      "要求": "要有钱",
+      "一句话介绍": "钱使我快乐",
+      "uploadDate": "2026-08-29",
+      "createdAt": 1788020818392,
+      "isPinned": false,
+      "uploaderType": "user",
+      "uploaderName": "非洲人（非洲）",
+      "uploaderCode": "",
+      "uploaderUid": 1788020564369,
+      "status": "pending",
+      "profileNo": "A043",
+      "mediaList": [
+        {
+          "url": "./media/1788020818626_IMG_20260808_142404.jpg",
+          "type": "image/jpeg",
+          "isMain": true
+        }
+      ]
+    },
+    {
       "id": 1788019789328,
       "姓名": "冰杰",
       "性别": "男",
@@ -963,7 +997,7 @@
       "password": "714956"
     }
   ],
-  "nextProfileNo": 43,
+  "nextProfileNo": 44,
   "version": "",
   "hideVersionInfo": false,
   "hiddenVersions": [
