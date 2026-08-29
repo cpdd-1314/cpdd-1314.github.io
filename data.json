@@ -146,7 +146,7 @@
           "time": 1788020048610
         }
       ],
-      "updatedAt": 1788044641672
+      "updatedAt": 1788044910147
     },
     {
       "id": 1787920638746,
@@ -1150,6 +1150,17 @@
       "originalId": 1788019789328,
       "isApplyModify": true,
       "fromPublic": true
+    },
+    {
+      "id": "sync_probe_1788044867",
+      "姓名": "SYNCPROBE",
+      "性别": "女",
+      "年龄": "20岁",
+      "一句话介绍": "sync-latency-probe",
+      "status": "approved",
+      "createdAt": 1788044869000,
+      "likes": [],
+      "comments": []
     }
   ],
   "staffs": [
@@ -1175,6 +1186,12 @@
     "6.1.0"
   ],
   "adminLogs": [
+    {
+      "time": 1788044910147,
+      "actor": "超级管理员",
+      "op": "审核",
+      "desc": "通过「冰杰」的修改申请，档案已更新"
+    },
     {
       "time": 1788044641672,
       "actor": "超级管理员",
