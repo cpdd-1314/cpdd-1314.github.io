@@ -1799,7 +1799,7 @@
         </div>
         <div class="form-group">
           <label>年龄</label>
-          <input type="text" name="年龄" placeholder="如：28（）">
+          <input type="text" name="年龄" placeholder="如：28（必须年满 18 周岁）">
         </div>
         <div class="form-group">
           <label>身高</label>
@@ -3280,12 +3280,12 @@
       const month = String(now.getMonth() + 1).padStart(2, '0');
       const day = String(now.getDate()).padStart(2, '0');
 
-      // 年龄校验：必须填写真实数字，且年满 1 周岁
+      // 年龄校验：必须填写真实数字，且年满 18 周岁
       const ageRaw = (formData.get('年龄') || '').toString().trim().replace(/岁/g, '');
       const ageNum = parseFloat(ageRaw);
-      if (!ageRaw || Number.isNaN(ageNum) || ageNum < 1 || ageNum > 120 || !Number.isFinite(ageNum)) {
+      if (!ageRaw || Number.isNaN(ageNum) || ageNum < 18 || ageNum > 120 || !Number.isFinite(ageNum)) {
         btn.disabled = false;
-        showAlert('⚠️ 年龄必须填写真实数字，且需年满 1 周岁。');
+        showAlert('⚠️ 年龄必须填写真实数字，且需年满 18 周岁。');
         return;
       }
 
