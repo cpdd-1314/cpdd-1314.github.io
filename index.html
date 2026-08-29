@@ -406,6 +406,27 @@
     .notif-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--primary); flex-shrink: 0; margin-top: 8px; }
     .tab-page { max-width: 720px; margin: 0 auto; }
     .tab-page h2 { font-size: 18px; margin-bottom: 14px; }
+    /* 未登录提示美化 */
+    .login-prompt {
+      max-width: 420px; margin: 24px auto; text-align: center;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+      border: 1px solid var(--border); border-radius: 18px;
+      padding: 34px 24px; box-shadow: 0 8px 24px rgba(0,0,0,0.04);
+    }
+    .login-prompt-icon {
+      width: 72px; height: 72px; margin: 0 auto 16px;
+      border-radius: 50%; background: #eff6ff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 34px; line-height: 1;
+    }
+    .login-prompt h3 { font-size: 17px; font-weight: 700; margin-bottom: 8px; color: var(--text); }
+    .login-prompt p { font-size: 13px; color: var(--text-muted); line-height: 1.7; margin-bottom: 20px; }
+    .login-prompt-btns { display: flex; flex-direction: column; gap: 10px; }
+    .login-prompt-btns .btn { justify-content: center; width: 100%; }
+    @media (min-width: 420px) {
+      .login-prompt-btns { flex-direction: row; }
+      .login-prompt-btns .btn { width: auto; flex: 1; }
+    }
     /* 发布 tab 提交方式选项卡片 */
     .publish-option {
       display: flex; align-items: center; gap: 14px;
@@ -549,35 +570,55 @@
 <!-- ===== 发布 Tab ===== -->
 <main id="tab-publish" class="tab-page" style="display:none;">
   <h2>📤 发布我的资料</h2>
-  <div class="notice">发布后经管理员审核通过即展示给所有人。两种方式任选：</div>
-  <div style="display:flex; flex-direction:column; gap:12px; margin-top:14px;">
-    <div class="publish-option" onclick="publishAsUser()">
-      <div style="font-size:24px;">👤</div>
-      <div style="flex:1;">
-        <b>登录提交</b>
-        <div style="font-size:12px; color:var(--text-muted); line-height:1.5;">已注册用户发布资料，被点赞/评论/收藏时你会收到站内通知；可在「我的」管理自己的资料</div>
+  <div id="publishNeedLogin" style="display:none;">
+    <div class="login-prompt">
+      <div class="login-prompt-icon">📤</div>
+      <h3>登录后发布资料</h3>
+      <p>注册用户可以管理自己发布的内容，并接收点赞/评论/收藏通知</p>
+      <div class="login-prompt-btns">
+        <button class="btn btn-primary" onclick="toggleModal('userModal', true)">登录 / 注册</button>
+        <button class="btn btn-outline" onclick="switchTab('home')">返回首页</button>
       </div>
-      <span style="color:var(--primary); font-size:18px;">›</span>
-    </div>
-    <div class="publish-option" onclick="publishAsGuest()">
-      <div style="font-size:24px;">👋</div>
-      <div style="flex:1;">
-        <b>访客提交</b>
-        <div style="font-size:12px; color:var(--text-muted); line-height:1.5;">无需注册直接提交，提交后需添加管理员微信完成审核</div>
-      </div>
-      <span style="color:var(--primary); font-size:18px;">›</span>
     </div>
   </div>
-  <h3 style="font-size:14px; margin: 24px 0 10px; color:var(--text-muted);">我发过的资料</h3>
-  <div id="myPublishedList"></div>
+  <div id="publishLoggedIn">
+    <div class="notice">发布后经管理员审核通过即展示给所有人。两种方式任选：</div>
+    <div style="display:flex; flex-direction:column; gap:12px; margin-top:14px;">
+      <div class="publish-option" onclick="publishAsUser()">
+        <div style="font-size:24px;">👤</div>
+        <div style="flex:1;">
+          <b>登录提交</b>
+          <div style="font-size:12px; color:var(--text-muted); line-height:1.5;">已注册用户发布资料，被点赞/评论/收藏时你会收到站内通知；可在「我的」管理自己的资料</div>
+        </div>
+        <span style="color:var(--primary); font-size:18px;">›</span>
+      </div>
+      <div class="publish-option" onclick="publishAsGuest()">
+        <div style="font-size:24px;">👋</div>
+        <div style="flex:1;">
+          <b>访客提交</b>
+          <div style="font-size:12px; color:var(--text-muted); line-height:1.5;">无需注册直接提交，提交后需添加管理员微信完成审核</div>
+        </div>
+        <span style="color:var(--primary); font-size:18px;">›</span>
+      </div>
+    </div>
+    <h3 style="font-size:14px; margin: 24px 0 10px; color:var(--text-muted);">我发过的资料</h3>
+    <div id="myPublishedList"></div>
+  </div>
 </main>
 
 <!-- ===== 收件箱 Tab ===== -->
 <main id="tab-inbox" class="tab-page" style="display:none;">
   <h2>💬 收件箱</h2>
-  <div id="inboxNeedLogin" style="display:none; text-align:center; color:var(--text-muted); padding:30px;">
-    请先登录才能查看通知<br><br>
-    <a href="javascript:void(0)" onclick="switchTab('home'); toggleModal('userModal', true);" style="color:var(--primary); text-decoration:underline;">去登录/注册</a>
+  <div id="inboxNeedLogin" style="display:none;">
+    <div class="login-prompt">
+      <div class="login-prompt-icon">💬</div>
+      <h3>登录后查看消息</h3>
+      <p>收到点赞、评论、收藏时，我们会第一时间通知你</p>
+      <div class="login-prompt-btns">
+        <button class="btn btn-primary" onclick="toggleModal('userModal', true)">登录 / 注册</button>
+        <button class="btn btn-outline" onclick="switchTab('home')">返回首页</button>
+      </div>
+    </div>
   </div>
   <div id="inboxList"></div>
 </main>
@@ -585,9 +626,16 @@
 <!-- ===== 我的主页 Tab ===== -->
 <main id="tab-profile" class="tab-page" style="display:none;">
   <h2>👤 我的</h2>
-  <div id="profileNeedLogin" style="display:none; text-align:center; color:var(--text-muted); padding:30px;">
-    请先登录才能查看个人主页<br><br>
-    <a href="javascript:void(0)" onclick="switchTab('home'); toggleModal('userModal', true);" style="color:var(--primary); text-decoration:underline;">去登录/注册</a>
+  <div id="profileNeedLogin" style="display:none;">
+    <div class="login-prompt">
+      <div class="login-prompt-icon">👤</div>
+      <h3>登录后管理个人主页</h3>
+      <p>查看收藏、留言、发布记录，管理你的嘉宾资料</p>
+      <div class="login-prompt-btns">
+        <button class="btn btn-primary" onclick="toggleModal('userModal', true)">登录 / 注册</button>
+        <button class="btn btn-outline" onclick="switchTab('home')">返回首页</button>
+      </div>
+    </div>
   </div>
   <div id="profileLoggedIn" style="display:none;">
     <div id="profileHeader"></div>
@@ -633,16 +681,44 @@
   </div>
 </main>
 
+<!-- ===== 管理视图 Tab（审核 / 已隐藏）===== -->
+<main id="tab-adminlist" class="tab-page" style="display:none;">
+  <div class="container">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+      <button class="btn btn-outline" onclick="switchTab('home')">← 返回首页</button>
+      <h2 style="font-size:18px; margin:0;">🔧 管理视图</h2>
+    </div>
+    <div class="toolbar" style="margin-bottom:20px;">
+      <div class="toolbar-left">
+        <div class="filters">
+          <button class="filter-btn" id="adminModePending" onclick="setAdminMode('pending')">⏳ 待审核</button>
+          <button class="filter-btn" id="adminModeHidden" onclick="setAdminMode('hidden')">🙈 已隐藏</button>
+        </div>
+      </div>
+      <div class="toolbar-right">
+        <span id="adminModeHint" style="font-size:12px; color:var(--text-muted);">正在查看待审核档案</span>
+      </div>
+    </div>
+    <div class="grid" id="adminCardsContainer"></div>
+    <div class="pagination" id="adminPagination" style="display:none; justify-content:center; align-items:center; gap:8px; margin-top:24px; flex-wrap:wrap;">
+      <button class="btn btn-outline" id="adminPagePrev" style="font-size:13px; padding:6px 14px;" onclick="changeAdminPage(adminCurrentPage - 1)">← 上一页</button>
+      <div id="adminPageNumbers" style="display:flex; gap:6px; align-items:center;"></div>
+      <button class="btn btn-outline" id="adminPageNext" style="font-size:13px; padding:6px 14px;" onclick="changeAdminPage(adminCurrentPage + 1)">下一页 →</button>
+      <span id="adminPageInfo" style="font-size:12px; color:var(--text-muted);"></span>
+    </div>
+  </div>
+</main>
+
 <!-- 底部 Tab 导航（固定在视口底部） -->
 <nav id="bottomTab" class="bottom-tab" style="display:none;">
   <button class="tab-btn active" data-tab="home" onclick="switchTab('home')">
     <span class="tab-icon">🏠</span><span class="tab-label">首页</span>
   </button>
-  <button class="tab-btn" data-tab="publish" onclick="switchTab('publish')">
-    <span class="tab-icon add-icon">＋</span>
-  </button>
   <button class="tab-btn" data-tab="sponsor" id="sponsorTab" onclick="openSponsorModal()" style="display:none;">
     <span class="tab-icon">☕</span><span class="tab-label">赞助</span>
+  </button>
+  <button class="tab-btn" data-tab="publish" onclick="switchTab('publish')">
+    <span class="tab-icon add-icon">＋</span>
   </button>
   <button class="tab-btn" data-tab="inbox" onclick="switchTab('inbox')">
     <span class="tab-icon">💬</span><span class="tab-label">收件箱</span>
@@ -1167,9 +1243,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.1.1';
+  const APP_VERSION = '6.1.5';
   const CHANGELOG = [
-    { v: '6.1.1', d: '2026-08-29', note: '登录状态加固：刷新/重开自动恢复登录（含管理员身份），不再需要重新登录', type: 'fix' },
+    { v: '6.1.5', d: '2026-08-29', note: '底部导航➕移到中间；审核/隐藏改为独立管理页面；未登录页面提示美化', type: 'fix' },
     { v: '6.1.0', d: '2026-08-29', note: '管理员即用户（登录自动关联账号）；新增动态赞助按钮（管理员可设文案/收款码/开关）', type: 'feature' },
     { v: '6.0.5', d: '2026-08-29', note: '手机端表单优化：窄屏改为单列布局，字段不再挤到右边', type: 'fix' },
     { v: '6.0.4', d: '2026-08-28', note: '点「我的」「收件箱」不再弹窗登录，直接显示页面内的登录提示', type: 'fix' },
@@ -2817,13 +2893,16 @@
   function renderMyPublished() {
     const u = getCurrentUser();
     const list = document.getElementById('myPublishedList');
-    const hint = document.getElementById('publishNeedLoginHint');
+    const needLogin = document.getElementById('publishNeedLogin');
+    const loggedIn = document.getElementById('publishLoggedIn');
     if (!u) {
       if (list) list.innerHTML = '';
-      if (hint) hint.style.display = 'inline';
+      if (needLogin) needLogin.style.display = 'block';
+      if (loggedIn) loggedIn.style.display = 'none';
       return;
     }
-    if (hint) hint.style.display = 'none';
+    if (needLogin) needLogin.style.display = 'none';
+    if (loggedIn) loggedIn.style.display = 'block';
     const myProfiles = (appState.profiles || []).filter(function(p) { return p.uploaderUid === u.id; })
       .sort(function(a, b) { return (b.createdAt || 0) - (a.createdAt || 0); });
     list.innerHTML = myProfiles.length === 0
@@ -2841,8 +2920,8 @@
   // 切换底部 Tab
   function switchTab(name) {
     if (!name) return;
-    // 未登录访问 inbox/profile 不弹窗，直接切换页面（页面内显示"请先登录"提示）
-    ['home', 'publish', 'inbox', 'profile'].forEach(function(t) {
+    // 管理视图 tab 不在底部导航里
+    ['home', 'publish', 'inbox', 'profile', 'adminlist'].forEach(function(t) {
       const el = document.getElementById('tab-' + t);
       if (el) el.style.display = (t === name) ? 'block' : 'none';
     });
@@ -2852,6 +2931,7 @@
     if (name === 'inbox') renderInbox();
     if (name === 'profile') renderProfilePage();
     if (name === 'publish') renderMyPublished();
+    if (name === 'adminlist') renderAdminCards();
     if (name !== 'home') window.scrollTo(0, 0);
   }
 
@@ -3061,28 +3141,31 @@
     renderCards();
   }
 
+  // 管理视图：待审核 / 已隐藏 独立页面状态
+  let adminMode = 'pending'; // 'pending' | 'hidden'
+  let adminCurrentPage = 1;
+  let adminFilteredTotal = 0;
+
+  function setAdminMode(mode) {
+    adminMode = mode;
+    adminCurrentPage = 1;
+    renderAdminCards();
+  }
+
   // 是否显示已隐藏档案（仅管理员可开启）
   let showHidden = false;
   function toggleShowHidden() {
-    showHidden = !showHidden;
-    const btn = document.getElementById('showHiddenBtn');
-    if (btn) btn.classList.toggle('active', showHidden);
-    renderCards();
-    switchTab('home');   // 切回首页查看效果
+    showHidden = true;
+    setAdminMode('hidden');
+    switchTab('adminlist');   // 进入独立管理页面
   }
 
   // 待审核模式：管理员一键筛选出所有待审核档案
   let pendingReviewMode = false;
   function togglePendingReview() {
-    pendingReviewMode = !pendingReviewMode;
-    const btn = document.getElementById('pendingReviewBtn');
-    if (btn) {
-      btn.classList.toggle('active', pendingReviewMode);
-      btn.style.background = pendingReviewMode ? 'var(--pin-gold)' : '';
-      btn.style.color = pendingReviewMode ? '#fff' : '';
-    }
-    renderCards();
-    switchTab('home');   // 切回首页查看待审核列表
+    pendingReviewMode = true;
+    setAdminMode('pending');
+    switchTab('adminlist');   // 进入独立管理页面
   }
 
   // 更新待审核计数（管理员可见）
@@ -3164,33 +3247,19 @@
     const keyword = document.getElementById('searchInput').value.toLowerCase().trim();
     const sortBy = document.getElementById('sortSelect').value;
     const container = document.getElementById('cardsContainer');
-    const isAdminView = isSuper() || isStaff() || isGuestIdentity();
 
+    // 首页只展示已通过且未隐藏的档案；待审核/已隐藏统一到独立管理视图
     let filtered = (appState.profiles || []).filter(item => {
-      // 待审核档案：不混入主列表，只有点开"待审核"按钮时才单独显示
-      if (item.status === 'pending') {
-        return pendingReviewMode;
-      }
-      // 待审核模式下只显示待审核档案（已通过的不显示）
-      if (pendingReviewMode && item.status !== 'pending') return false;
-      // 隐藏档案：普通访客一律看不到；管理员只有开启"显示已隐藏"才看到
-      if (item.isHidden && !(isAdminView && showHidden)) return false;
+      if (item.status === 'pending' || item.isHidden) return false;
       const matchGender = currentGender === '全部' || item['性别'] === currentGender;
       const fullStr = Object.values(item).filter(v => typeof v === 'string').join(' ').toLowerCase();
       return matchGender && (!keyword || fullStr.includes(keyword));
     });
 
-    // 排序：待审核模式按时间倒序；正常模式按"位置即序号"规则（与位置弹窗一致）
-    if (pendingReviewMode) {
-      filtered.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-    } else {
-      filtered = sortByPosition(filtered);
-    }
+    filtered = sortByPosition(filtered);
 
     if (filtered.length === 0) {
-      container.innerHTML = pendingReviewMode
-        ? `<p style="grid-column: 1/-1; text-align:center; color: var(--text-muted); padding: 40px;">✅ 没有待审核的档案，全部处理完毕！</p>`
-        : `<p style="grid-column: 1/-1; text-align:center; color: var(--text-muted); padding: 40px;">暂无匹配的嘉宾档案</p>`;
+      container.innerHTML = `<p style="grid-column: 1/-1; text-align:center; color: var(--text-muted); padding: 40px;">暂无匹配的嘉宾档案</p>`;
       filteredTotal = 0;
       renderPagination(0);
       updatePendingCount();
@@ -3205,65 +3274,154 @@
     // 按页切片
     const pageItems = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
-    container.innerHTML = pageItems.map(item => {
-      const mediaList = item.mediaList || [];
-      const mainMedia = getMainMedia(mediaList);   // 主照片 = 封面
-      const imgCount = mediaList.filter(m => m.type && m.type.startsWith('image')).length;
-      const vidCount = mediaList.filter(m => m.type && m.type.startsWith('video')).length;
-
-      let badgeText = '';
-      if (imgCount > 0) badgeText += `📷 ${imgCount} `;
-      if (vidCount > 0) badgeText += `🎬 ${vidCount}`;
-
-      let coverHtml = `<img src="${placeholderDataURI('暂无照片')}" alt="封面">`;
-      if (mainMedia) {
-        if (mainMedia.type && mainMedia.type.startsWith('video')) {
-          // 视频封面：快速加载首帧，悬停播放，带播放角标
-          coverHtml = `<div style="position:relative; width:100%; height:100%;">
-            <video src="${mainMedia.url}" preload="metadata" muted playsinline loop onmouseover="this.play()" onmouseout="this.pause()"></video>
-            <span style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none;">
-              <span style="width:40px; height:40px; border-radius:50%; background:rgba(0,0,0,0.55); color:#fff; display:flex; align-items:center; justify-content:center; font-size:16px; border:2px solid rgba(255,255,255,0.8);">▶</span>
-            </span>
-          </div>`;
-        } else {
-          coverHtml = `<img src="${mainMedia.url}" alt="${item['姓名']}" loading="lazy" decoding="async">`;
-        }
-      }
-
-      const displayDate = item.uploadDate ? item.uploadDate.split(' ')[0] : '近期上传';
-
-      return `
-        <div class="card ${item.isPinned ? 'is-pinned' : ''} ${item.isHidden ? 'is-hidden' : ''}" onclick="openDetail(${item.id})">
-          <div class="card-media-wrap">
-            ${coverHtml}
-            ${item.isPinned ? `<span class="pin-badge">📌 置顶</span>` : ''}
-            ${item.isHidden ? `<span class="pin-badge" style="background:#6b7280;">🙈 已隐藏</span>` : ''}
-            ${item.status === 'pending' ? `<span class="pin-badge" style="background:#f59e0b;">${item.isApplyModify ? '📝 修改申请' : '⏳ 待审核'} ${fmtDateTime(item.createdAt) ? fmtDateTime(item.createdAt).split(' ')[1] : ''}</span>` : ''}
-            ${badgeText ? `<span class="media-badge">${badgeText}</span>` : ''}
-            <span class="date-badge">📅 ${displayDate}</span>
-          </div>
-          <div class="card-body">
-            <div class="card-title">
-              <span>${item['姓名'] || '未填'} <small style="font-weight:normal; font-size:13px; color:var(--text-muted);">(${item['性别'] || '-'})</small></span>
-              <span class="card-loc">${item['国家/城市'] || ''}</span>
-            </div>
-            <div class="card-meta">${item['年龄'] ? item['年龄'] + '岁 · ' : ''}${item['身高'] || ''} · ${item['职业/学生'] || ''}</div>
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
-              ${canSeeInternalTags() && (item.guestNo || item.profileNo) ? `<span class="uploader-tag">🔖 编号 ${item.guestNo || item.profileNo}</span>` : '<span></span>'}
-              ${canSeeInternalTags() && typeof item.sortOrder === 'number' ? `<span class="uploader-tag">📍 ${posText(item.sortOrder)}</span>` : ''}
-              ${uploaderTag(item)}
-            </div>
-            <div class="card-quote">“${item['一句话介绍'] || '暂无一句话介绍'}”</div>
-          </div>
-        </div>
-      `;
-    }).join('');
+    container.innerHTML = pageItems.map(buildCardHTML).join('');
 
     // 渲染分页控件 + 更新待审核计数
     renderPagination(filteredTotal);
     updatePendingCount();
     // 记录当前页码/搜索/筛选/排序（滚动位置由 scroll 监听保存）
     savePageState();
+  }
+
+  // 生成一张嘉宾卡片 HTML（首页与管理视图复用）
+  function buildCardHTML(item) {
+    const mediaList = item.mediaList || [];
+    const mainMedia = getMainMedia(mediaList);   // 主照片 = 封面
+    const imgCount = mediaList.filter(m => m.type && m.type.startsWith('image')).length;
+    const vidCount = mediaList.filter(m => m.type && m.type.startsWith('video')).length;
+
+    let badgeText = '';
+    if (imgCount > 0) badgeText += `📷 ${imgCount} `;
+    if (vidCount > 0) badgeText += `🎬 ${vidCount}`;
+
+    let coverHtml = `<img src="${placeholderDataURI('暂无照片')}" alt="封面">`;
+    if (mainMedia) {
+      if (mainMedia.type && mainMedia.type.startsWith('video')) {
+        // 视频封面：快速加载首帧，悬停播放，带播放角标
+        coverHtml = `<div style="position:relative; width:100%; height:100%;">
+          <video src="${mainMedia.url}" preload="metadata" muted playsinline loop onmouseover="this.play()" onmouseout="this.pause()"></video>
+          <span style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none;">
+            <span style="width:40px; height:40px; border-radius:50%; background:rgba(0,0,0,0.55); color:#fff; display:flex; align-items:center; justify-content:center; font-size:16px; border:2px solid rgba(255,255,255,0.8);">▶</span>
+          </span>
+        </div>`;
+      } else {
+        coverHtml = `<img src="${mainMedia.url}" alt="${item['姓名']}" loading="lazy" decoding="async">`;
+      }
+    }
+
+    const displayDate = item.uploadDate ? item.uploadDate.split(' ')[0] : '近期上传';
+
+    return `
+      <div class="card ${item.isPinned ? 'is-pinned' : ''} ${item.isHidden ? 'is-hidden' : ''}" onclick="openDetail(${item.id})">
+        <div class="card-media-wrap">
+          ${coverHtml}
+          ${item.isPinned ? `<span class="pin-badge">📌 置顶</span>` : ''}
+          ${item.isHidden ? `<span class="pin-badge" style="background:#6b7280;">🙈 已隐藏</span>` : ''}
+          ${item.status === 'pending' ? `<span class="pin-badge" style="background:#f59e0b;">${item.isApplyModify ? '📝 修改申请' : '⏳ 待审核'} ${fmtDateTime(item.createdAt) ? fmtDateTime(item.createdAt).split(' ')[1] : ''}</span>` : ''}
+          ${badgeText ? `<span class="media-badge">${badgeText}</span>` : ''}
+          <span class="date-badge">📅 ${displayDate}</span>
+        </div>
+        <div class="card-body">
+          <div class="card-title">
+            <span>${item['姓名'] || '未填'} <small style="font-weight:normal; font-size:13px; color:var(--text-muted);">(${item['性别'] || '-'})</small></span>
+            <span class="card-loc">${item['国家/城市'] || ''}</span>
+          </div>
+          <div class="card-meta">${item['年龄'] ? item['年龄'] + '岁 · ' : ''}${item['身高'] || ''} · ${item['职业/学生'] || ''}</div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+            ${canSeeInternalTags() && (item.guestNo || item.profileNo) ? `<span class="uploader-tag">🔖 编号 ${item.guestNo || item.profileNo}</span>` : '<span></span>'}
+            ${canSeeInternalTags() && typeof item.sortOrder === 'number' ? `<span class="uploader-tag">📍 ${posText(item.sortOrder)}</span>` : ''}
+            ${uploaderTag(item)}
+          </div>
+          <div class="card-quote">“${item['一句话介绍'] || '暂无一句话介绍'}”</div>
+        </div>
+      </div>
+    `;
+  }
+
+  // 管理视图（待审核 / 已隐藏）独立渲染
+  function renderAdminCards() {
+    const container = document.getElementById('adminCardsContainer');
+    if (!container) return;
+
+    // 更新按钮激活状态与提示文案
+    const pendingBtn = document.getElementById('adminModePending');
+    const hiddenBtn = document.getElementById('adminModeHidden');
+    const hint = document.getElementById('adminModeHint');
+    if (pendingBtn) pendingBtn.classList.toggle('active', adminMode === 'pending');
+    if (hiddenBtn) hiddenBtn.classList.toggle('active', adminMode === 'hidden');
+    if (hint) hint.textContent = adminMode === 'pending' ? '正在查看待审核档案' : '正在查看已隐藏档案';
+
+    let filtered = (appState.profiles || []).filter(item => {
+      if (adminMode === 'pending') return item.status === 'pending';
+      if (adminMode === 'hidden') return item.isHidden;
+      return false;
+    });
+
+    // 待审核按时间倒序；已隐藏按位置规则
+    if (adminMode === 'pending') {
+      filtered.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    } else {
+      filtered = sortByPosition(filtered);
+    }
+
+    if (filtered.length === 0) {
+      container.innerHTML = adminMode === 'pending'
+        ? `<p style="grid-column: 1/-1; text-align:center; color: var(--text-muted); padding: 40px;">✅ 没有待审核的档案，全部处理完毕！</p>`
+        : `<p style="grid-column: 1/-1; text-align:center; color: var(--text-muted); padding: 40px;">暂无已隐藏的档案</p>`;
+      adminFilteredTotal = 0;
+      renderAdminPagination(0);
+      updatePendingCount();
+      return;
+    }
+
+    adminFilteredTotal = filtered.length;
+    const maxPage = Math.max(1, Math.ceil(adminFilteredTotal / PAGE_SIZE));
+    if (adminCurrentPage > maxPage) adminCurrentPage = maxPage;
+    const pageItems = filtered.slice((adminCurrentPage - 1) * PAGE_SIZE, adminCurrentPage * PAGE_SIZE);
+    container.innerHTML = pageItems.map(buildCardHTML).join('');
+    renderAdminPagination(adminFilteredTotal);
+    updatePendingCount();
+  }
+
+  function changeAdminPage(page) {
+    const total = adminFilteredTotal;
+    const maxPage = Math.max(1, Math.ceil(total / PAGE_SIZE));
+    if (page < 1 || page > maxPage) return;
+    adminCurrentPage = page;
+    renderAdminCards();
+    const topEl = document.querySelector('#tab-adminlist .toolbar') || document.getElementById('adminCardsContainer');
+    if (topEl) {
+      const y = topEl.getBoundingClientRect().top + window.pageYOffset - 8;
+      window.scrollTo(0, Math.max(0, y));
+    }
+  }
+
+  function renderAdminPagination(total) {
+    const pag = document.getElementById('adminPagination');
+    const maxPage = Math.max(1, Math.ceil(total / PAGE_SIZE));
+    if (total <= PAGE_SIZE) {
+      pag.style.display = 'none';
+      return;
+    }
+    pag.style.display = 'flex';
+
+    const nums = document.getElementById('adminPageNumbers');
+    let pages = [];
+    const start = Math.max(1, adminCurrentPage - 3);
+    const end = Math.min(maxPage, start + 6);
+    for (let i = start; i <= end; i++) pages.push(i);
+    if (start > 1) pages.unshift('...');
+    if (end < maxPage) pages.push('...');
+
+    nums.innerHTML = pages.map(p =>
+      p === '...'
+        ? `<span style="color:var(--text-muted); padding:0 4px;">…</span>`
+        : `<button class="page-num ${p === adminCurrentPage ? 'active' : ''}" onclick="changeAdminPage(${p})">${p}</button>`
+    ).join('');
+
+    document.getElementById('adminPagePrev').disabled = adminCurrentPage <= 1;
+    document.getElementById('adminPageNext').disabled = adminCurrentPage >= maxPage;
+    document.getElementById('adminPageInfo').textContent = `共 ${total} 位 · 第 ${adminCurrentPage}/${maxPage} 页`;
   }
 
   // 转发按钮：复制当前嘉宾的直达链接（朋友打开即弹出该嘉宾资料）
