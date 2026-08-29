@@ -2050,8 +2050,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.9.1';
+  const APP_VERSION = '6.9.2';
   const CHANGELOG = [
+    { v: '6.9.2', d: '2026-08-30', note: '解释并缓解「改了还不同步」：写入后经 GitHub Pages 重建才对外生效（发布延迟 30s~2min），期间所有人拉到的仍是旧数据。新增「发布观察」——保存后每 4s 探测 Pages 是否已发布本次修改，发布成功即提示「已同步到所有设备」；左下角状态条改为可点击手动立即同步；并澄清本地改文件不会自动上线需部署', type: 'fix' },
     { v: '6.9.1', d: '2026-08-30', note: '修复「数据不会同步」：站点无后端，原只在启动时拉一次 data.json，导致多端/多标签页看不到彼此的新提交。新增每 15s 轻量轮询（带 ?t= 缓存击穿绕过 Pages CDN），与服务端指纹比对，变化即合并重渲染；正在编辑表单时跳过重渲染以免打扰；封号状态在多端实时生效（被封账号会被踢下线）；页面切回前台立即同步一次', type: 'fix' },
     { v: '6.9.0', d: '2026-08-30', note: '新增「封号」机制：管理员可在「注册用户」里封禁违规账号，封号后该用户所有留言对其余访客不可见、无法登录与点赞/收藏/留言/投稿；新增「邀请链接记住设备」：访客用带 ?k= 的投稿链接打开过本站后，该浏览器被授权，之后无需再带链接也能提交；并加固数据写入（409 冲突自动重试）与加载（失败重试），修复管理员令牌反复粘贴的问题', type: 'feature' },
     { v: '6.8.0', d: '2026-08-30', note: '投稿收口为「管理员链接授权 + 管理员审核」双道关：管理员可在后台生成带密钥、可限定使用次数的「投稿链接」；访客须用该链接（网址带 ?k=）打开本站才能提交，否则投稿入口锁定；注册用户仍可直接提交但同样进入待审核；提交成功后消耗一次链接次数，用尽即失效', type: 'feature' },
@@ -2851,6 +2852,8 @@
       if (putRes.ok) {
         // 写成功后把本地切成远端最新合并结果
         appState = merged;
+        try { __startPublishWatch(__syncSignature(merged)); } catch (e) {}
+        showToast('✅ 已保存（GitHub Pages 发布中，约 1 分钟内同步到所有设备）');
         return;
       }
       // 409 = 别人在我们读取之后又改了数据（sha 变了）。自动重试：重新拉最新再合并写回，最多 3 次
@@ -3960,7 +3963,9 @@
     if (!el) {
       el = document.createElement('div');
       el.id = 'syncBadge';
-      el.style.cssText = 'position:fixed;left:8px;bottom:8px;z-index:60;font-size:11px;line-height:1;padding:4px 8px;border-radius:10px;background:rgba(0,0,0,.45);color:#fff;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);pointer-events:none;opacity:.78;';
+      el.style.cssText = 'position:fixed;left:8px;bottom:8px;z-index:60;font-size:11px;line-height:1;padding:4px 8px;border-radius:10px;background:rgba(0,0,0,.45);color:#fff;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);cursor:pointer;pointer-events:auto;opacity:.82;user-select:none;';
+      el.title = '点击立即同步';
+      el.onclick = function () { __syncTick(); };
       document.body.appendChild(el);
     }
     return el;
@@ -4031,6 +4036,37 @@
     document.addEventListener('visibilitychange', function () {
       if (!document.hidden) __syncTick();
     });
+  }
+
+  // ===== 发布观察（解决「我改了但好像没同步」的等待焦虑）=====
+  // 改完提交到 GitHub 仓库后，GitHub Pages 需要重新构建才会对外提供新 data.json，
+  // 这段发布延迟（通常 30s~2min）内所有人拉到的仍是旧数据。这里在保存后每 4s 探测一次
+  // Pages 是否已发布我们刚写入的内容（用写入时的指纹比对），发布成功即提示「已同步到所有设备」。
+  let __publishWatchTimer = null;
+  let __publishWatchSig = '';
+  let __publishWatchDeadline = 0;
+  function __startPublishWatch(expectedSig) {
+    __publishWatchSig = expectedSig || '';
+    if (!__publishWatchSig) return;
+    __publishWatchDeadline = Date.now() + 150000; // 最多观察 2.5 分钟
+    if (__publishWatchTimer) clearInterval(__publishWatchTimer);
+    __publishWatchTimer = setInterval(async function () {
+      try {
+        const res = await fetch('./data.json?t=' + Date.now(), { cache: 'no-cache' });
+        if (!res.ok) return;
+        const data = await res.json();
+        const sig = __syncSignature(data);
+        if (sig === __publishWatchSig) {
+          // Pages 已发布我们的修改
+          clearInterval(__publishWatchTimer); __publishWatchTimer = null; __publishWatchSig = '';
+          if (typeof __syncTick === 'function') __syncTick();
+          showToast('🚀 已发布：你的修改已同步到所有设备');
+        } else if (Date.now() > __publishWatchDeadline) {
+          clearInterval(__publishWatchTimer); __publishWatchTimer = null; __publishWatchSig = '';
+          showToast('⏳ 仍在发布中（GitHub Pages 较慢），稍后自动同步');
+        }
+      } catch (e) {}
+    }, 4000);
   }
 
   // 打开管理员登录框时，若本机已记住 GitHub 令牌则自动回填，刷新/重开不再需要反复粘贴
