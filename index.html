@@ -195,6 +195,13 @@
     .card-media-wrap img, .card-media-wrap video {
       width: 100%; height: 100%; object-fit: cover;
     }
+    /* 注册用户卡片：无头像时的首字母占位 */
+    .user-avatar-fallback {
+      width: 100%; height: 100%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 72px; font-weight: 800; color: #fff;
+      background: linear-gradient(135deg, #a78bfa, #f472b6);
+    }
 
     .pin-badge {
       position: absolute; top: 8px; left: 8px; background: var(--pin-gold);
@@ -1396,6 +1403,7 @@
           <button class="filter-btn" id="adminModePending" onclick="setAdminMode('pending')">⏳ 待审核</button>
           <button class="filter-btn" id="adminModeHidden" onclick="setAdminMode('hidden')">🙈 已隐藏</button>
           <button class="filter-btn" id="adminModeAll" onclick="setAdminMode('all')">📋 全部</button>
+          <button class="filter-btn" id="adminModeUsers" onclick="setAdminMode('users')">👥 注册用户</button>
         </div>
       </div>
       <div class="toolbar-right">
@@ -1799,7 +1807,7 @@
         </div>
         <div class="form-group">
           <label>年龄</label>
-          <input type="text" name="年龄" placeholder="如：28">
+          <input type="text" name="年龄" placeholder="如：28（必须年满 18 周岁）">
         </div>
         <div class="form-group">
           <label>身高</label>
@@ -2011,8 +2019,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.7.0';
+  const APP_VERSION = '6.7.1';
   const CHANGELOG = [
+    { v: '6.7.1', d: '2026-08-29', note: '管理视图新增「👥 注册用户」筛选：管理员可查看全部注册用户（头像/群昵称/用户ID/注册时间/收藏数），密码不展示', type: 'feature' },
     { v: '6.7.0', d: '2026-08-29', note: '管理视图新增「全部」筛选与批量操作：可勾选多条档案后一次性隐藏或取消隐藏；操作前二次确认、写入失败自动回滚、记管理日志', type: 'feature' },
     { v: '6.6.0', d: '2026-08-29', note: '① 玻璃拟态重做：更饱和的流动色块背景 + 颗粒质感、极透折射材质、边缘色散（冷青/暖品红分光）、表面动态扫光、更厚的玻璃体积感，观感更接近 iOS 26 Liquid Glass；② 新增年龄校验：发布/编辑资料必须填写真实年龄且年满 18 周岁', type: 'feature' },
     { v: '6.5.0', d: '2026-08-29', note: '新增全站「玻璃拟态（Liquid Glass）」主题：iOS 26 风格半透明折射材质 + 流动彩色背景，管理员可在「我的」→ 管理面板一键开关，对所有访客生效', type: 'feature' },
@@ -3280,12 +3289,12 @@
       const month = String(now.getMonth() + 1).padStart(2, '0');
       const day = String(now.getDate()).padStart(2, '0');
 
-      // 年龄校验：必须填写真实数字，且年满 
+      // 年龄校验：必须填写真实数字，且年满 18 周岁
       const ageRaw = (formData.get('年龄') || '').toString().trim().replace(/岁/g, '');
       const ageNum = parseFloat(ageRaw);
-      if (!ageRaw || Number.isNaN(ageNum) || ageNum < 1 || ageNum > 120 || !Number.isFinite(ageNum)) {
+      if (!ageRaw || Number.isNaN(ageNum) || ageNum < 18 || ageNum > 120 || !Number.isFinite(ageNum)) {
         btn.disabled = false;
-        showAlert('⚠️ 年龄必须填写真实数字，且需年满 。');
+        showAlert('⚠️ 年龄必须填写真实数字，且需年满 18 周岁。');
         return;
       }
 
@@ -5039,10 +5048,23 @@
     const pendingBtn = document.getElementById('adminModePending');
     const hiddenBtn = document.getElementById('adminModeHidden');
     const allBtn = document.getElementById('adminModeAll');
+    const usersBtn = document.getElementById('adminModeUsers');
     const hint = document.getElementById('adminModeHint');
+    const batchBar = document.getElementById('adminBatchBar');
     if (pendingBtn) pendingBtn.classList.toggle('active', adminMode === 'pending');
     if (hiddenBtn) hiddenBtn.classList.toggle('active', adminMode === 'hidden');
     if (allBtn) allBtn.classList.toggle('active', adminMode === 'all');
+    if (usersBtn) usersBtn.classList.toggle('active', adminMode === 'users');
+
+    // 注册用户视图：独立渲染，并隐藏批量操作栏（批量隐藏仅用于档案）
+    if (adminMode === 'users') {
+      if (batchBar) batchBar.style.display = 'none';
+      if (hint) hint.textContent = `正在查看注册用户（共 ${(appState.users || []).length} 位）`;
+      renderUserCards();
+      return;
+    }
+    if (batchBar) batchBar.style.display = '';
+
     if (hint) {
       hint.textContent = adminMode === 'pending' ? '正在查看待审核档案'
         : adminMode === 'hidden' ? '正在查看已隐藏档案'
@@ -5086,6 +5108,56 @@
     renderAdminPagination(adminFilteredTotal);
     updatePendingCount();
     updateAdminBatchCount();
+  }
+
+  // 注册用户视图：渲染所有注册用户（管理员可见）
+  function renderUserCards() {
+    const container = document.getElementById('adminCardsContainer');
+    if (!container) return;
+    const users = (appState.users || []).slice().sort(function (a, b) { return (b.createdAt || 0) - (a.createdAt || 0); });
+    if (users.length === 0) {
+      container.innerHTML = `<p style="grid-column: 1/-1; text-align:center; color: var(--text-muted); padding: 40px;">暂无注册用户</p>`;
+      adminFilteredTotal = 0;
+      adminCurrentPageIds = [];
+      renderAdminPagination(0);
+      return;
+    }
+    adminFilteredTotal = users.length;
+    const maxPage = Math.max(1, Math.ceil(adminFilteredTotal / PAGE_SIZE));
+    if (adminCurrentPage > maxPage) adminCurrentPage = maxPage;
+    const pageItems = users.slice((adminCurrentPage - 1) * PAGE_SIZE, adminCurrentPage * PAGE_SIZE);
+    adminCurrentPageIds = pageItems.map(function (u) { return u.id; });
+    container.innerHTML = pageItems.map(function (u) { return buildUserCardHTML(u); }).join('');
+    renderAdminPagination(adminFilteredTotal);
+  }
+
+  // 单个注册用户卡片
+  function buildUserCardHTML(u) {
+    const name = u.name || '未命名用户';
+    const favCount = Array.isArray(u.favorites) ? u.favorites.length : 0;
+    const avatarHtml = u.avatar
+      ? `<img src="${u.avatar}" alt="${escapeHtml(name)}" loading="lazy" decoding="async">`
+      : `<div class="user-avatar-fallback">${escapeHtml((name || '?').slice(0, 1))}</div>`;
+    const hasPwd = u.password && String(u.password).length > 0;
+    return `
+      <div class="card user-card" data-id="${u.id}">
+        <div class="card-media-wrap user-avatar-wrap">
+          ${avatarHtml}
+          <span class="media-badge">👤 注册用户</span>
+        </div>
+        <div class="card-body">
+          <div class="card-title">
+            <span>${escapeHtml(name)} <small style="font-weight:normal; font-size:13px; color:var(--text-muted);">@${escapeHtml(u.groupName || '-')}</small></span>
+          </div>
+          <div class="card-meta">🆔 用户ID：${escapeHtml(String(u.id))}</div>
+          <div class="card-meta">📅 注册时间：${fmtDateTime(u.createdAt) || '未知'}</div>
+          <div class="card-meta">⭐ 收藏 ${favCount} 条 · 🔑 密码：${hasPwd ? '已设置（不展示）' : '未设置'}</div>
+          <div style="display:flex; gap:6px; margin-top:6px; flex-wrap:wrap;">
+            <span class="uploader-tag">👥 群昵称：${escapeHtml(u.groupName || '-')}</span>
+          </div>
+        </div>
+      </div>
+    `;
   }
 
   function changeAdminPage(page) {
