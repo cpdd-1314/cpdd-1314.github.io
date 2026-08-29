@@ -1807,7 +1807,7 @@
         </div>
         <div class="form-group">
           <label>年龄</label>
-          <input type="text" name="年龄" placeholder="如：28（必须年满 18 周岁）">
+          <input type="text" name="年龄" placeholder="如：28（提交后由管理员审核）">
         </div>
         <div class="form-group">
           <label>身高</label>
@@ -2019,8 +2019,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.7.2';
+  const APP_VERSION = '6.7.3';
   const CHANGELOG = [
+    { v: '6.7.3', d: '2026-08-30', note: '取消提交资料的「年满 18 周岁」硬性拦截，改为由管理员审核把关：所有访客/普通用户提交均进入待审核队列，只有管理员人工通过才公开；待审核卡片对未满 18 周岁申请人显示「🔞 未成年」角标与审核提醒', type: 'feature' },
     { v: '6.7.2', d: '2026-08-29', note: '修复 data.json 被覆盖成旧版的数据事故：saveToGitHub 改为以远端最新数据为基线做增量合并（按 id 叠加，本地编辑/新增覆盖、远端独有保留），本地陈旧缓存不再冲掉别人的新资料/用户', type: 'fix' },
     { v: '6.7.1', d: '2026-08-29', note: '管理视图新增「👥 注册用户」筛选：管理员可查看全部注册用户（头像/群昵称/用户ID/注册时间/收藏数），密码不展示', type: 'feature' },
     { v: '6.7.0', d: '2026-08-29', note: '管理视图新增「全部」筛选与批量操作：可勾选多条档案后一次性隐藏或取消隐藏；操作前二次确认、写入失败自动回滚、记管理日志', type: 'feature' },
@@ -3321,12 +3322,13 @@
       const month = String(now.getMonth() + 1).padStart(2, '0');
       const day = String(now.getDate()).padStart(2, '0');
 
-      // 年龄校验：必须填写真实数字，且年满 18 周岁
+      // 年龄：仅做数字合法性校验（防脏数据），不再硬性拦截；
+      // 未满 18 周岁的资料会进入「待审核」，由管理员人工审核决定是否公开
       const ageRaw = (formData.get('年龄') || '').toString().trim().replace(/岁/g, '');
       const ageNum = parseFloat(ageRaw);
-      if (!ageRaw || Number.isNaN(ageNum) || ageNum < 18 || ageNum > 120 || !Number.isFinite(ageNum)) {
+      if (!ageRaw || Number.isNaN(ageNum) || ageNum < 1 || ageNum > 120 || !Number.isFinite(ageNum)) {
         btn.disabled = false;
-        showAlert('⚠️ 年龄必须填写真实数字，且需年满 18 周岁。');
+        showAlert('⚠️ 年龄必须填写真实数字（1–120）。');
         return;
       }
 
@@ -5051,6 +5053,7 @@
           ${item.isPinned ? `<span class="pin-badge">📌 置顶</span>` : ''}
           ${item.isHidden ? `<span class="pin-badge" style="background:#6b7280;">🙈 已隐藏</span>` : ''}
           ${item.status === 'pending' ? `<span class="pin-badge" style="background:#f59e0b;">${item.isApplyModify ? '📝 修改申请' : '⏳ 待审核'} ${fmtDateTime(item.createdAt) ? fmtDateTime(item.createdAt).split(' ')[1] : ''}</span>` : ''}
+          ${(inAdminView && item.status === 'pending' && (() => { const a = parseInt((item['年龄']||'').toString().replace(/岁/g,'')); return !isNaN(a) && a < 18; })()) ? `<span class="pin-badge" style="background:#dc2626;">🔞 未成年</span>` : ''}
           ${badgeText ? `<span class="media-badge">${badgeText}</span>` : ''}
           <span class="date-badge">📅 ${displayDate}</span>
         </div>
@@ -5301,7 +5304,7 @@
       <div class="modal-row"><div class="modal-label">【一句话介绍】</div><div class="modal-box" style="font-style:italic;">“${item['一句话介绍'] || '-'}”</div></div>
 
       ${item.status === 'pending' && (isSuper() || isStaff()) ? `
-      <div class="notice" style="margin-bottom:10px;">${item.isApplyModify ? '📝 这是<b>修改申请</b>：通过后将用申请内容覆盖原档案。' : '📮 这是新提交的档案，审核通过后展示给所有人。'}</div>
+      <div class="notice" style="margin-bottom:10px;">${item.isApplyModify ? '📝 这是<b>修改申请</b>：通过后将用申请内容覆盖原档案。' : '📮 这是新提交的档案，审核通过后展示给所有人。'}${(() => { const a = parseInt((item['年龄']||'').toString().replace(/岁/g,'')); return (!isNaN(a) && a < 18) ? '<br><span style="color:#dc2626;font-weight:800;">⚠️ 申请人填写年龄未满 18 周岁，请谨慎审核，勿对未成年人公开。</span>' : ''; })()}</div>
       <div class="admin-action-row">
         <button class="btn btn-primary" style="flex:1; background:#16a34a;" onclick="approveProfile(${item.id})">✅ 通过审核</button>
         <button class="btn btn-outline" style="flex:1; color:var(--danger); border-color:#fca5a5;" onclick="deleteProfile(${item.id})">❌ 拒绝</button>
