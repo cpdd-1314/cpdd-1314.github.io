@@ -168,6 +168,28 @@
     .card.is-pinned { border: 2px solid var(--pin-gold); }
     .card.is-hidden { opacity: 0.65; border: 1px dashed #9ca3af; }
     .card.is-hidden .card-media-wrap { filter: grayscale(0.8); }
+    /* 批量选择：卡片左上角复选框 */
+    .batch-check {
+      position: absolute; top: 8px; left: 8px; z-index: 6;
+      width: 28px; height: 28px; border-radius: 9px;
+      background: rgba(255,255,255,.94);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 10px rgba(15,23,42,.28);
+      cursor: pointer;
+    }
+    .batch-check input { width: 17px; height: 17px; cursor: pointer; margin: 0; accent-color: var(--primary); }
+    .card.is-batch-selected { outline: 3px solid var(--primary); outline-offset: -3px; }
+    .batch-bar {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      padding: 10px 12px; margin-bottom: 16px;
+      border: 1px dashed var(--border); border-radius: 14px;
+      background: rgba(99,102,241,.04);
+    }
+    .batch-bar .btn { font-size: 13px; padding: 7px 14px; }
+    #adminBatchToggle.on {
+      background: linear-gradient(135deg, #6366f1, #a855f7);
+      border-color: transparent; color: #fff; font-weight: 600;
+    }
     .card:hover { transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0,0,0,0.06); }
     .card-media-wrap { width: 100%; height: 260px; background: #000; position: relative; }
     .card-media-wrap img, .card-media-wrap video {
@@ -1368,17 +1390,31 @@
       <button class="btn btn-outline" onclick="switchTab('home')">← 返回首页</button>
       <h2 style="font-size:18px; margin:0;">🔧 管理视图</h2>
     </div>
-    <div class="toolbar" style="margin-bottom:20px;">
+    <div class="toolbar" style="margin-bottom:12px;">
       <div class="toolbar-left">
         <div class="filters">
           <button class="filter-btn" id="adminModePending" onclick="setAdminMode('pending')">⏳ 待审核</button>
           <button class="filter-btn" id="adminModeHidden" onclick="setAdminMode('hidden')">🙈 已隐藏</button>
+          <button class="filter-btn" id="adminModeAll" onclick="setAdminMode('all')">📋 全部</button>
         </div>
       </div>
       <div class="toolbar-right">
         <span id="adminModeHint" style="font-size:12px; color:var(--text-muted);">正在查看待审核档案</span>
       </div>
     </div>
+
+    <!-- 批量操作栏：可多选后一次性隐藏 / 取消隐藏 -->
+    <div class="batch-bar" id="adminBatchBar">
+      <button class="btn btn-outline" id="adminBatchToggle" onclick="toggleAdminBatchMode()">☑️ 批量选择</button>
+      <span id="adminBatchCount" style="font-size:13px; color:var(--text-muted);"></span>
+      <div id="adminBatchActions" style="display:none; gap:8px; flex-wrap:wrap; margin-left:auto;">
+        <button class="btn btn-outline" onclick="adminBatchSelectPage(true)">✅ 全选本页</button>
+        <button class="btn btn-outline" onclick="adminBatchSelectPage(false)">🧹 清空选择</button>
+        <button class="btn btn-primary" id="adminBatchHideBtn" onclick="adminBatchApply(true)">🙈 批量隐藏</button>
+        <button class="btn btn-primary" id="adminBatchShowBtn" onclick="adminBatchApply(false)">👁️ 批量取消隐藏</button>
+      </div>
+    </div>
+
     <div class="grid" id="adminCardsContainer"></div>
     <div class="pagination" id="adminPagination" style="display:none; justify-content:center; align-items:center; gap:8px; margin-top:24px; flex-wrap:wrap;">
       <button class="btn btn-outline" id="adminPagePrev" style="font-size:13px; padding:6px 14px;" onclick="changeAdminPage(adminCurrentPage - 1)">← 上一页</button>
@@ -1975,8 +2011,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.6.0';
+  const APP_VERSION = '6.7.0';
   const CHANGELOG = [
+    { v: '6.7.0', d: '2026-08-29', note: '管理视图新增「全部」筛选与批量操作：可勾选多条档案后一次性隐藏或取消隐藏；操作前二次确认、写入失败自动回滚、记管理日志', type: 'feature' },
     { v: '6.6.0', d: '2026-08-29', note: '① 玻璃拟态重做：更饱和的流动色块背景 + 颗粒质感、极透折射材质、边缘色散（冷青/暖品红分光）、表面动态扫光、更厚的玻璃体积感，观感更接近 iOS 26 Liquid Glass；② 新增年龄校验：发布/编辑资料必须填写真实年龄且年满 18 周岁', type: 'feature' },
     { v: '6.5.0', d: '2026-08-29', note: '新增全站「玻璃拟态（Liquid Glass）」主题：iOS 26 风格半透明折射材质 + 流动彩色背景，管理员可在「我的」→ 管理面板一键开关，对所有访客生效', type: 'feature' },
     { v: '6.4.1', d: '2026-08-29', note: '修复收藏/点赞/留言丢失：改为基于最新数据增量保存，不再整体覆盖（不会抹掉别人的新资料，自己的收藏也不会被别人抹掉）；失败自动回滚、防连点、增加操作提示', type: 'fix' },
@@ -4687,15 +4724,115 @@
     renderCards();
   }
 
-  // 管理视图：待审核 / 已隐藏 独立页面状态
-  let adminMode = 'pending'; // 'pending' | 'hidden'
+  // 管理视图：待审核 / 已隐藏 / 全部 独立页面状态
+  let adminMode = 'pending'; // 'pending' | 'hidden' | 'all'
   let adminCurrentPage = 1;
   let adminFilteredTotal = 0;
+  let adminCurrentPageIds = [];   // 当前页档案 id，供"全选本页"使用
+
+  // 批量选择（管理视图内可多选，一次性隐藏 / 取消隐藏）
+  let adminBatchMode = false;
+  let adminBatchSelected = new Set();
 
   function setAdminMode(mode) {
     adminMode = mode;
     adminCurrentPage = 1;
+    adminBatchSelected.clear();
+    updateAdminBatchUI();
     renderAdminCards();
+  }
+
+  function toggleAdminBatchMode() {
+    adminBatchMode = !adminBatchMode;
+    adminBatchSelected.clear();
+    updateAdminBatchUI();
+    renderAdminCards();
+  }
+
+  function updateAdminBatchUI() {
+    const toggle = document.getElementById('adminBatchToggle');
+    const count = document.getElementById('adminBatchCount');
+    const actions = document.getElementById('adminBatchActions');
+    if (toggle) {
+      toggle.textContent = adminBatchMode ? '✖️ 退出批量' : '☑️ 批量选择';
+      toggle.classList.toggle('on', adminBatchMode);
+    }
+    if (actions) actions.style.display = adminBatchMode ? 'flex' : 'none';
+    updateAdminBatchCount();
+  }
+
+  function updateAdminBatchCount() {
+    const count = document.getElementById('adminBatchCount');
+    if (count) {
+      count.textContent = adminBatchMode
+        ? `已选 ${adminBatchSelected.size} 条（可跨页累积）`
+        : '可勾选多条后一次性隐藏 / 取消隐藏';
+    }
+  }
+
+  function toggleBatchSelect(id, checked) {
+    const key = String(id);
+    if (checked) adminBatchSelected.add(key);
+    else adminBatchSelected.delete(key);
+    const card = document.querySelector(`.card[data-id="${id}"]`);
+    if (card) card.classList.toggle('is-batch-selected', checked);
+    updateAdminBatchCount();
+  }
+
+  function adminBatchSelectPage(select) {
+    if (select) adminCurrentPageIds.forEach(id => adminBatchSelected.add(String(id)));
+    else adminBatchSelected.clear();
+    renderAdminCards();
+  }
+
+  async function adminBatchApply(hide) {
+    const ids = Array.from(adminBatchSelected);
+    if (ids.length === 0) { showAlert('请先勾选要操作的档案'); return; }
+    const verb = hide ? '隐藏' : '取消隐藏';
+    confirmAction(`确定要${verb}选中的 ${ids.length} 条档案吗？`, async function () {
+      const btns = [document.getElementById('adminBatchHideBtn'), document.getElementById('adminBatchShowBtn')];
+      btns.forEach(b => { if (b) b.disabled = true; });
+      try {
+        const idSet = new Set(ids.map(String));
+        const changed = await patchRemoteState(function (base) {
+          let n = 0;
+          (base.profiles || []).forEach(function (p) {
+            if (!idSet.has(String(p.id))) return;
+            if (hide) {
+              p.isHidden = true;
+              if (p.status !== 'pending') p.status = 'removed';
+              p.hiddenAt = Date.now();
+            } else {
+              p.isHidden = false;
+              if (p.status === 'removed') p.status = 'approved';
+              delete p.hiddenAt;
+              delete p.hiddenReason;
+            }
+            n++;
+          });
+          const ident = getCurrentIdentity();
+          const actor = ident ? (ident.type === 'super' ? '超级管理员' : (ident.name || '内部管理员')) : '管理员';
+          if (!Array.isArray(base.adminLogs)) base.adminLogs = [];
+          base.adminLogs.unshift({
+            time: Date.now(), actor, op: '批量' + verb,
+            desc: (hide ? '隐藏' : '恢复显示') + ' ' + n + ' 条档案'
+          });
+          if (base.adminLogs.length > 200) base.adminLogs.length = 200;
+          return n;
+        }, 'batch ' + (hide ? 'hide' : 'unhide') + ' ' + ids.length + ' profiles');
+
+        // 用远端结果同步本地，保证两边一致
+        adminBatchSelected.clear();
+        updateAdminBatchUI();
+        renderAdminCards();
+        renderCards();
+        toast(`✅ 已${verb} ${changed} 条档案`);
+      } catch (err) {
+        showAlert('❌ 批量操作失败：' + err.message);
+      } finally {
+        btns.forEach(b => { if (b) b.disabled = false; });
+      }
+    });
   }
 
   // 是否显示已隐藏档案（仅管理员可开启）
@@ -4830,7 +4967,7 @@
   }
 
   // 生成一张嘉宾卡片 HTML（首页与管理视图复用）
-  function buildCardHTML(item) {
+  function buildCardHTML(item, inAdminView) {
     const mediaList = item.mediaList || [];
     const mainMedia = getMainMedia(mediaList);   // 主照片 = 封面
     const imgCount = mediaList.filter(m => m.type && m.type.startsWith('image')).length;
@@ -4857,9 +4994,18 @@
 
     const displayDate = item.uploadDate ? item.uploadDate.split(' ')[0] : '近期上传';
 
+    // 批量选择模式下显示左上角复选框（点它不要打开详情）
+    const batchHtml = (inAdminView && adminBatchMode)
+      ? `<label class="batch-check" onclick="event.stopPropagation();">
+           <input type="checkbox" ${adminBatchSelected.has(String(item.id)) ? 'checked' : ''}
+                  onchange="toggleBatchSelect(${item.id}, this.checked)">
+         </label>`
+      : '';
+
     return `
-      <div class="card ${item.isPinned ? 'is-pinned' : ''} ${item.isHidden ? 'is-hidden' : ''}" onclick="openDetail(${item.id})">
+      <div class="card ${item.isPinned ? 'is-pinned' : ''} ${item.isHidden ? 'is-hidden' : ''} ${(inAdminView && adminBatchMode && adminBatchSelected.has(String(item.id))) ? 'is-batch-selected' : ''}" data-id="${item.id}" onclick="openDetail(${item.id})">
         <div class="card-media-wrap">
+          ${batchHtml}
           ${coverHtml}
           ${item.isPinned ? `<span class="pin-badge">📌 置顶</span>` : ''}
           ${item.isHidden ? `<span class="pin-badge" style="background:#6b7280;">🙈 已隐藏</span>` : ''}
@@ -4892,18 +5038,25 @@
     // 更新按钮激活状态与提示文案
     const pendingBtn = document.getElementById('adminModePending');
     const hiddenBtn = document.getElementById('adminModeHidden');
+    const allBtn = document.getElementById('adminModeAll');
     const hint = document.getElementById('adminModeHint');
     if (pendingBtn) pendingBtn.classList.toggle('active', adminMode === 'pending');
     if (hiddenBtn) hiddenBtn.classList.toggle('active', adminMode === 'hidden');
-    if (hint) hint.textContent = adminMode === 'pending' ? '正在查看待审核档案' : '正在查看已隐藏档案';
+    if (allBtn) allBtn.classList.toggle('active', adminMode === 'all');
+    if (hint) {
+      hint.textContent = adminMode === 'pending' ? '正在查看待审核档案'
+        : adminMode === 'hidden' ? '正在查看已隐藏档案'
+        : '正在查看全部档案（可批量隐藏 / 取消隐藏）';
+    }
 
     let filtered = (appState.profiles || []).filter(item => {
       if (adminMode === 'pending') return item.status === 'pending';
       if (adminMode === 'hidden') return item.isHidden;
+      if (adminMode === 'all') return true;
       return false;
     });
 
-    // 待审核按时间倒序；已隐藏按位置规则
+    // 待审核按时间倒序；其余按位置规则
     if (adminMode === 'pending') {
       filtered.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
     } else {
@@ -4913,10 +5066,14 @@
     if (filtered.length === 0) {
       container.innerHTML = adminMode === 'pending'
         ? `<p style="grid-column: 1/-1; text-align:center; color: var(--text-muted); padding: 40px;">✅ 没有待审核的档案，全部处理完毕！</p>`
-        : `<p style="grid-column: 1/-1; text-align:center; color: var(--text-muted); padding: 40px;">暂无已隐藏的档案</p>`;
+        : adminMode === 'hidden'
+          ? `<p style="grid-column: 1/-1; text-align:center; color: var(--text-muted); padding: 40px;">暂无已隐藏的档案</p>`
+          : `<p style="grid-column: 1/-1; text-align:center; color: var(--text-muted); padding: 40px;">暂无档案</p>`;
       adminFilteredTotal = 0;
+      adminCurrentPageIds = [];
       renderAdminPagination(0);
       updatePendingCount();
+      updateAdminBatchCount();
       return;
     }
 
@@ -4924,9 +5081,11 @@
     const maxPage = Math.max(1, Math.ceil(adminFilteredTotal / PAGE_SIZE));
     if (adminCurrentPage > maxPage) adminCurrentPage = maxPage;
     const pageItems = filtered.slice((adminCurrentPage - 1) * PAGE_SIZE, adminCurrentPage * PAGE_SIZE);
-    container.innerHTML = pageItems.map(buildCardHTML).join('');
+    adminCurrentPageIds = pageItems.map(i => i.id);
+    container.innerHTML = pageItems.map(i => buildCardHTML(i, true)).join('');
     renderAdminPagination(adminFilteredTotal);
     updatePendingCount();
+    updateAdminBatchCount();
   }
 
   function changeAdminPage(page) {
