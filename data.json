@@ -147,7 +147,16 @@
           "type": "image/jpeg"
         }
       ],
-      "updatedAt": 1787912745770
+      "updatedAt": 1787912745770,
+      "comments": [
+        {
+          "id": 1788016313503,
+          "uid": "super",
+          "name": "管理员",
+          "text": "cpdd",
+          "time": 1788016313042
+        }
+      ]
     },
     {
       "id": 1787848900338,
