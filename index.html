@@ -2019,8 +2019,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.7.1';
+  const APP_VERSION = '6.7.2';
   const CHANGELOG = [
+    { v: '6.7.2', d: '2026-08-29', note: '修复 data.json 被覆盖成旧版的数据事故：saveToGitHub 改为以远端最新数据为基线做增量合并（按 id 叠加，本地编辑/新增覆盖、远端独有保留），本地陈旧缓存不再冲掉别人的新资料/用户', type: 'fix' },
     { v: '6.7.1', d: '2026-08-29', note: '管理视图新增「👥 注册用户」筛选：管理员可查看全部注册用户（头像/群昵称/用户ID/注册时间/收藏数），密码不展示', type: 'feature' },
     { v: '6.7.0', d: '2026-08-29', note: '管理视图新增「全部」筛选与批量操作：可勾选多条档案后一次性隐藏或取消隐藏；操作前二次确认、写入失败自动回滚、记管理日志', type: 'feature' },
     { v: '6.6.0', d: '2026-08-29', note: '① 玻璃拟态重做：更饱和的流动色块背景 + 颗粒质感、极透折射材质、边缘色散（冷青/暖品红分光）、表面动态扫光、更厚的玻璃体积感，观感更接近 iOS 26 Liquid Glass；② 新增年龄校验：发布/编辑资料必须填写真实年龄且年满 18 周岁', type: 'feature' },
@@ -2787,16 +2788,22 @@
   async function saveToGitHub() {
     const token = getWriteToken();
     if (!token) throw new Error('未检测到写入令牌（管理员需登录，或嘉宾需输入有效凭证）');
-    // 先取当前 sha
+    // 先取当前 sha 与最新内容
     let sha;
+    let serverData = null;
     const getRes = await fetch(`${API}/data.json`, { headers: { Authorization: `Bearer ${token}` } });
     if (getRes.ok) {
       const j = await getRes.json();
       sha = j.sha;
+      try { serverData = JSON.parse(b64ToStr(j.content)); } catch (e) { serverData = null; }
     } else if (getRes.status !== 404) {
       throw new Error('读取 data.json 失败 HTTP ' + getRes.status);
     }
-    const content = btoa(unescape(encodeURIComponent(JSON.stringify(appState, null, 2))));
+    // 以「远端最新数据」为基线做增量合并：即使本地 appState 是陈旧缓存（例如只加载到 4 条旧数据），
+    // 也不会把别人的新资料/用户整体冲掉，避免反复出现 data.json 被覆盖成旧版的数据事故。
+    const base = (serverData && typeof serverData === 'object') ? serverData : appState;
+    const merged = mergeStateSafe(base, appState);
+    const content = btoa(unescape(encodeURIComponent(JSON.stringify(merged, null, 2))));
     const putRes = await fetch(`${API}/data.json`, {
       method: 'PUT',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -2806,6 +2813,31 @@
       const err = await putRes.json().catch(() => ({}));
       throw new Error(err.message || ('提交失败 HTTP ' + putRes.status));
     }
+    // 写成功后把本地切成远端最新合并结果
+    appState = merged;
+  }
+
+  // 安全的状态合并：以 server 为基线，按 id 叠加本地条目（本地编辑/新增覆盖，server 独有保留），
+  // 业务标量设置（玻璃模式/微信号/版本信息等）以本地为准。
+  function mergeStateSafe(base, local) {
+    const out = JSON.parse(JSON.stringify(base || {}));
+    const scalars = ['glassMode', 'wechat', 'version', 'hideVersionInfo', 'nextProfileNo'];
+    scalars.forEach(function (k) { if (local[k] !== undefined) out[k] = local[k]; });
+    if (Array.isArray(local.hiddenVersions)) out.hiddenVersions = local.hiddenVersions;
+    if (Array.isArray(local.staffs)) out.staffs = local.staffs;
+    if (Array.isArray(local.adminLogs)) out.adminLogs = local.adminLogs;
+    out.profiles = mergeById(base.profiles, local.profiles);
+    out.users = mergeById(base.users, local.users);
+    out.notifications = mergeById(base.notifications, local.notifications);
+    return out;
+  }
+  function mergeById(baseArr, localArr) {
+    baseArr = Array.isArray(baseArr) ? baseArr : [];
+    localArr = Array.isArray(localArr) ? localArr : [];
+    const map = new Map();
+    baseArr.forEach(function (x) { if (x && x.id != null) map.set(String(x.id), x); });
+    localArr.forEach(function (x) { if (x && x.id != null) map.set(String(x.id), x); });
+    return Array.from(map.values());
   }
 
   // base64 → 字符串（GitHub 返回的 content 带换行，且是 UTF-8 JSON）
