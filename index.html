@@ -391,6 +391,22 @@
       padding: 1px 5px; border-radius: 999px; min-width: 16px; text-align: center;
       line-height: 1.3;
     }
+    /* 手机端输入（软键盘弹出）时隐藏底部导航与浮动入口，避免挡住输入框 */
+    body.keyboard-open .bottom-tab,
+    body.keyboard-open #floatWrap,
+    body.keyboard-open #floatBall { display: none !important; }
+    /* 赞助页面 */
+    .sponsor-hero {
+      background: linear-gradient(180deg, #fff7ed 0%, #ffffff 100%);
+      border: 1px solid #fed7aa; border-radius: 16px;
+      padding: 28px 20px; text-align: center; margin-bottom: 14px;
+    }
+    .sponsor-hero-icon { font-size: 44px; line-height: 1; margin-bottom: 10px; }
+    .sponsor-hero h3 { font-size: 17px; margin-bottom: 6px; }
+    .sponsor-hero .sponsor-desc { font-size: 13px; color: var(--text-muted); line-height: 1.7; margin-bottom: 6px; }
+    .sponsor-hero .original-qr-img { max-width: 260px; }
+    .sponsor-usage { display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: var(--text); }
+    .sponsor-usage div { display: flex; gap: 8px; align-items: flex-start; line-height: 1.6; }
     /* 个人主页/通知卡片样式 */
     .profile-section {
       background: var(--card-bg); border: 1px solid var(--border);
@@ -580,6 +596,15 @@
         <button class="btn btn-outline" onclick="switchTab('home')">返回首页</button>
       </div>
     </div>
+    <h3 style="font-size:14px; margin: 20px 0 10px; color:var(--text-muted); text-align:center;">—— 不想注册？也可以这样提交 ——</h3>
+    <div class="publish-option" onclick="publishAsGuest()">
+      <div style="font-size:24px;">👋</div>
+      <div style="flex:1;">
+        <b>游客提交</b>
+        <div style="font-size:12px; color:var(--text-muted); line-height:1.5;">无需注册，直接填写资料提交；提交后需添加管理员微信完成审核</div>
+      </div>
+      <span style="color:var(--primary); font-size:18px;">›</span>
+    </div>
   </div>
   <div id="publishLoggedIn">
     <div class="notice">发布后经管理员审核通过即展示给所有人。两种方式任选：</div>
@@ -654,6 +679,24 @@
     <button class="btn btn-outline" style="color:var(--danger); border-color:#fca5a5; width:100%;" onclick="logoutUser()">退出登录</button>
   </div>
 
+  <!-- 网站作者（所有访客可见） -->
+  <div class="profile-section" style="margin-top:16px;">
+    <h3>🌐 网站作者</h3>
+    <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+      <div style="width:52px; height:52px; border-radius:50%; background:linear-gradient(135deg,#4f46e5,#7c3aed); color:#fff; display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:700; flex-shrink:0;">作</div>
+      <div style="flex:1; min-width:130px;">
+        <div style="font-size:16px; font-weight:700;">xiaomaomiii777</div>
+        <div style="font-size:12px; color:var(--text-muted); line-height:1.6;">本站作者兼管理员 · 资料审核、问题反馈、合作都可以加这个微信</div>
+      </div>
+      <button class="btn btn-wechat" onclick="copyWechatId()">
+        <svg class="wechat-icon" viewBox="0 0 24 24">
+          <path d="M9.5 4C4.8 4 1 7.4 1 11.5c0 2.4 1.3 4.5 3.4 5.9l-.9 2.6 3.1-1.6c.9.3 2 .5 2.9.5.3 0 .7 0 1-.1-.3-.7-.4-1.5-.4-2.3 0-4.1 3.8-7.5 8.5-7.5.3 0 .7 0 1 .1C19.1 6.8 14.8 4 9.5 4zm-2.2 4.2c.7 0 1.2.6 1.2 1.2s-.6 1.2-1.2 1.2c-.7 0-1.2-.6-1.2-1.2s.5-1.2 1.2-1.2zm4.8 0c.7 0 1.2.6 1.2 1.2s-.6 1.2-1.2 1.2c-.7 0-1.2-.6-1.2-1.2s.5-1.2 1.2-1.2zm6.9 3.8c-3.9 0-7 2.7-7 6 0 3.3 3.1 6 7 6 .8 0 1.6-.1 2.4-.4l2.5 1.3-.7-2.1c1.7-1.1 2.8-2.8 2.8-4.8 0-3.3-3.1-6-7-6zm-2.5 3.5c.5 0 .9.4.9.9s-.4.9-.9.9-.9-.4-.9-.9.4-.9.9-.9zm4.2 0c.5 0 .9.4.9.9s-.4.9-.9.9-.9-.4-.9-.9.4-.9.9-.9z"/>
+        </svg>
+        复制微信号
+      </button>
+    </div>
+  </div>
+
   <!-- 管理员管理面板（按钮全部集中在这里） -->
   <div id="adminPanel" style="display:none; margin-top:16px;">
     <div class="profile-section">
@@ -678,6 +721,45 @@
     <button class="btn btn-outline" style="font-size:11px; padding:2px 8px;" onclick="showChangelog()">📋 更新记录</button>
     <button class="btn btn-outline" style="font-size:11px; padding:2px 8px;" onclick="showTerms()">📄 使用条款</button>
     <span class="ver-text">© 2026 全球找对象</span>
+  </div>
+</main>
+
+<!-- ===== 赞助 Tab（整页）===== -->
+<main id="tab-sponsor" class="tab-page" style="display:none;">
+  <h2>☕ 赞助支持</h2>
+  <div class="sponsor-hero">
+    <div class="sponsor-hero-icon">☕</div>
+    <h3 id="sponsorPageTitle">请我喝杯咖啡</h3>
+    <div class="sponsor-desc" id="sponsorPageText">如果这个网站帮你找到了缘分，可以请作者喝杯咖啡 ☕</div>
+    <img id="sponsorPageQr" src="" alt="赞助收款码" class="original-qr-img">
+    <div class="file-hint" id="sponsorPageQrHint" style="text-align:center;">长按识别二维码即可赞助 · 收款码由管理员维护</div>
+  </div>
+  <div class="profile-section">
+    <h3>💛 赞助将用于</h3>
+    <div class="sponsor-usage">
+      <div><span>🖥️</span><span>网站服务器与带宽费用，保证访问速度</span></div>
+      <div><span>🛠️</span><span>新功能开发与日常维护迭代</span></div>
+      <div><span>🔍</span><span>资料人工审核与社群运营</span></div>
+    </div>
+  </div>
+  <div class="profile-section">
+    <h3>🌐 联系作者</h3>
+    <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+      <div style="width:44px; height:44px; border-radius:50%; background:#eff6ff; color:var(--primary); display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:700; flex-shrink:0;">作</div>
+      <div style="flex:1; min-width:120px;">
+        <div style="font-weight:700;">xiaomaomiii777</div>
+        <div style="font-size:12px; color:var(--text-muted);">网站作者微信号 · 有问题、建议、商务合作都可加</div>
+      </div>
+      <button class="btn btn-wechat" onclick="copyWechatId()">
+        <svg class="wechat-icon" viewBox="0 0 24 24">
+          <path d="M9.5 4C4.8 4 1 7.4 1 11.5c0 2.4 1.3 4.5 3.4 5.9l-.9 2.6 3.1-1.6c.9.3 2 .5 2.9.5.3 0 .7 0 1-.1-.3-.7-.4-1.5-.4-2.3 0-4.1 3.8-7.5 8.5-7.5.3 0 .7 0 1 .1C19.1 6.8 14.8 4 9.5 4zm-2.2 4.2c.7 0 1.2.6 1.2 1.2s-.6 1.2-1.2 1.2c-.7 0-1.2-.6-1.2-1.2s.5-1.2 1.2-1.2zm4.8 0c.7 0 1.2.6 1.2 1.2s-.6 1.2-1.2 1.2c-.7 0-1.2-.6-1.2-1.2s.5-1.2 1.2-1.2zm6.9 3.8c-3.9 0-7 2.7-7 6 0 3.3 3.1 6 7 6 .8 0 1.6-.1 2.4-.4l2.5 1.3-.7-2.1c1.7-1.1 2.8-2.8 2.8-4.8 0-3.3-3.1-6-7-6zm-2.5 3.5c.5 0 .9.4.9.9s-.4.9-.9.9-.9-.4-.9-.9.4-.9.9-.9zm4.2 0c.5 0 .9.4.9.9s-.4.9-.9.9-.9-.4-.9-.9.4-.9.9-.9z"/>
+        </svg>
+        复制微信号
+      </button>
+    </div>
+  </div>
+  <div style="text-align:center; margin-top:18px;">
+    <button class="btn btn-outline" onclick="switchTab('home')">← 返回首页</button>
   </div>
 </main>
 
@@ -714,7 +796,7 @@
   <button class="tab-btn active" data-tab="home" onclick="switchTab('home')">
     <span class="tab-icon">🏠</span><span class="tab-label">首页</span>
   </button>
-  <button class="tab-btn" data-tab="sponsor" id="sponsorTab" onclick="openSponsorModal()" style="display:none;">
+  <button class="tab-btn" data-tab="sponsor" id="sponsorTab" onclick="switchTab('sponsor')" style="display:none;">
     <span class="tab-icon">☕</span><span class="tab-label">赞助</span>
   </button>
   <button class="tab-btn" data-tab="publish" onclick="switchTab('publish')">
@@ -1243,8 +1325,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.1.5';
+  const APP_VERSION = '6.2.0';
   const CHANGELOG = [
+    { v: '6.2.0', d: '2026-08-29', note: '赞助升级为整页（底部☕直达）；发布页新增游客提交入口；打字时底部导航自动隐藏；「我的」页显示网站作者', type: 'feature' },
     { v: '6.1.5', d: '2026-08-29', note: '底部导航➕移到中间；审核/隐藏改为独立管理页面；未登录页面提示美化', type: 'fix' },
     { v: '6.1.0', d: '2026-08-29', note: '管理员即用户（登录自动关联账号）；新增动态赞助按钮（管理员可设文案/收款码/开关）', type: 'feature' },
     { v: '6.0.5', d: '2026-08-29', note: '手机端表单优化：窄屏改为单列布局，字段不再挤到右边', type: 'fix' },
@@ -1813,6 +1896,37 @@
     return btoa(binary);
   }
 
+  // ===== 手机端软键盘弹起时自动隐藏底部导航 =====
+  let __maxViewportH = 0;
+  // 传入高度可手动测试；不传则读取 visualViewport（软键盘弹出时它会变矮）
+  function updateKeyboardState(viewH) {
+    const vv = window.visualViewport;
+    const h = Math.round(typeof viewH === 'number' ? viewH : (vv ? vv.height : window.innerHeight));
+    if (h > __maxViewportH) __maxViewportH = h;
+    // 仅手机宽度生效；视口高度骤降超过 140px 判定为软键盘弹出
+    const isPhone = window.innerWidth <= 900;
+    const open = !!isPhone && (__maxViewportH - h) > 140;
+    document.body.classList.toggle('keyboard-open', open);
+    return open;
+  }
+  (function initKeyboardWatch() {
+    __maxViewportH = window.innerHeight;
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', function () { updateKeyboardState(); });
+    }
+    window.addEventListener('resize', function () { updateKeyboardState(); });
+    // 部分浏览器软键盘不触发 resize，聚焦/失焦时再兜底检查一次
+    document.addEventListener('focusin', function (e) {
+      const t = e.target;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT')) {
+        setTimeout(function () { updateKeyboardState(); }, 320);
+      }
+    });
+    document.addEventListener('focusout', function () {
+      setTimeout(function () { updateKeyboardState(); }, 320);
+    });
+  })();
+
   // ===== UI 与交互 =====
   function updateWechatUI() {
     document.getElementById('wechatIdText').textContent = appState.wechat.id || '';
@@ -1833,6 +1947,22 @@
     if (txEl) txEl.value = sp.text || '';
     const spHint = document.getElementById('sponsorQrHint');
     if (spHint) spHint.textContent = sp.qr ? '✅ 已设置赞助二维码（重新选择可更换）' : '未设置赞助二维码（只显示文案）';
+  }
+
+  // 赞助整页（底部 ☕ 直达，每次实时刷新内容）
+  function renderSponsorPage() {
+    const sp = appState.wechat.sponsor || { enabled: false, text: '', qr: '' };
+    const textEl = document.getElementById('sponsorPageText');
+    const imgEl = document.getElementById('sponsorPageQr');
+    const hintEl = document.getElementById('sponsorPageQrHint');
+    if (textEl) textEl.textContent = sp.text || '如果这个网站帮你找到了缘分，可以请作者喝杯咖啡 ☕';
+    if (imgEl) {
+      if (sp.qr) { imgEl.src = sp.qr; imgEl.style.display = 'block'; }
+      else { imgEl.removeAttribute('src'); imgEl.style.display = 'none'; }
+    }
+    if (hintEl) hintEl.textContent = sp.qr
+      ? '长按识别二维码即可赞助 · 收款码由管理员维护'
+      : '管理员还没上传收款码，可加作者微信 xiaomaomiii777 支持';
   }
 
   // 动态打开赞助弹窗（每次实时刷新内容）
@@ -2921,7 +3051,7 @@
   function switchTab(name) {
     if (!name) return;
     // 管理视图 tab 不在底部导航里
-    ['home', 'publish', 'inbox', 'profile', 'adminlist'].forEach(function(t) {
+    ['home', 'publish', 'inbox', 'profile', 'adminlist', 'sponsor'].forEach(function(t) {
       const el = document.getElementById('tab-' + t);
       if (el) el.style.display = (t === name) ? 'block' : 'none';
     });
@@ -2932,6 +3062,7 @@
     if (name === 'profile') renderProfilePage();
     if (name === 'publish') renderMyPublished();
     if (name === 'adminlist') renderAdminCards();
+    if (name === 'sponsor') renderSponsorPage();
     if (name !== 'home') window.scrollTo(0, 0);
   }
 
