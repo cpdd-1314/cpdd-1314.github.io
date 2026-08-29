@@ -4,6 +4,20 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>🌍 全球找对象 - 快速找到心目中的伴侣</title>
+
+  <!-- 网站图标（地球）：浏览器标签页 / 收藏夹 / 添加到主屏幕 -->
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
+  <link rel="icon" type="image/png" sizes="180x180" href="apple-touch-icon.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+  <meta name="theme-color" content="#4f46e5">
+
+  <!-- 搜索与分享信息 -->
+  <meta name="description" content="全球找对象 —— 面向全球华人的公开交友资料展示平台。真人照片视频、城市筛选、条件说清、人工审核，加微信或进群直接联系。">
+  <meta property="og:title" content="🌍 全球找对象 - 快速找到心目中的伴侣">
+  <meta property="og:description" content="面向全球华人的公开交友资料展示平台：真人照片视频、城市筛选、条件说清、人工审核。">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="apple-touch-icon.png">
   <style>
     :root {
       --primary: #4f46e5;
@@ -1453,8 +1467,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.3.1';
+  const APP_VERSION = '6.3.2';
   const CHANGELOG = [
+    { v: '6.3.2', d: '2026-08-29', note: '新增地球网站图标（浏览器标签页/收藏夹/添加到主屏幕都显示）；补充站点描述与分享信息', type: 'fix' },
     { v: '6.3.1', d: '2026-08-29', note: '「我的」页底部新增品牌介绍入口（紧挨使用条款）；底部顺序改为：版本入口 → Copyright → 网站作者', type: 'fix' },
     { v: '6.3.0', d: '2026-08-29', note: '「我的」页新增全球找对象品牌介绍；使用条款扩充为完整版（十八章 Terms & Conditions）', type: 'feature' },
     { v: '6.2.1', d: '2026-08-29', note: '修复「登录提交」漏洞：未登录不再能提交；登录后发布页自动刷新，登录成功直接继续填资料', type: 'fix' },
