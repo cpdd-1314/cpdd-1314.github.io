@@ -993,6 +993,7 @@
     <button class="close-btn" onclick="toggleModal('userModal', false)">×</button>
     <h2 style="font-size:18px; margin-bottom:4px;">👤 用户登录 / 注册</h2>
     <div style="font-size:11px; color:var(--text-muted); margin-bottom:12px;">注册后可留言、点赞、收藏嘉宾资料</div>
+    <div id="userModalTip" class="notice" style="display:none; margin-bottom:12px;"></div>
     <div style="display:flex; gap:8px; margin-bottom:12px;">
       <button type="button" id="userTabLogin" class="btn btn-primary" style="flex:1; padding:6px;" onclick="switchUserTab('login')">登录</button>
       <button type="button" id="userTabReg" class="btn btn-outline" style="flex:1; padding:6px;" onclick="switchUserTab('reg')">注册</button>
@@ -1325,8 +1326,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.2.0';
+  const APP_VERSION = '6.2.1';
   const CHANGELOG = [
+    { v: '6.2.1', d: '2026-08-29', note: '修复「登录提交」漏洞：未登录不再能提交；登录后发布页自动刷新，登录成功直接继续填资料', type: 'fix' },
     { v: '6.2.0', d: '2026-08-29', note: '赞助升级为整页（底部☕直达）；发布页新增游客提交入口；打字时底部导航自动隐藏；「我的」页显示网站作者', type: 'feature' },
     { v: '6.1.5', d: '2026-08-29', note: '底部导航➕移到中间；审核/隐藏改为独立管理页面；未登录页面提示美化', type: 'fix' },
     { v: '6.1.0', d: '2026-08-29', note: '管理员即用户（登录自动关联账号）；新增动态赞助按钮（管理员可设文案/收款码/开关）', type: 'feature' },
@@ -2022,21 +2024,40 @@
   // 打开"添加新档案"表单（重置所有状态）
   // mode: 'admin' 管理员直接添加（立即显示）；'public' 访客公开上传（提交后进入待审核）
   // ➕ 发布 tab 两种提交方式入口
+  // submitter: 'user' = 登录提交（必须已登录）；'guest' = 游客提交（允许未登录）
   function publishAsUser() {
     const u = getCurrentUser();
     const isAdmin = isSuper() || isStaff();
     if (!u && !isAdmin) {
-      showAlert('请先登录（或注册）再提交资料，这样被点赞/评论/收藏时能收到通知');
+      // 未登录：记住"登录后要发资料"的意图，登录/注册成功会自动打开表单
+      window.__pendingPublish = true;
+      switchUserTab('login');
+      const tip = document.getElementById('userModalTip');
+      if (tip) {
+        tip.style.display = 'block';
+        tip.textContent = '📤 登录后提交资料：被点赞/评论/收藏时会收到通知，也能在「我的」里管理。不想注册可以关掉这里，用「游客提交」。';
+      }
       toggleModal('userModal', true);
       return;
     }
-    openAddForm('public');
+    window.__pendingPublish = false;
+    openAddForm('public', 'user');
   }
   function publishAsGuest() {
-    openAddForm('public');
+    window.__pendingPublish = false;
+    openAddForm('public', 'guest');
   }
 
-  function openAddForm(mode) {
+  // 登录/注册成功后，若之前点过「登录提交」则自动打开上传表单
+  function flushPendingPublish() {
+    if (!window.__pendingPublish) return false;
+    window.__pendingPublish = false;
+    if (!getCurrentUser() && !isSuper() && !isStaff()) return false;
+    setTimeout(function () { openAddForm('public', 'user'); }, 260);
+    return true;
+  }
+
+  function openAddForm(mode, submitter) {
     document.getElementById('editingProfileId').value = '';
     document.getElementById('formModalTitle').textContent = mode === 'public' ? '上传我的资料' : '添加新嘉宾档案';
     document.getElementById('submitBtn').textContent = mode === 'public' ? '提交资料（等待管理员审核）' : '确认保存并同步到全网';
@@ -2054,6 +2075,8 @@
     setCompressStatus('');
     // 记录当前表单模式
     window.__formMode = mode || (isSuper() || isStaff() ? 'admin' : 'public');
+    // 记录提交来源：'user' 登录提交 / 'guest' 游客提交 / 'admin' 管理员添加
+    window.__formSubmitter = submitter || (isSuper() || isStaff() ? 'admin' : 'guest');
     // 公开上传提示
     const notice = document.getElementById('formPublicNotice');
     if (notice) notice.style.display = mode === 'public' ? 'block' : 'none';
@@ -2069,6 +2092,7 @@
     form.reset();
     document.getElementById('editingProfileId').value = String(id);
     window.__formMode = mode || 'admin';
+    window.__formSubmitter = 'edit';
     const isApply = mode === 'apply';
     document.getElementById('formModalTitle').textContent = isApply ? '📝 申请修改档案：' + (item['姓名'] || '') : '✏️ 编辑档案：' + (item['姓名'] || '');
     document.getElementById('submitBtn').textContent = isApply ? '提交修改（等待管理员审核）' : '保存修改并同步到全网';
@@ -2145,6 +2169,21 @@
     const btn = document.getElementById('submitBtn');
     const editingId = document.getElementById('editingProfileId').value;
     btn.disabled = true;
+
+    // 兜底：点的是「登录提交」，但提交时登录态已失效 → 拦下来，不允许以游客身份蒙混提交
+    if (!editingId && window.__formSubmitter === 'user' && !getCurrentUser() && !isSuper() && !isStaff()) {
+      btn.disabled = false;
+      toggleModal('formModal', false);
+      window.__pendingPublish = true;
+      const tip = document.getElementById('userModalTip');
+      if (tip) {
+        tip.style.display = 'block';
+        tip.textContent = '⚠️ 登录状态已失效，重新登录后会自动继续填写资料。';
+      }
+      switchUserTab('login');
+      toggleModal('userModal', true);
+      return;
+    }
 
     try {
       const formData = new FormData(e.target);
@@ -2284,8 +2323,8 @@
           newProfile.uploaderName = '管理员';
           newProfile.uploaderCode = 'ADMIN';
           newProfile.uploaderUid = ensureAdminUser('super', '超级管理员').id;
-        } else if (regUser && !ident) {
-          // 注册用户（用 getCurrentUser 判定，无管理员身份时）
+        } else if (regUser) {
+          // 注册用户（含"管理员即用户"的账号；被赞/评论/收藏时收到通知）
           newProfile.uploaderType = 'user';
           newProfile.uploaderName = regUser.name + (regUser.groupName ? '（' + regUser.groupName + '）' : '');
           newProfile.uploaderCode = '';
@@ -2610,6 +2649,19 @@
     if (typeof updateInboxBadge === 'function') updateInboxBadge();
   }
 
+  // 登录 / 注册 / 退出后统一刷新所有跟登录态相关的页面
+  // 避免发布页还停留在"未登录"视图，导致已登录用户误用「游客提交」
+  function refreshUserPages() {
+    refreshUserUI();
+    if (typeof updateInboxBadge === 'function') updateInboxBadge();
+    const tab = window.__currentTab || 'home';
+    if (tab === 'publish') renderMyPublished();
+    else if (tab === 'inbox') renderInbox();
+    else if (tab === 'profile') renderProfilePage();
+    else if (tab === 'adminlist') renderAdminCards();
+    else renderCards();
+  }
+
   // 用户弹窗 Tab 切换
   function switchUserTab(tab) {
     const isLogin = tab === 'login';
@@ -2639,15 +2691,16 @@
     try {
       await saveToGitHub();
       setCurrentUser(user);
-      refreshUserUI();
-      updateInboxBadge();
       toggleModal('userModal', false);
+      refreshUserPages();
       document.getElementById('regNameInput').value = '';
       document.getElementById('regGroupNameInput').value = '';
       document.getElementById('regPwdInput').value = '';
       document.getElementById('regPwd2Input').value = '';
-      // 注册后自动跳到"我的"tab
-      switchTab('profile');
+      // 点过「登录提交」的用户：注册成功后直接继续发资料，不跳走
+      if (!flushPendingPublish()) {
+        switchTab('profile');   // 注册后自动跳到"我的"tab
+      }
       showAlert('✅ 注册成功，已自动登录「' + name + '」（群名：' + groupName + '）！现在可以发资料、留言、点赞、收藏啦。');
     } catch (err) {
       appState.users = appState.users.filter(u => u.id !== user.id);
@@ -2664,17 +2717,20 @@
     if (!user) { showAlert('❌ 没有昵称「' + name + '」，请先注册'); return; }
     if (user.password !== pwd) { showAlert('❌ 密码错误'); return; }
     setCurrentUser(user);
-    refreshUserUI();
     toggleModal('userModal', false);
+    refreshUserPages();     // 立即刷新发布页/我的/收件箱，避免停留在旧登录态
     document.getElementById('userNameInput').value = '';
     document.getElementById('userPwdInput').value = '';
+    // 之前点过「登录提交」：登录成功直接打开上传表单
+    if (flushPendingPublish()) return;
     showAlert('✅ 欢迎回来：' + name + '！');
   }
 
   // 退出登录
   function logoutUser() {
     setCurrentUser(null);
-    refreshUserUI();
+    window.__pendingPublish = false;
+    refreshUserPages();     // 退出后发布页要切回"未登录"视图
     showAlert('已退出登录。');
   }
 
@@ -3063,6 +3119,7 @@
     if (name === 'publish') renderMyPublished();
     if (name === 'adminlist') renderAdminCards();
     if (name === 'sponsor') renderSponsorPage();
+    window.__currentTab = name;   // 记录当前页面，登录/退出后可精准重渲染
     if (name !== 'home') window.scrollTo(0, 0);
   }
 
@@ -4200,6 +4257,11 @@
       if (editingInput) editingInput.value = '';
       const box = document.getElementById('existingMediaBox');
       if (box) box.style.display = 'none';
+    }
+    if (!show && id === 'userModal') {
+      // 关闭登录弹窗时清掉"登录后发资料"的提示（但不清除登录意图，避免用户误关后又要重来）
+      const tip = document.getElementById('userModalTip');
+      if (tip) tip.style.display = 'none';
     }
   }
 
