@@ -911,18 +911,7 @@
       "isHidden": true
     }
   ],
-  "staffs": [
-    {
-      "code": "ST002",
-      "name": "瑾瑜",
-      "password": "714956"
-    },
-    {
-      "code": "ST003",
-      "name": "1",
-      "password": "1"
-    }
-  ],
+  "staffs": [],
   "nextProfileNo": 42,
   "version": "",
   "hideVersionInfo": false,
@@ -931,6 +920,18 @@
     "4.3.2"
   ],
   "adminLogs": [
+    {
+      "time": 1788005328830,
+      "actor": "超级管理员",
+      "op": "管理员",
+      "desc": "删除内部管理员「1」（ST003）"
+    },
+    {
+      "time": 1788005326798,
+      "actor": "超级管理员",
+      "op": "管理员",
+      "desc": "删除内部管理员「瑾瑜」（ST002）"
+    },
     {
       "time": 1788005325728,
       "actor": "超级管理员",
