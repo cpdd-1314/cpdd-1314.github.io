@@ -2050,9 +2050,10 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.9.2';
+  const APP_VERSION = '6.9.3';
   const CHANGELOG = [
     { v: '6.9.2', d: '2026-08-30', note: '解释并缓解「改了还不同步」：写入后经 GitHub Pages 重建才对外生效（发布延迟 30s~2min），期间所有人拉到的仍是旧数据。新增「发布观察」——保存后每 4s 探测 Pages 是否已发布本次修改，发布成功即提示「已同步到所有设备」；左下角状态条改为可点击手动立即同步；并澄清本地改文件不会自动上线需部署', type: 'fix' },
+    { v: '6.9.3', d: '2026-08-30', note: '修复「审核/生成链接/很多操作不同步」的真正根因：① saveToGitHub 的合并函数漏合并 submitLinks 数组，导致生成的投稿链接、链接 used 计数、删除链接每次保存都被整体丢弃（连本地 appState 也被覆盖成不含新链接）；新增 mergeByKey 按 key 安全合并投稿链接。② 15s 自动同步会在保存的网络请求进行中把 appState 替换成服务端旧副本（Pages CDN 滞后），污染正在保存的本地改动 → 审核/编辑被覆盖写丢；新增写锁 __saving 与「保存后 45s 内不回拉覆盖」保护', type: 'fix' },
     { v: '6.9.1', d: '2026-08-30', note: '修复「数据不会同步」：站点无后端，原只在启动时拉一次 data.json，导致多端/多标签页看不到彼此的新提交。新增每 15s 轻量轮询（带 ?t= 缓存击穿绕过 Pages CDN），与服务端指纹比对，变化即合并重渲染；正在编辑表单时跳过重渲染以免打扰；封号状态在多端实时生效（被封账号会被踢下线）；页面切回前台立即同步一次', type: 'fix' },
     { v: '6.9.0', d: '2026-08-30', note: '新增「封号」机制：管理员可在「注册用户」里封禁违规账号，封号后该用户所有留言对其余访客不可见、无法登录与点赞/收藏/留言/投稿；新增「邀请链接记住设备」：访客用带 ?k= 的投稿链接打开过本站后，该浏览器被授权，之后无需再带链接也能提交；并加固数据写入（409 冲突自动重试）与加载（失败重试），修复管理员令牌反复粘贴的问题', type: 'feature' },
     { v: '6.8.0', d: '2026-08-30', note: '投稿收口为「管理员链接授权 + 管理员审核」双道关：管理员可在后台生成带密钥、可限定使用次数的「投稿链接」；访客须用该链接（网址带 ?k=）打开本站才能提交，否则投稿入口锁定；注册用户仍可直接提交但同样进入待审核；提交成功后消耗一次链接次数，用尽即失效', type: 'feature' },
@@ -2826,6 +2827,10 @@
   async function saveToGitHub() {
     const token = getWriteToken();
     if (!token) throw new Error('未检测到写入令牌（管理员需登录，或嘉宾需输入有效凭证）');
+    // 加写锁：保存的网络请求进行期间，禁止自动同步把 appState 替换成服务端旧副本，
+    // 否则本地的审核/编辑/生成链接会在 await 期间被污染，写回时被覆盖丢。
+    __saving = true;
+    try {
     // 以「远端最新数据」为基线做增量合并：即使本地 appState 是陈旧缓存（例如只加载到 4 条旧数据），
     // 也不会把别人的新资料/用户整体冲掉，避免反复出现 data.json 被覆盖成旧版的数据事故。
     let attempts = 0;
@@ -2852,6 +2857,7 @@
       if (putRes.ok) {
         // 写成功后把本地切成远端最新合并结果
         appState = merged;
+        __lastSavedAt = Date.now();
         try { __startPublishWatch(__syncSignature(merged)); } catch (e) {}
         showToast('✅ 已保存（GitHub Pages 发布中，约 1 分钟内同步到所有设备）');
         return;
@@ -2864,6 +2870,9 @@
       }
       const err = await putRes.json().catch(() => ({}));
       throw new Error(err.message || ('提交失败 HTTP ' + putRes.status));
+    }
+    } finally {
+      __saving = false;
     }
   }
 
@@ -2879,6 +2888,10 @@
     out.profiles = mergeById(base.profiles, local.profiles);
     out.users = mergeById(base.users, local.users);
     out.notifications = mergeById(base.notifications, local.notifications);
+    // 关键修复：投稿链接数组曾漏合并，导致「生成链接 / 链接 used 计数 / 删除链接」
+    // 在每次保存时都被整体丢弃（连本地 appState 也被覆盖成不含新链接）→ 生成的链接根本不同步。
+    // submitLinks 以 key 为主键合并，本地新增/消费次数/删除都会保留并写回仓库。
+    out.submitLinks = mergeByKey(base.submitLinks, local.submitLinks);
     return out;
   }
   function mergeById(baseArr, localArr) {
@@ -2887,6 +2900,22 @@
     const map = new Map();
     baseArr.forEach(function (x) { if (x && x.id != null) map.set(String(x.id), x); });
     localArr.forEach(function (x) { if (x && x.id != null) map.set(String(x.id), x); });
+    return Array.from(map.values());
+  }
+  // 与 mergeById 类似，但主键优先取 key（投稿链接用 key 而非 id 做唯一标识），
+  // 找不到 key 时退回 id。用于 submitLinks 的安全合并，避免链接被整体冲掉。
+  function mergeByKey(baseArr, localArr) {
+    baseArr = Array.isArray(baseArr) ? baseArr : [];
+    localArr = Array.isArray(localArr) ? localArr : [];
+    const keyOf = function (x) {
+      if (!x || x === null) return null;
+      if (x.key != null) return String(x.key);
+      if (x.id != null) return String(x.id);
+      return null;
+    };
+    const map = new Map();
+    baseArr.forEach(function (x) { const k = keyOf(x); if (k != null) map.set(k, x); });
+    localArr.forEach(function (x) { const k = keyOf(x); if (k != null) map.set(k, x); });
     return Array.from(map.values());
   }
 
@@ -3946,6 +3975,10 @@
   // 比对，变了就合并重渲染；正在编辑表单时跳过重渲染以免打断输入；封号状态多端实时生效。
   let __syncTimer = null;
   let __lastSyncSig = '';
+  // 写锁 + 最近保存时间：防止自动同步在「保存的网络请求进行中 / 刚保存完」时，
+  // 把 appState 替换成服务端旧副本（GitHub Pages CDN 滞后），导致本地刚做的审核/编辑/生成链接被覆盖写丢。
+  let __saving = false;
+  let __lastSavedAt = 0;
   function __syncSignature(d) {
     // 廉价指纹：对关键数组/标量做紧凑序列化后做简单哈希，足以检测「是否有变化」
     try {
@@ -3971,12 +4004,22 @@
     return el;
   }
   async function __syncTick() {
+    // 写锁：保存的网络请求进行中不要拉取，否则会把 appState 替换成服务端旧副本，
+    // 覆盖我们正在保存的本地改动（审核/编辑/生成链接等）
+    if (__saving) return;
     try {
       const res = await fetch('./data.json?t=' + Date.now(), { cache: 'no-cache' });
       if (!res.ok) return;
       const data = await res.json();
       const sig = __syncSignature(data);
       const badge = document.getElementById('syncBadge');
+      // 刚保存完（<45s）时，GitHub Pages CDN 常常还没发布新数据，拉到的仍是旧副本；
+      // 若直接替换本地，会把我刚保存的审核/链接/编辑覆盖回旧值（表现就是「审核了又变回去」）。
+      // 先跳过拉取，等 CDN 跟上（约 30s）后的下一次轮询再正常同步。
+      if (Date.now() - __lastSavedAt < 45000) {
+        if (badge) badge.textContent = '已同步 ' + new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+        return;
+      }
       if (sig === __lastSyncSig) {
         if (badge) badge.textContent = '已同步 ' + new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
         return; // 无变化，跳过合并与重渲染
