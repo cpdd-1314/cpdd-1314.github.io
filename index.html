@@ -2050,8 +2050,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.8.0';
+  const APP_VERSION = '6.9.0';
   const CHANGELOG = [
+    { v: '6.9.0', d: '2026-08-30', note: '新增「封号」机制：管理员可在「注册用户」里封禁违规账号，封号后该用户所有留言对其余访客不可见、无法登录与点赞/收藏/留言/投稿；新增「邀请链接记住设备」：访客用带 ?k= 的投稿链接打开过本站后，该浏览器被授权，之后无需再带链接也能提交；并加固数据写入（409 冲突自动重试）与加载（失败重试），修复管理员令牌反复粘贴的问题', type: 'feature' },
     { v: '6.8.0', d: '2026-08-30', note: '投稿收口为「管理员链接授权 + 管理员审核」双道关：管理员可在后台生成带密钥、可限定使用次数的「投稿链接」；访客须用该链接（网址带 ?k=）打开本站才能提交，否则投稿入口锁定；注册用户仍可直接提交但同样进入待审核；提交成功后消耗一次链接次数，用尽即失效', type: 'feature' },
     { v: '6.7.3', d: '2026-08-30', note: '取消提交资料的「年满 18 周岁」硬性拦截，改为由管理员审核把关：所有访客/普通用户提交均进入待审核队列，只有管理员人工通过才公开；待审核卡片对未满 18 周岁申请人显示「🔞 未成年」角标与审核提醒', type: 'feature' },
     { v: '6.7.2', d: '2026-08-29', note: '修复 data.json 被覆盖成旧版的数据事故：saveToGitHub 改为以远端最新数据为基线做增量合并（按 id 叠加，本地编辑/新增覆盖、远端独有保留），本地陈旧缓存不再冲掉别人的新资料/用户', type: 'fix' },
@@ -2823,33 +2824,43 @@
   async function saveToGitHub() {
     const token = getWriteToken();
     if (!token) throw new Error('未检测到写入令牌（管理员需登录，或嘉宾需输入有效凭证）');
-    // 先取当前 sha 与最新内容
-    let sha;
-    let serverData = null;
-    const getRes = await fetch(`${API}/data.json`, { headers: { Authorization: `Bearer ${token}` } });
-    if (getRes.ok) {
-      const j = await getRes.json();
-      sha = j.sha;
-      try { serverData = JSON.parse(b64ToStr(j.content)); } catch (e) { serverData = null; }
-    } else if (getRes.status !== 404) {
-      throw new Error('读取 data.json 失败 HTTP ' + getRes.status);
-    }
     // 以「远端最新数据」为基线做增量合并：即使本地 appState 是陈旧缓存（例如只加载到 4 条旧数据），
     // 也不会把别人的新资料/用户整体冲掉，避免反复出现 data.json 被覆盖成旧版的数据事故。
-    const base = (serverData && typeof serverData === 'object') ? serverData : appState;
-    const merged = mergeStateSafe(base, appState);
-    const content = btoa(unescape(encodeURIComponent(JSON.stringify(merged, null, 2))));
-    const putRes = await fetch(`${API}/data.json`, {
-      method: 'PUT',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: 'update data.json', content, sha })
-    });
-    if (!putRes.ok) {
+    let attempts = 0;
+    while (true) {
+      // 每次尝试前都重新取最新 sha 与内容（避免 409 冲突时写覆盖别人新数据）
+      let sha;
+      let serverData = null;
+      const getRes = await fetch(`${API}/data.json`, { headers: { Authorization: `Bearer ${token}` } });
+      if (getRes.ok) {
+        const j = await getRes.json();
+        sha = j.sha;
+        try { serverData = JSON.parse(b64ToStr(j.content)); } catch (e) { serverData = null; }
+      } else if (getRes.status !== 404) {
+        throw new Error('读取 data.json 失败 HTTP ' + getRes.status);
+      }
+      const base = (serverData && typeof serverData === 'object') ? serverData : appState;
+      const merged = mergeStateSafe(base, appState);
+      const content = btoa(unescape(encodeURIComponent(JSON.stringify(merged, null, 2))));
+      const putRes = await fetch(`${API}/data.json`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: 'update data.json', content, sha })
+      });
+      if (putRes.ok) {
+        // 写成功后把本地切成远端最新合并结果
+        appState = merged;
+        return;
+      }
+      // 409 = 别人在我们读取之后又改了数据（sha 变了）。自动重试：重新拉最新再合并写回，最多 3 次
+      if (putRes.status === 409 && attempts < 3) {
+        attempts++;
+        await new Promise(r => setTimeout(r, 300 * attempts));
+        continue;
+      }
       const err = await putRes.json().catch(() => ({}));
       throw new Error(err.message || ('提交失败 HTTP ' + putRes.status));
     }
-    // 写成功后把本地切成远端最新合并结果
-    appState = merged;
   }
 
   // 安全的状态合并：以 server 为基线，按 id 叠加本地条目（本地编辑/新增覆盖，server 独有保留），
@@ -3205,16 +3216,25 @@
       const k = new URLSearchParams(location.search).get('k');
       if (k && findActiveSubmitLink(k)) {
         window.__submitKey = k;
+        // 记住这台设备"打开过邀请链接"：用 localStorage 持久化（跨会话/换标签页都有效），
+        // 之后即使网址不带 ?k= 也能提交（满足"记住那个人"的需求，同时修掉原 sessionStorage 一关就丢的链接 bug）
+        try { localStorage.setItem('__submitKey', k); } catch (e) {}
+        try { localStorage.setItem('__guestAuthorized', '1'); } catch (e) {}
         try { sessionStorage.setItem('submitKey', k); } catch (e) {}
         return;
       }
+      // 没有 ?k= 时：若本设备曾被授权，仍保持解锁（优先用 localStorage，退回 sessionStorage）
       try {
-        const sk = sessionStorage.getItem('submitKey');
+        const sk = localStorage.getItem('__submitKey') || sessionStorage.getItem('submitKey');
         if (sk && findActiveSubmitLink(sk)) window.__submitKey = sk;
       } catch (e) {}
     } catch (e) {}
   }
-  function isGuestSubmitUnlocked() { return !!findActiveSubmitLink(window.__submitKey); }
+  // 访客投稿是否解锁：有效链接 或 本设备已被授权（打开过邀请链接）都算解锁
+  function isGuestSubmitUnlocked() {
+    try { if (localStorage.getItem('__guestAuthorized') === '1') return true; } catch (e) {}
+    return !!findActiveSubmitLink(window.__submitKey);
+  }
   function refreshPublishAccess() {
     const unlocked = isGuestSubmitUnlocked();
     ['guestOptA', 'guestOptB'].forEach(id => {
@@ -3477,6 +3497,13 @@
     const btn = document.getElementById('submitBtn');
     const editingId = document.getElementById('editingProfileId').value;
     btn.disabled = true;
+
+    // 封号用户禁止提交资料
+    if (!editingId && currentUserBanned()) {
+      btn.disabled = false;
+      showAlert('❌ 你的账号已被封禁，无法提交资料');
+      return;
+    }
 
     // 兜底：点的是「登录提交」，但提交时登录态已失效 → 拦下来，不允许以游客身份蒙混提交
     if (!editingId && window.__formSubmitter === 'user' && !getCurrentUser() && !isSuper() && !isStaff()) {
@@ -3785,6 +3812,7 @@
     clickTimer = setTimeout(() => { clickCount = 0; }, 1500);
     if (clickCount >= 5) {
       clickCount = 0;
+      prefillAdminToken();
       toggleModal('loginModal', true);
     }
   }
@@ -3792,6 +3820,7 @@
   document.addEventListener('keydown', (e) => {
     if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
       e.preventDefault();
+      prefillAdminToken();
       toggleModal('loginModal', true);
     }
   });
@@ -3837,27 +3866,30 @@
 
   async function loadData() {
     let loaded = false;
-    try {
-      // 条件请求：数据没变时服务器返回 304（几乎零流量），变了才下载新数据
-      const res = await fetch('./data.json', { cache: 'no-cache' });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.wechat) appState.wechat = data.wechat;
-        appState.profiles = Array.isArray(data.profiles) ? data.profiles : [];
-        appState.staffs = Array.isArray(data.staffs) ? data.staffs : [];
-        if (typeof data.nextProfileNo === 'number') appState.nextProfileNo = data.nextProfileNo;
-        if (typeof data.version === 'string') appState.version = data.version;
-        if (typeof data.hideVersionInfo === 'boolean') appState.hideVersionInfo = data.hideVersionInfo;
-        if (Array.isArray(data.hiddenVersions)) appState.hiddenVersions = data.hiddenVersions;
-        if (Array.isArray(data.adminLogs)) appState.adminLogs = data.adminLogs;
-        if (Array.isArray(data.users)) appState.users = data.users;
-        if (Array.isArray(data.notifications)) appState.notifications = data.notifications;
-        if (typeof data.glassMode === 'boolean') appState.glassMode = data.glassMode;
-        if (Array.isArray(data.submitLinks)) appState.submitLinks = data.submitLinks;
-        loaded = true;
+    let data = null;
+    // 失败重试：首次用条件请求，失败再带缓存击穿参数 ?t= 重试一次，避免偶发网络抖动导致空白/旧数据
+    for (let attempt = 0; attempt < 2 && !loaded; attempt++) {
+      try {
+        const url = attempt === 0 ? './data.json' : './data.json?t=' + Date.now();
+        const res = await fetch(url, { cache: 'no-cache' });
+        if (res.ok) { data = await res.json(); loaded = true; }
+      } catch (err) {
+        if (attempt === 0) console.warn('首次加载 data.json 失败，重试中：', err);
       }
-    } catch (err) {
-      console.warn('加载 data.json 出错：', err);
+    }
+    if (loaded && data) {
+      if (data.wechat) appState.wechat = data.wechat;
+      appState.profiles = Array.isArray(data.profiles) ? data.profiles : [];
+      appState.staffs = Array.isArray(data.staffs) ? data.staffs : [];
+      if (typeof data.nextProfileNo === 'number') appState.nextProfileNo = data.nextProfileNo;
+      if (typeof data.version === 'string') appState.version = data.version;
+      if (typeof data.hideVersionInfo === 'boolean') appState.hideVersionInfo = data.hideVersionInfo;
+      if (Array.isArray(data.hiddenVersions)) appState.hiddenVersions = data.hiddenVersions;
+      if (Array.isArray(data.adminLogs)) appState.adminLogs = data.adminLogs;
+      if (Array.isArray(data.users)) appState.users = data.users;
+      if (Array.isArray(data.notifications)) appState.notifications = data.notifications;
+      if (typeof data.glassMode === 'boolean') appState.glassMode = data.glassMode;
+      if (Array.isArray(data.submitLinks)) appState.submitLinks = data.submitLinks;
     }
     if (!loaded) {
       // 取不到仓库数据时（本地预览 / 分享链接 / 直接双击打开）用内置示例兜底，避免白屏
@@ -3901,6 +3933,15 @@
   function checkAdminState() {
     const isAdmin = sessionStorage.getItem('is_match_admin') === 'true' || localStorage.getItem('is_match_admin') === 'true';
     document.body.classList.toggle('is-admin', isAdmin);
+  }
+
+  // 打开管理员登录框时，若本机已记住 GitHub 令牌则自动回填，刷新/重开不再需要反复粘贴
+  function prefillAdminToken() {
+    try {
+      const t = getToken();
+      const inp = document.getElementById('adminTokenInput');
+      if (inp && t) inp.value = t;
+    } catch (e) {}
   }
 
   // ===== 身份系统 =====
@@ -3948,6 +3989,54 @@
       localStorage.removeItem('current_user');
     }
   }
+
+  // 封号（ban）相关：被封禁的用户无法登录与操作，其留言对其他人不可见
+  // 判断某 uid 是否被封禁（从 users 里查 banned 字段）
+  function isBannedUid(uid) {
+    if (uid == null) return false;
+    const u = (appState.users || []).find(function (x) { return String(x.id) === String(uid); });
+    return !!(u && u.banned);
+  }
+  // 当前登录用户是否被封禁
+  function currentUserBanned() {
+    const u = getCurrentUser();
+    if (!u) return false;
+    return isBannedUid(u.id);
+  }
+  // 过滤掉被封禁用户的留言，返回对其他人可见的留言列表
+  function visibleComments(item) {
+    const cs = (item && item.comments) || [];
+    return cs.filter(function (c) { return !isBannedUid(c.uid); });
+  }
+  // 封禁 / 解封某用户（仅管理员可操作），走增量保存避免覆盖他人数据
+  async function setUserBanned(uid, banned, reason) {
+    if (!isSuper() && !isStaff()) { showAlert('仅管理员可封禁用户'); return; }
+    uid = Number(uid);
+    try {
+      await patchRemoteState(function (base) {
+        if (!Array.isArray(base.users)) base.users = [];
+        const u = base.users.find(function (x) { return x.id === uid; });
+        if (!u) throw new Error('未找到该用户');
+        u.banned = !!banned;
+        if (banned) u.banReason = (reason || '').slice(0, 200);
+        else delete u.banReason;
+      }, (banned ? 'ban ' : 'unban ') + uid);
+      // 若被封禁的是当前登录用户，立即踢下线
+      const cur = getCurrentUser();
+      if (banned && cur && Number(cur.id) === uid) setCurrentUser(null);
+      if (typeof renderUserCards === 'function') renderUserCards();
+      if (typeof renderCards === 'function') renderCards();
+      showToast(banned ? '已封禁该用户' : '已解封');
+    } catch (err) {
+      showAlert('❌ 操作失败：' + (err && err.message ? err.message : err));
+    }
+  }
+  function banUser(uid) {
+    const reason = (window.prompt('封禁原因（可选，会记录在后台）：', '') || '').trim();
+    if (reason === null) return;   // 取消
+    setUserBanned(uid, true, reason);
+  }
+  function unbanUser(uid) { setUserBanned(uid, false, ''); }
 
   // 生成头像 HTML：有头像用图片，没有则用昵称首字母
   function avatarHtml(user, size, fontSize) {
@@ -4078,6 +4167,7 @@
     const user = (appState.users || []).find(u => u.name === name);
     if (!user) { showAlert('❌ 没有昵称「' + name + '」，请先注册'); return; }
     if (user.password !== pwd) { showAlert('❌ 密码错误'); return; }
+    if (user.banned) { showAlert('❌ 该账号已被封禁，无法登录' + (user.banReason ? '（原因：' + user.banReason + '）' : '')); return; }
     setCurrentUser(user);
     toggleModal('userModal', false);
     refreshUserPages();     // 立即刷新发布页/我的/收件箱，避免停留在旧登录态
@@ -4324,7 +4414,7 @@
     const liked = isLikedByMe(item);
     const faved = isFavoritedByMe(item);
     const likeCount = (item.likes || []).length;
-    const commentCount = (item.comments || []).length;
+    const commentCount = visibleComments(item).length;
     bar.innerHTML =
       '<button class="btn ' + (liked ? 'btn-primary' : 'btn-outline') + '" style="flex:1; font-size:13px;" onclick="toggleLike(' + item.id + ')">' + (liked ? '👍 已赞' : '👍 点赞') + ' <span id="likeCount">' + likeCount + '</span></button>' +
       '<button class="btn ' + (faved ? 'btn-primary' : 'btn-outline') + '" style="flex:1; font-size:13px;" onclick="toggleFavorite(' + item.id + ')">' + (faved ? '⭐ 已收藏' : '⭐ 收藏') + '</button>' +
@@ -4334,6 +4424,7 @@
   async function toggleLike(id) {
     const user = getCurrentUser();
     if (!user) { showAlert('请先登录，才能点赞'); toggleModal('userModal', true); return; }
+    if (currentUserBanned()) { showAlert('❌ 你的账号已被封禁，无法操作'); return; }
     let item = appState.profiles.find(function(p) { return String(p.id) === String(id); });
     if (!item) return;
     if (__interactLock) return;
@@ -4384,6 +4475,7 @@
   async function toggleFavorite(id) {
     const user = getCurrentUser();
     if (!user) { showAlert('请先登录，才能收藏'); toggleModal('userModal', true); return; }
+    if (currentUserBanned()) { showAlert('❌ 你的账号已被封禁，无法操作'); return; }
     let item = appState.profiles.find(function(p) { return String(p.id) === String(id); });
     if (!item) return;
     if (__interactLock) return;
@@ -4448,7 +4540,8 @@
   function renderComments(item) {
     const area = document.getElementById('commentsArea');
     if (!area) return;
-    const comments = item.comments || [];
+    // 被封禁用户的留言对其他人不可见（数据保留，解封后自动恢复）
+    const comments = visibleComments(item);
     let html = '<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">' +
       '<div class="modal-label" style="font-size:14px; font-weight:700; color:var(--text);">💬 留言（' + comments.length + '）</div></div>';
     if (comments.length === 0) {
@@ -4481,6 +4574,7 @@
   async function submitComment(profileId) {
     const user = getCurrentUser();
     if (!user) { showAlert('请先登录，才能留言'); toggleModal('userModal', true); return; }
+    if (currentUserBanned()) { showAlert('❌ 你的账号已被封禁，无法留言'); return; }
     const input = document.getElementById('commentInput');
     const text = (input ? input.value : '').trim();
     if (!text) { showAlert('留言内容不能为空'); return; }
@@ -5353,11 +5447,14 @@
       ? `<img src="${u.avatar}" alt="${escapeHtml(name)}" loading="lazy" decoding="async">`
       : `<div class="user-avatar-fallback">${escapeHtml((name || '?').slice(0, 1))}</div>`;
     const hasPwd = u.password && String(u.password).length > 0;
+    const banned = !!u.banned;
+    const banBtn = `<button class="btn btn-outline" style="font-size:11px; padding:5px 10px; ${banned ? 'color:#047857; border-color:#a7f3d0;' : 'color:#dc2626; border-color:#fca5a5;'}" onclick="${banned ? 'unbanUser' : 'banUser'}(${u.id})">${banned ? '✅ 解封' : '⛔ 封号'}</button>`;
     return `
-      <div class="card user-card" data-id="${u.id}">
+      <div class="card user-card" data-id="${u.id}" style="${banned ? 'opacity:.7;' : ''}">
         <div class="card-media-wrap user-avatar-wrap">
           ${avatarHtml}
           <span class="media-badge">👤 注册用户</span>
+          ${banned ? '<span class="media-badge" style="bottom:8px; background:#dc2626;">⛔ 已封禁</span>' : ''}
         </div>
         <div class="card-body">
           <div class="card-title">
@@ -5365,9 +5462,11 @@
           </div>
           <div class="card-meta">🆔 用户ID：${escapeHtml(String(u.id))}</div>
           <div class="card-meta">📅 注册时间：${fmtDateTime(u.createdAt) || '未知'}</div>
-          <div class="card-meta">⭐ 收藏 ${favCount} 条 · 🔑 密码：${hasPwd ? '已设置（不展示）' : '未设置'}</div>
-          <div style="display:flex; gap:6px; margin-top:6px; flex-wrap:wrap;">
+          <div class="card-meta">⭐ 收藏 ${favCount} 条 · 🔑 密码：${hasPwd ? '已设置（不展示）' : '未设置'}${banned ? ' · <b style="color:#dc2626;">已封禁</b>' : ''}</div>
+          ${banned && u.banReason ? `<div class="card-meta" style="color:#dc2626;">封禁原因：${escapeHtml(u.banReason)}</div>` : ''}
+          <div style="display:flex; gap:6px; margin-top:6px; flex-wrap:wrap; align-items:center;">
             <span class="uploader-tag">👥 群昵称：${escapeHtml(u.groupName || '-')}</span>
+            ${banBtn}
           </div>
         </div>
       </div>
@@ -6103,6 +6202,7 @@
   refreshIdentityUI();
   refreshUserUI();
   updateVersionWidget();   // 显示版本号 + 按隐藏设置控制可见性
+  prefillAdminToken();     // 记住令牌时预填登录框，避免反复粘贴
   loadData();
 </script>
 
