@@ -634,7 +634,16 @@
       "fromPublic": true,
       "status": "approved",
       "profileNo": "A022",
-      "mediaList": []
+      "mediaList": [],
+      "comments": [
+        {
+          "id": 1788021100220,
+          "uid": 1788020564369,
+          "name": "非洲人",
+          "text": "pcdd",
+          "time": 1788021100115
+        }
+      ]
     },
     {
       "id": 1787412932269,
