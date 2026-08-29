@@ -1513,6 +1513,18 @@
       "favorites": []
     }
   ],
-  "notifications": [],
+  "notifications": [
+    {
+      "id": 1788044552649,
+      "toUid": 1788017541235,
+      "type": "like",
+      "profileId": 1788039106708,
+      "actorUid": "super",
+      "actorName": "管理员",
+      "text": "赞了你的嘉宾资料「冰杰」",
+      "time": 1788044551781,
+      "read": false
+    }
+  ],
   "glassMode": false
 }
