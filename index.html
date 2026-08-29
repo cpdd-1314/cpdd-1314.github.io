@@ -1153,8 +1153,11 @@
         <button class="btn btn-outline" onclick="switchTab('home')">返回首页</button>
       </div>
     </div>
+    <div id="guestLockedBannerA" style="display:none; background:#fef2f2; border:1px solid #fecaca; border-radius:12px; padding:14px 16px; color:#b91c1c; font-size:13px; line-height:1.8; text-align:center;">
+      🔒 <b>游客投稿入口已锁定</b><br>请通过管理员分享的投稿链接（含 <code>?k=</code> 参数）打开本站，才能提交资料。
+    </div>
     <h3 style="font-size:14px; margin: 20px 0 10px; color:var(--text-muted); text-align:center;">—— 不想注册？也可以这样提交 ——</h3>
-    <div class="publish-option" onclick="publishAsGuest()">
+    <div id="guestOptA" class="publish-option" onclick="publishAsGuest()">
       <div style="font-size:24px;">👋</div>
       <div style="flex:1;">
         <b>游客提交</b>
@@ -1165,6 +1168,9 @@
   </div>
   <div id="publishLoggedIn">
     <div class="notice">发布后经管理员审核通过即展示给所有人。两种方式任选：</div>
+    <div id="guestLockedBannerB" style="display:none; background:#fef2f2; border:1px solid #fecaca; border-radius:12px; padding:14px 16px; color:#b91c1c; font-size:13px; line-height:1.8; text-align:center; margin-top:14px;">
+      🔒 <b>游客投稿入口已锁定</b><br>请通过管理员分享的投稿链接（含 <code>?k=</code> 参数）打开本站，才能提交资料。
+    </div>
     <div style="display:flex; flex-direction:column; gap:12px; margin-top:14px;">
       <div class="publish-option" onclick="publishAsUser()">
         <div style="font-size:24px;">👤</div>
@@ -1174,7 +1180,7 @@
         </div>
         <span style="color:var(--primary); font-size:18px;">›</span>
       </div>
-      <div class="publish-option" onclick="publishAsGuest()">
+      <div id="guestOptB" class="publish-option" onclick="publishAsGuest()">
         <div style="font-size:24px;">👋</div>
         <div style="flex:1;">
           <b>访客提交</b>
@@ -1311,6 +1317,7 @@
         <button class="btn btn-outline super-only" onclick="toggleModal('staffAdminModal', true)">👥 内部管理员</button>
         <button class="btn btn-outline super-only" onclick="openAdminLogs()">📋 操作记录</button>
         <button class="btn btn-outline admin-only" onclick="toggleModal('wechatConfigModal', true)">⚙️ 修改微信名片</button>
+        <button class="btn btn-outline admin-only" onclick="openSubmitLinkModal()">📨 投稿链接</button>
         <button class="btn btn-outline admin-only" id="glassModeBtn" onclick="toggleGlassMode()">🪟 玻璃拟态：关</button>
         <button class="btn btn-outline super-only" onclick="openVersionAdmin()">⚙️ 版本管理</button>
         <button class="btn btn-outline admin-only" onclick="logoutAdmin()">🚪 退出管理</button>
@@ -1536,6 +1543,30 @@
       </div>
       <button type="submit" class="btn btn-primary" style="width:100%; padding:10px;" id="saveWechatBtn">保存并同步</button>
     </form>
+  </div>
+</div>
+
+<!-- 投稿链接管理弹窗 -->
+<div class="modal-overlay" id="submitLinkModal" onclick="handleOverlayClick(event, 'submitLinkModal')">
+  <div class="modal" style="max-width:460px;">
+    <button class="close-btn" onclick="toggleModal('submitLinkModal', false)">×</button>
+    <h2 style="font-size:18px; margin-bottom:4px;">📨 投稿链接管理</h2>
+    <p style="font-size:12px; color:var(--text-muted); margin:0 0 12px; line-height:1.6;">生成带密钥的链接分享给投稿人，可限定使用次数。访客须用该链接（网址末尾带 <code>?k=</code>）打开本站才能提交，提交后进入「待审核」由你审核。</p>
+    <div style="display:flex; gap:8px; margin-bottom:6px;">
+      <input type="text" id="slNote" placeholder="备注（可选，如：给小红）" style="flex:1; padding:8px; border:1px solid var(--border); border-radius:8px; font-size:13px;">
+      <input type="number" id="slMax" value="1" min="1" max="999" style="width:96px; padding:8px; border:1px solid var(--border); border-radius:8px; font-size:13px;">
+      <button class="btn btn-primary" style="padding:8px 14px;" onclick="generateSubmitLink()">生成</button>
+    </div>
+    <div class="file-hint" style="margin-bottom:12px;">使用次数：该链接最多可被用来提交几条资料（1–999），用尽后自动失效</div>
+    <div id="slGenerated" style="display:none; background:#ecfdf5; border:1px solid #a7f3d0; border-radius:10px; padding:12px; margin-bottom:14px;">
+      <div style="font-size:12px; color:#047857; font-weight:700; margin-bottom:6px;">✅ 链接已生成（原始密钥仅显示这一次，请立即复制分享）：</div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <input type="text" id="slGenLink" readonly style="flex:1; padding:8px; border:1px solid #a7f3d0; border-radius:8px; font-size:12px; background:#fff;">
+        <button class="btn btn-outline" style="font-size:12px; padding:8px 10px;" onclick="copyTextById('slGenLink')">复制</button>
+      </div>
+    </div>
+    <h3 style="font-size:14px; margin:0 0 8px;">已有链接</h3>
+    <div id="slList"></div>
   </div>
 </div>
 
@@ -2019,8 +2050,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.7.3';
+  const APP_VERSION = '6.8.0';
   const CHANGELOG = [
+    { v: '6.8.0', d: '2026-08-30', note: '投稿收口为「管理员链接授权 + 管理员审核」双道关：管理员可在后台生成带密钥、可限定使用次数的「投稿链接」；访客须用该链接（网址带 ?k=）打开本站才能提交，否则投稿入口锁定；注册用户仍可直接提交但同样进入待审核；提交成功后消耗一次链接次数，用尽即失效', type: 'feature' },
     { v: '6.7.3', d: '2026-08-30', note: '取消提交资料的「年满 18 周岁」硬性拦截，改为由管理员审核把关：所有访客/普通用户提交均进入待审核队列，只有管理员人工通过才公开；待审核卡片对未满 18 周岁申请人显示「🔞 未成年」角标与审核提醒', type: 'feature' },
     { v: '6.7.2', d: '2026-08-29', note: '修复 data.json 被覆盖成旧版的数据事故：saveToGitHub 改为以远端最新数据为基线做增量合并（按 id 叠加，本地编辑/新增覆盖、远端独有保留），本地陈旧缓存不再冲掉别人的新资料/用户', type: 'fix' },
     { v: '6.7.1', d: '2026-08-29', note: '管理视图新增「👥 注册用户」筛选：管理员可查看全部注册用户（头像/群昵称/用户ID/注册时间/收藏数），密码不展示', type: 'feature' },
@@ -2489,7 +2521,8 @@
     adminLogs: [],       // 管理员操作记录（仅超级管理员可查看）
     users: [],           // 注册用户列表 [{id, name, password, groupName, avatar, createdAt, favorites:[]}]
     notifications: [],   // 站内通知 [{id, toUid, type, profileId, actorUid, actorName, text, time, read}]
-    glassMode: false     // 全站玻璃拟态主题开关（管理员控制，对所有访客生效）
+    glassMode: false,    // 全站玻璃拟态主题开关（管理员控制，对所有访客生效）
+    submitLinks: []      // 投稿链接 [{key:hash, maxUses, used, note, createdAt}]；访客须凭有效链接(?k=)才能提交
   };
 
   // 内置示例兜底：当取不到仓库 data.json（本地预览 / 分享链接 / 直接双击打开）时，
@@ -2535,7 +2568,8 @@
       }
     ],
     staffs: [],        // 内部管理员列表
-    nextProfileNo: 1   // 档案编号计数器
+    nextProfileNo: 1,  // 档案编号计数器
+    submitLinks: []    // 投稿链接（访客凭有效链接才能提交）
   };
 
   // 内联 SVG 占位图（离线可用、国内友好，替代 via.placeholder.com）
@@ -3155,6 +3189,146 @@
   // mode: 'admin' 管理员直接添加（立即显示）；'public' 访客公开上传（提交后进入待审核）
   // ➕ 发布 tab 两种提交方式入口
   // submitter: 'user' = 登录提交（必须已登录）；'guest' = 游客提交（允许未登录）
+  // ===== 投稿链接机制（管理员生成、可指定使用次数；访客须凭有效链接 ?k= 才能提交）=====
+  function hashSubmitKey(s) {
+    let h = 5381;
+    for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0;
+    return 'sk' + h.toString(36);
+  }
+  function findActiveSubmitLink(rawKey) {
+    if (!rawKey) return null;
+    const h = hashSubmitKey(rawKey);
+    return (appState.submitLinks || []).find(l => l.key === h && (l.used || 0) < (l.maxUses || 0));
+  }
+  function applySubmitKeyFromUrl() {
+    try {
+      const k = new URLSearchParams(location.search).get('k');
+      if (k && findActiveSubmitLink(k)) {
+        window.__submitKey = k;
+        try { sessionStorage.setItem('submitKey', k); } catch (e) {}
+        return;
+      }
+      try {
+        const sk = sessionStorage.getItem('submitKey');
+        if (sk && findActiveSubmitLink(sk)) window.__submitKey = sk;
+      } catch (e) {}
+    } catch (e) {}
+  }
+  function isGuestSubmitUnlocked() { return !!findActiveSubmitLink(window.__submitKey); }
+  function refreshPublishAccess() {
+    const unlocked = isGuestSubmitUnlocked();
+    ['guestOptA', 'guestOptB'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = unlocked ? '' : 'none';
+    });
+    ['guestLockedBannerA', 'guestLockedBannerB'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = unlocked ? 'none' : '';
+    });
+  }
+  // 管理员当前会话内已生成的原始密钥（仅用于列表里复制链接；不落库，刷新后需重新生成）
+  window.__issuedKeys = window.__issuedKeys || {};
+  function copyText(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => showToast && showToast('已复制')).catch(() => {});
+    } else {
+      const ta = document.createElement('textarea');
+      ta.value = text; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); } catch (e) {}
+      document.body.removeChild(ta);
+    }
+  }
+  function copyTextById(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    copyText(el.value || el.textContent || '');
+  }
+  function showToast(msg) {
+    try {
+      let t = document.getElementById('__toast');
+      if (!t) {
+        t = document.createElement('div');
+        t.id = '__toast';
+        t.style.cssText = 'position:fixed;left:50%;bottom:80px;transform:translateX(-50%);background:rgba(17,24,39,.92);color:#fff;padding:8px 16px;border-radius:999px;font-size:13px;z-index:99999;opacity:0;transition:opacity .2s;pointer-events:none;';
+        document.body.appendChild(t);
+      }
+      t.textContent = msg;
+      t.style.opacity = '1';
+      clearTimeout(t.__timer);
+      t.__timer = setTimeout(() => { t.style.opacity = '0'; }, 1400);
+    } catch (e) {}
+  }
+  function openSubmitLinkModal() {
+    document.getElementById('slNote').value = '';
+    document.getElementById('slMax').value = '1';
+    document.getElementById('slGenerated').style.display = 'none';
+    renderSubmitLinkList();
+    toggleModal('submitLinkModal', true);
+  }
+  async function generateSubmitLink() {
+    if (!isSuper() && !isStaff()) { showAlert('仅管理员可生成投稿链接'); return; }
+    const note = (document.getElementById('slNote').value || '').trim();
+    let max = parseInt(document.getElementById('slMax').value, 10);
+    if (!Number.isFinite(max) || max < 1) max = 1;
+    if (max > 999) max = 999;
+    const raw = Math.random().toString(36).slice(2) + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    const hash = hashSubmitKey(raw);
+    appState.submitLinks = appState.submitLinks || [];
+    appState.submitLinks.push({ key: hash, maxUses: max, used: 0, note: note, createdAt: Date.now() });
+    window.__issuedKeys[hash] = raw;
+    try {
+      await saveToGitHub();
+    } catch (e) {
+      // 回滚本次新增，避免本地与远端不一致
+      appState.submitLinks = appState.submitLinks.filter(l => l.key !== hash);
+      delete window.__issuedKeys[hash];
+      showAlert('保存失败：' + (e && e.message ? e.message : e));
+      return;
+    }
+    const link = location.origin + location.pathname + '?k=' + raw;
+    document.getElementById('slGenLink').value = link;
+    document.getElementById('slGenerated').style.display = 'block';
+    renderSubmitLinkList();
+    showToast('投稿链接已生成');
+  }
+  function renderSubmitLinkList() {
+    const box = document.getElementById('slList');
+    if (!box) return;
+    const list = appState.submitLinks || [];
+    if (!list.length) {
+      box.innerHTML = '<div class="file-hint">还没有投稿链接，生成一条分享给投稿人吧。</div>';
+      return;
+    }
+    box.innerHTML = list.slice().reverse().map(l => {
+      const exhausted = (l.used || 0) >= (l.maxUses || 0);
+      const status = exhausted
+        ? '<span style="color:#dc2626; font-weight:700;">已用尽</span>'
+        : `<span style="color:#047857; font-weight:700;">有效</span>`;
+      const rawKey = window.__issuedKeys[l.key];
+      const copyBtn = rawKey
+        ? `<button class="btn btn-outline" style="font-size:11px; padding:4px 8px;" onclick="copyText('${location.origin + location.pathname}?k=${rawKey}')">复制链接</button>`
+        : '<span style="font-size:11px; color:var(--text-muted);">原始密钥仅生成时可见</span>';
+      return `<div style="border:1px solid var(--border); border-radius:10px; padding:10px 12px; margin-bottom:8px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600;">${escapeHtml(l.note || '未命名链接')}</div>
+          <div style="font-size:12px;">${status}</div>
+        </div>
+        <div style="font-size:12px; color:var(--text-muted); margin:4px 0 8px;">已用 ${l.used || 0} / ${l.maxUses} 次 · 创建于 ${fmtDateTime(l.createdAt) || '—'}</div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          ${copyBtn}
+          <button class="btn btn-outline" style="font-size:11px; padding:4px 8px; color:#dc2626; border-color:#fecaca;" onclick="deleteSubmitLink('${l.key}')">删除</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  async function deleteSubmitLink(hash) {
+    if (!confirm('确定删除该投稿链接？')) return;
+    appState.submitLinks = (appState.submitLinks || []).filter(l => l.key !== hash);
+    delete window.__issuedKeys[hash];
+    try { await saveToGitHub(); } catch (e) { showAlert('保存失败：' + (e && e.message ? e.message : e)); return; }
+    renderSubmitLinkList();
+    showToast('已删除');
+  }
   function publishAsUser() {
     const u = getCurrentUser();
     const isAdmin = isSuper() || isStaff();
@@ -3174,6 +3348,10 @@
     openAddForm('public', 'user');
   }
   function publishAsGuest() {
+    if (!isGuestSubmitUnlocked()) {
+      showAlert('🔒 游客投稿入口已锁定\n\n请通过管理员分享的投稿链接（网址末尾带 ?k= 参数）打开本站后，才能提交资料。');
+      return;
+    }
     window.__pendingPublish = false;
     openAddForm('public', 'guest');
   }
@@ -3322,15 +3500,8 @@
       const month = String(now.getMonth() + 1).padStart(2, '0');
       const day = String(now.getDate()).padStart(2, '0');
 
-      // 年龄：仅做数字合法性校验（防脏数据），不再硬性拦截；
-      // 未满 18 周岁的资料会进入「待审核」，由管理员人工审核决定是否公开
-      const ageRaw = (formData.get('年龄') || '').toString().trim().replace(/岁/g, '');
-      const ageNum = parseFloat(ageRaw);
-      if (!ageRaw || Number.isNaN(ageNum) || ageNum < 1 || ageNum > 120 || !Number.isFinite(ageNum)) {
-        btn.disabled = false;
-        showAlert('⚠️ 年龄必须填写真实数字（1–120）。');
-        return;
-      }
+      // 年龄字段照常采集，不再做硬性拦截；
+      // 投稿改为「管理员链接授权 + 管理员审核」双道关，未成年人资料进入待审核由管理员把关
 
       // 编辑模式：更新已有档案
       if (editingId) {
@@ -3479,6 +3650,11 @@
         // 审核状态：公开上传(或访客)默认待审核，管理员添加立即通过
         const isPublicUpload = formMode === 'public' || (!isSuper() && !isStaff());
         newProfile.status = isPublicUpload ? 'pending' : 'approved';
+        // 访客凭投稿链接提交：消耗一次链接使用次数（链接即将失效时仍可提交本次，提交后失效）
+        if (newProfile.uploaderType === 'public' && window.__submitKey) {
+          const link = findActiveSubmitLink(window.__submitKey);
+          if (link) link.used = (link.used || 0) + 1;
+        }
         // 分配档案编号
         newProfile.profileNo = 'A' + String(appState.nextProfileNo || 1).padStart(3, '0');
         appState.nextProfileNo = (appState.nextProfileNo || 1) + 1;
@@ -3677,6 +3853,7 @@
         if (Array.isArray(data.users)) appState.users = data.users;
         if (Array.isArray(data.notifications)) appState.notifications = data.notifications;
         if (typeof data.glassMode === 'boolean') appState.glassMode = data.glassMode;
+        if (Array.isArray(data.submitLinks)) appState.submitLinks = data.submitLinks;
         loaded = true;
       }
     } catch (err) {
@@ -3689,6 +3866,7 @@
     }
     updateWechatUI();
     applyGlassMode();     // 玻璃拟态开关（管理员控制，随数据一起下发）
+    applySubmitKeyFromUrl();   // 解析 ?k= 投稿链接，决定是否解锁访客提交
     // 刷新后恢复：页码/搜索/筛选/排序（在渲染前设置，renderCards 用恢复的状态出页）
     restorePageState();
     renderCards();
@@ -3811,6 +3989,7 @@
       '<span style="font-size:10px; opacity:.55; flex-shrink:0;">✏️</span></button>' +
       '<button class="btn btn-outline" style="font-size:12px; padding:6px 10px;" onclick="logoutUser()">退出</button>';
     if (typeof updateInboxBadge === 'function') updateInboxBadge();
+    if (typeof refreshPublishAccess === 'function') refreshPublishAccess();
   }
 
   // 登录 / 注册 / 退出后统一刷新所有跟登录态相关的页面
