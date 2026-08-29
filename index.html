@@ -409,6 +409,9 @@
     body.keyboard-open .bottom-tab,
     body.keyboard-open #floatWrap,
     body.keyboard-open #floatBall { display: none !important; }
+    /* 向下滚动页面时隐藏底部导航，向上滚动时显示（沉浸浏览） */
+    body.nav-hidden .bottom-tab { transform: translateY(110%); }
+    .bottom-tab { transition: transform .25s ease; }
     /* 赞助页面 */
     .sponsor-hero {
       background: linear-gradient(180deg, #fff7ed 0%, #ffffff 100%);
@@ -1155,7 +1158,46 @@
         <label>确认密码</label>
         <input type="password" id="regPwd2Input" placeholder="再输一遍密码">
       </div>
+      <div class="form-group" style="margin-bottom:14px;">
+        <label>头像（选填，会压缩成 128×128 小图）</label>
+        <input type="file" id="regAvatarInput" accept="image/*" onchange="previewRegAvatar(this)">
+        <div id="regAvatarPreview" style="display:none; width:64px; height:64px; border-radius:50%; overflow:hidden; margin-top:8px; border:2px solid var(--border);">
+          <img src="" alt="头像预览" style="width:100%; height:100%; object-fit:cover;">
+        </div>
+        <div class="file-hint">留空则用昵称首字母作为默认头像</div>
+      </div>
       <button type="submit" class="btn btn-primary" style="width:100%;">注册并登录</button>
+    </form>
+  </div>
+</div>
+
+<!-- 编辑我的资料弹窗（修改昵称、群名、头像） -->
+<div class="modal-overlay" id="profileEditModal" onclick="handleOverlayClick(event, 'profileEditModal')">
+  <div class="modal" style="max-width:380px;">
+    <button class="close-btn" onclick="toggleModal('profileEditModal', false)">×</button>
+    <h2 style="font-size:18px; margin-bottom:4px;">✏️ 编辑我的资料</h2>
+    <div style="font-size:11px; color:var(--text-muted); margin-bottom:12px;">修改后点击保存即可同步</div>
+    <form onsubmit="handleEditProfile(event)">
+      <div style="display:flex; justify-content:center; margin-bottom:14px;">
+        <div style="width:80px; height:80px; border-radius:50%; overflow:hidden; background:var(--bg); border:2px solid var(--border);">
+          <img id="editAvatarPreview" src="" alt="头像预览" style="width:100%; height:100%; object-fit:cover; display:none;">
+          <div id="editAvatarFallback" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:28px; font-weight:700; color:var(--primary);"></div>
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:10px;">
+        <label>昵称</label>
+        <input type="text" id="editNameInput" required maxlength="16" placeholder="你的昵称">
+      </div>
+      <div class="form-group" style="margin-bottom:10px;">
+        <label>群名（你在群里的名字）</label>
+        <input type="text" id="editGroupNameInput" maxlength="20" placeholder="如：相亲群-小红">
+      </div>
+      <div class="form-group" style="margin-bottom:14px;">
+        <label>更换头像（选填）</label>
+        <input type="file" id="editAvatarInput" accept="image/*" onchange="previewEditAvatar(this)">
+        <div class="file-hint">留空保持原头像；上传后会自动压缩</div>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%;" id="saveProfileBtn">保存修改</button>
     </form>
   </div>
 </div>
@@ -1467,8 +1509,10 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.3.2';
+  const APP_VERSION = '6.4.1';
   const CHANGELOG = [
+    { v: '6.4.1', d: '2026-08-29', note: '修复收藏/点赞/留言丢失：改为基于最新数据增量保存，不再整体覆盖（不会抹掉别人的新资料，自己的收藏也不会被别人抹掉）；失败自动回滚、防连点、增加操作提示', type: 'fix' },
+    { v: '6.4.0', d: '2026-08-29', note: '注册可上传头像、登录后随时修改头像与昵称；浏览/打字时底部导航自动隐藏，看内容更沉浸', type: 'feature' },
     { v: '6.3.2', d: '2026-08-29', note: '新增地球网站图标（浏览器标签页/收藏夹/添加到主屏幕都显示）；补充站点描述与分享信息', type: 'fix' },
     { v: '6.3.1', d: '2026-08-29', note: '「我的」页底部新增品牌介绍入口（紧挨使用条款）；底部顺序改为：版本入口 → Copyright → 网站作者', type: 'fix' },
     { v: '6.3.0', d: '2026-08-29', note: '「我的」页新增全球找对象品牌介绍；使用条款扩充为完整版（十八章 Terms & Conditions）', type: 'feature' },
@@ -1927,7 +1971,7 @@
     hideVersionInfo: false,  // 管理员是否对访客隐藏版本信息
     hiddenVersions: [],  // 管理员隐藏的更新记录版本号列表
     adminLogs: [],       // 管理员操作记录（仅超级管理员可查看）
-    users: [],           // 注册用户列表 [{id, name, password, groupName, createdAt, favorites:[]}]
+    users: [],           // 注册用户列表 [{id, name, password, groupName, avatar, createdAt, favorites:[]}]
     notifications: []    // 站内通知 [{id, toUid, type, profileId, actorUid, actorName, text, time, read}]
   };
 
@@ -2031,6 +2075,29 @@
     if (blob.size >= file.size) return file;
     const safe = file.name.replace(/\.[^.]+$/, '') + '.jpg';
     return new File([blob], safe, { type: 'image/jpeg' });
+  }
+
+  // 头像压缩：裁剪为正方形 128×128 JPEG，返回 dataURL
+  async function compressAvatarFile(file, size, quality) {
+    size = size || 128;
+    quality = quality || 0.8;
+    const img = await new Promise((resolve, reject) => {
+      const el = new Image();
+      el.onload = () => resolve(el);
+      el.onerror = () => reject(new Error('头像读取失败'));
+      el.src = URL.createObjectURL(file);
+    });
+    const canvas = document.createElement('canvas');
+    canvas.width = size; canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#e2e8f0';
+    ctx.fillRect(0, 0, size, size);
+    const srcSize = Math.min(img.naturalWidth, img.naturalHeight);
+    const sx = (img.naturalWidth - srcSize) / 2;
+    const sy = (img.naturalHeight - srcSize) / 2;
+    ctx.drawImage(img, sx, sy, srcSize, srcSize, 0, 0, size, size);
+    URL.revokeObjectURL(img.src);
+    return canvas.toDataURL('image/jpeg', quality);
   }
 
   // 视频压缩：canvas.captureStream + MediaRecorder 转码，降低分辨率/码率
@@ -2226,6 +2293,81 @@
     }
   }
 
+  // base64 → 字符串（GitHub 返回的 content 带换行，且是 UTF-8 JSON）
+  function b64ToStr(b64) {
+    const bin = atob(String(b64 || '').replace(/\s/g, ''));
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new TextDecoder('utf-8').decode(bytes);
+  }
+
+  // ===== 安全的增量保存（点赞/收藏/留言等轻量操作专用）=====
+  // 为什么需要它：saveToGitHub() 把「本地 appState」整体写回仓库，而本地 appState 只是
+  // 页面打开那一刻的快照。期间管理员审核、别人发资料/点赞都可能已经改过仓库 ——
+  // 整体覆盖会把别人的改动抹掉，别人的下一次操作也会把你的收藏/点赞抹掉
+  // （表现就是"收藏了过会儿又没了"、"别人的新资料消失了"）。
+  // 这里的做法：先拉远端最新数据当基线 → 在基线上只改自己这一点 → 带刚拿到的 sha 写回。
+  // 既不覆盖别人，sha 也对得上；写成功后本地同步为最新，顺带看到别人刚发的内容。
+  async function patchRemoteState(patchFn, commitMsg) {
+    const token = getWriteToken();
+    if (!token) throw new Error('未检测到写入令牌');
+
+    let sha;
+    let base = null;
+    const getRes = await fetch(`${API}/data.json`, { headers: { Authorization: `Bearer ${token}` } });
+    if (getRes.ok) {
+      const j = await getRes.json();
+      sha = j.sha;
+      try { base = JSON.parse(b64ToStr(j.content)); } catch (e) { base = null; }
+    } else if (getRes.status !== 404) {
+      throw new Error('读取远端数据失败 HTTP ' + getRes.status);
+    }
+    // 拿不到远端（离线/异常）就退回本地基线，行为与修复前一致，不会更糟
+    if (!base || typeof base !== 'object') base = appState;
+    if (!Array.isArray(base.profiles)) base.profiles = appState.profiles || [];
+    if (!Array.isArray(base.users)) base.users = appState.users || [];
+    if (!Array.isArray(base.notifications)) base.notifications = appState.notifications || [];
+
+    const ret = patchFn(base);   // 在最新基线上打补丁
+
+    const content = btoa(unescape(encodeURIComponent(JSON.stringify(base, null, 2))));
+    const putRes = await fetch(`${API}/data.json`, {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: commitMsg || 'update data.json', content, sha })
+    });
+    if (!putRes.ok) {
+      const err = await putRes.json().catch(() => ({}));
+      throw new Error(err.message || ('提交失败 HTTP ' + putRes.status));
+    }
+    // 写成功后把本地切成远端最新
+    appState = Object.assign({}, appState, base);
+    return ret === undefined ? base : ret;
+  }
+
+  // 轻量提示（不打断操作，2 秒自动消失）
+  let __toastTimer = null;
+  function toast(msg) {
+    let el = document.getElementById('__toast');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = '__toast';
+      el.style.cssText = 'position:fixed; left:50%; bottom:92px; transform:translateX(-50%) translateY(10px);' +
+        ' background:rgba(17,24,39,.92); color:#fff; font-size:13px; padding:9px 16px; border-radius:999px;' +
+        ' z-index:99999; opacity:0; transition:opacity .2s ease, transform .2s ease; pointer-events:none;' +
+        ' max-width:80vw; text-align:center; box-shadow:0 6px 20px rgba(0,0,0,.25);';
+      document.body.appendChild(el);
+    }
+    el.textContent = msg;
+    el.style.opacity = '1';
+    el.style.transform = 'translateX(-50%) translateY(0)';
+    clearTimeout(__toastTimer);
+    __toastTimer = setTimeout(function () {
+      el.style.opacity = '0';
+      el.style.transform = 'translateX(-50%) translateY(10px)';
+    }, 2000);
+  }
+
   function base64FromArrayBuffer(buf) {
     let binary = '';
     const bytes = new Uint8Array(buf);
@@ -2265,6 +2407,61 @@
     document.addEventListener('focusout', function () {
       setTimeout(function () { updateKeyboardState(); }, 320);
     });
+  })();
+
+  // 向下滚动页面时自动隐藏底部导航（沉浸浏览），向上滚动时恢复
+  (function initScrollNavWatch() {
+    const getY = function () { return window.scrollY || window.pageYOffset || 0; };
+    let lastY = getY();
+    let anchorY = lastY;      // 方向反转时的锚点，用来累计滑动距离
+    let lastDown = true;
+    let hidden = false;
+    let ticking = false;
+
+    // 供外部调用：切页/开弹窗时强制把导航显示出来
+    window.showBottomNav = function () {
+      hidden = false;
+      lastY = getY();
+      anchorY = lastY;
+      document.body.classList.remove('nav-hidden');
+    };
+
+    function onScroll() {
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(function () {
+        ticking = false;
+        const y = getY();
+        const d = y - lastY;
+        if (Math.abs(d) < 2) return;                 // 忽略抖动
+        const down = d > 0;
+        if (down !== lastDown) { anchorY = y; lastDown = down; }   // 方向反转，重设锚点
+        if (down) {
+          // 向下：已离开顶部、累计下滑 40px 以上 → 收起导航，给内容让位
+          if (!hidden && y > 120 && (y - anchorY) > 40) {
+            document.body.classList.add('nav-hidden');
+            hidden = true;
+            anchorY = y;
+          }
+        } else {
+          // 向上：累计上滑 24px 以上 → 立刻把导航放回来
+          if (hidden && (anchorY - y) > 24) {
+            document.body.classList.remove('nav-hidden');
+            hidden = false;
+            anchorY = y;
+          }
+        }
+        // 滚回顶部区域，无论如何都显示
+        if (hidden && y < 100) {
+          document.body.classList.remove('nav-hidden');
+          hidden = false;
+          anchorY = y;
+        }
+        lastY = y;
+      });
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('hashchange', window.showBottomNav);
   })();
 
   // ===== UI 与交互 =====
@@ -2955,8 +3152,27 @@
     catch (e) { return null; }
   }
   function setCurrentUser(user) {
-    if (user) localStorage.setItem('current_user', JSON.stringify({ id: user.id, name: user.name, groupName: user.groupName || '' }));
-    else localStorage.removeItem('current_user');
+    if (user) {
+      localStorage.setItem('current_user', JSON.stringify({
+        id: user.id,
+        name: user.name,
+        groupName: user.groupName || '',
+        avatar: user.avatar || ''
+      }));
+    } else {
+      localStorage.removeItem('current_user');
+    }
+  }
+
+  // 生成头像 HTML：有头像用图片，没有则用昵称首字母
+  function avatarHtml(user, size, fontSize) {
+    const s = size || 64;
+    const f = fontSize || Math.round(s * 0.4);
+    const name = (user && (user.name || '')) || '?';
+    if (user && user.avatar) {
+      return '<img src="' + user.avatar + '" alt="' + escapeHtml(name) + '" style="width:100%; height:100%; object-fit:cover; display:block;">';
+    }
+    return '<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:' + f + 'px; font-weight:700; background:linear-gradient(135deg, var(--primary), #7c3aed); color:#fff;">' + escapeHtml(name.charAt(0)) + '</div>';
   }
 
   // 确保管理员（超级/内部）在用户列表中有对应账号："管理员本身就是用户"
@@ -2982,7 +3198,10 @@
     }
     area.innerHTML =
       '<button class="btn btn-outline" style="font-size:12px; padding:6px 10px;" onclick="openMyFavorites()">❤️ 我的收藏</button>' +
-      '<span title="' + (user.groupName ? '群名：' + escapeHtml(user.groupName) : '未设置群名') + '" style="background:var(--primary); color:#fff; font-size:12px; padding:4px 10px; border-radius:999px; white-space:nowrap; max-width:140px; overflow:hidden; text-overflow:ellipsis;">👤 ' + escapeHtml(user.name) + (user.groupName ? ' · ' + escapeHtml(user.groupName) : '') + '</span>' +
+      '<button class="btn btn-outline" title="点这里修改头像 / 昵称 / 群名" style="font-size:12px; padding:4px 10px; display:flex; align-items:center; gap:6px; border-radius:999px; max-width:200px;" onclick="openEditProfileModal()">' +
+      '<span style="width:22px; height:22px; border-radius:50%; overflow:hidden; flex-shrink:0;">' + avatarHtml(user, 22, 11) + '</span>' +
+      '<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escapeHtml(user.name) + (user.groupName ? ' · ' + escapeHtml(user.groupName) : '') + '</span>' +
+      '<span style="font-size:10px; opacity:.55; flex-shrink:0;">✏️</span></button>' +
       '<button class="btn btn-outline" style="font-size:12px; padding:6px 10px;" onclick="logoutUser()">退出</button>';
     if (typeof updateInboxBadge === 'function') updateInboxBadge();
   }
@@ -3022,12 +3241,28 @@
     if (groupName.length > 20) { showAlert('群名最长 20 个字'); return; }
     if (pwd.length < 4) { showAlert('密码至少 4 位'); return; }
     if (pwd !== pwd2) { showAlert('两次密码不一致'); return; }
-    if ((appState.users || []).some(u => u.name === name)) { showAlert('昵称「' + name + '」已被注册，换一个吧'); return; }
-    const user = { id: Date.now(), name: name, password: pwd, groupName: groupName, createdAt: Date.now(), favorites: [] };
-    if (!Array.isArray(appState.users)) appState.users = [];
-    appState.users.push(user);
+
+    // 头像（选填）：压缩成 128×128 后随账号保存
+    const avatarFile = (document.getElementById('regAvatarInput') || {}).files
+      ? document.getElementById('regAvatarInput').files[0] : null;
+    let avatar = '';
+    if (avatarFile) {
+      try { avatar = await compressAvatarFile(avatarFile, 128, 0.8); }
+      catch (err) { showAlert('头像处理失败：' + err.message + '，可以先不传头像'); return; }
+    }
+
+    const user = { id: Date.now(), name: name, password: pwd, groupName: groupName, avatar: avatar, createdAt: Date.now(), favorites: [] };
+    const btn = document.querySelector('#userFormReg button[type="submit"]');
+    if (btn) { btn.disabled = true; btn.textContent = '注册中…'; }
     try {
-      await saveToGitHub();
+      // 以远端最新数据为基线注册，避免把别人刚注册/刚发的资料覆盖掉
+      await patchRemoteState(function(base) {
+        if (!Array.isArray(base.users)) base.users = [];
+        if (base.users.some(function(x) { return x.name === name; })) {
+          throw new Error('昵称「' + name + '」已被注册，换一个吧');
+        }
+        base.users.push(user);
+      }, 'register ' + name);
       setCurrentUser(user);
       toggleModal('userModal', false);
       refreshUserPages();
@@ -3035,14 +3270,17 @@
       document.getElementById('regGroupNameInput').value = '';
       document.getElementById('regPwdInput').value = '';
       document.getElementById('regPwd2Input').value = '';
+      clearRegAvatar();
       // 点过「登录提交」的用户：注册成功后直接继续发资料，不跳走
       if (!flushPendingPublish()) {
         switchTab('profile');   // 注册后自动跳到"我的"tab
       }
       showAlert('✅ 注册成功，已自动登录「' + name + '」（群名：' + groupName + '）！现在可以发资料、留言、点赞、收藏啦。');
     } catch (err) {
-      appState.users = appState.users.filter(u => u.id !== user.id);
-      showAlert('❌ 注册失败：' + err.message);
+      const m = err.message || '';
+      showAlert(m.indexOf('已被注册') >= 0 ? m : ('❌ 注册失败：' + m + '\n请检查网络后重试'));
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = '注册并登录'; }
     }
   }
 
@@ -3072,18 +3310,143 @@
     showAlert('已退出登录。');
   }
 
+  // ===== 头像预览 =====
+  // 注册表单选好头像后即时预览（先压缩再显示，避免大图卡顿）
+  async function previewRegAvatar(input) {
+    const file = input.files && input.files[0];
+    const box = document.getElementById('regAvatarPreview');
+    if (!file) { if (box) box.style.display = 'none'; return; }
+    try {
+      const dataUrl = await compressAvatarFile(file, 128, 0.8);
+      if (box) {
+        const img = box.querySelector('img');
+        if (img) img.src = dataUrl;
+        box.style.display = 'block';
+      }
+    } catch (err) {
+      showAlert('头像读取失败：' + err.message);
+      input.value = '';
+      if (box) box.style.display = 'none';
+    }
+  }
+  function clearRegAvatar() {
+    const input = document.getElementById('regAvatarInput');
+    const box = document.getElementById('regAvatarPreview');
+    if (input) input.value = '';
+    if (box) { const img = box.querySelector('img'); if (img) img.src = ''; box.style.display = 'none'; }
+  }
+
+  // 编辑资料弹窗：打开时填入当前昵称/群名/头像
+  function openEditProfileModal() {
+    const u = getCurrentUser();
+    if (!u) { toggleModal('userModal', true); return; }
+    const fresh = (appState.users || []).find(function(x) { return x.id === u.id; }) || u;
+    const nameInput = document.getElementById('editNameInput');
+    const groupInput = document.getElementById('editGroupNameInput');
+    const img = document.getElementById('editAvatarPreview');
+    const fallback = document.getElementById('editAvatarFallback');
+    const fileInput = document.getElementById('editAvatarInput');
+    if (nameInput) nameInput.value = fresh.name || '';
+    if (groupInput) groupInput.value = fresh.groupName || '';
+    if (fileInput) fileInput.value = '';
+    if (img) { img.src = fresh.avatar || ''; img.style.display = fresh.avatar ? 'block' : 'none'; }
+    if (fallback) { fallback.textContent = (fresh.name || '?').charAt(0); fallback.style.display = fresh.avatar ? 'none' : 'flex'; }
+    window.__editAvatarData = '';   // 本次未选择新头像
+    toggleModal('profileEditModal', true);
+  }
+
+  // 编辑资料弹窗：选新头像后预览
+  async function previewEditAvatar(input) {
+    const file = input.files && input.files[0];
+    const img = document.getElementById('editAvatarPreview');
+    const fallback = document.getElementById('editAvatarFallback');
+    if (!file) {
+      window.__editAvatarData = '';
+      if (img) img.style.display = 'none';
+      if (fallback) fallback.style.display = 'flex';
+      return;
+    }
+    try {
+      const dataUrl = await compressAvatarFile(file, 128, 0.8);
+      window.__editAvatarData = dataUrl;
+      if (img) { img.src = dataUrl; img.style.display = 'block'; }
+      if (fallback) fallback.style.display = 'none';
+    } catch (err) {
+      showAlert('头像读取失败：' + err.message);
+      input.value = '';
+      window.__editAvatarData = '';
+    }
+  }
+
+  // 保存昵称 / 群名 / 头像
+  async function handleEditProfile(e) {
+    e.preventDefault();
+    const u = getCurrentUser();
+    if (!u) { toggleModal('profileEditModal', false); toggleModal('userModal', true); return; }
+    const btn = document.getElementById('saveProfileBtn');
+    const name = (document.getElementById('editNameInput').value || '').trim();
+    const groupName = (document.getElementById('editGroupNameInput').value || '').trim();
+    if (!name) { showAlert('昵称不能为空'); return; }
+    if (name.length > 16) { showAlert('昵称最长 16 个字'); return; }
+    if (groupName.length > 20) { showAlert('群名最长 20 个字'); return; }
+    if ((appState.users || []).some(function(x) { return x.name === name && x.id !== u.id; })) {
+      showAlert('昵称「' + name + '」已被别人用了，换一个吧'); return;
+    }
+    const localUser = (appState.users || []).find(function(x) { return String(x.id) === String(u.id); });
+    const oldName = localUser ? localUser.name : u.name;
+    if (btn) { btn.disabled = true; btn.textContent = '保存中…'; }
+    const newAvatar = window.__editAvatarData || '';
+    try {
+      // 以远端最新数据为基线修改，避免把别人同时段的改动覆盖掉
+      await patchRemoteState(function(base) {
+        if (!Array.isArray(base.users)) base.users = [];
+        const bu = base.users.find(function(x) { return String(x.id) === String(u.id); });
+        if (!bu) throw new Error('账号不存在，请重新登录');
+        if (base.users.some(function(x) { return x.name === name && String(x.id) !== String(u.id); })) {
+          throw new Error('昵称「' + name + '」已被别人用了，换一个吧');
+        }
+        bu.name = name;
+        bu.groupName = groupName;
+        if (newAvatar) bu.avatar = newAvatar;
+        // 同步昵称到该用户发过的资料（改名了，落款也跟着变）
+        (base.profiles || []).forEach(function(p) {
+          if (String(p.uploaderUid) === String(u.id)) { p.uploaderName = name; p.uploaderGroupName = groupName; }
+        });
+        // 同步留言里的昵称
+        (base.profiles || []).forEach(function(p) {
+          (p.comments || []).forEach(function(c) {
+            if (String(c.uid) === String(u.id)) { c.name = name; if (c.groupName !== undefined) c.groupName = groupName; }
+          });
+        });
+      }, 'update profile ' + name);
+      setCurrentUser((appState.users || []).find(function(x) { return String(x.id) === String(u.id); }) || u);
+      window.__editAvatarData = '';
+      toggleModal('profileEditModal', false);
+      refreshUserPages();
+      const changed = oldName !== name ? '（原昵称：' + oldName + '）' : '';
+      showAlert('✅ 资料已保存' + changed + '！');
+    } catch (err) {
+      showAlert('❌ 保存失败：' + err.message);
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = '保存修改'; }
+    }
+  }
+
   // 我的收藏弹窗
   function openMyFavorites() {
     const user = getCurrentUser();
     if (!user) { showAlert('请先登录，才能查看收藏'); toggleModal('userModal', true); return; }
-    const freshUser = (appState.users || []).find(u => u.id === user.id) || user;
+    const freshUser = (appState.users || []).find(function(u) { return String(u.id) === String(user.id); }) || user;
     const ids = freshUser.favorites || [];
     const items = ids.map(function(id) {
-      return appState.profiles.find(p => String(p.id) === String(id));
+      return appState.profiles.find(function(p) { return String(p.id) === String(id); });
     }).filter(Boolean);
+    // 收藏了但资料已被删除/下架的，单独提示，而不是默默消失让人以为丢了
+    const missing = ids.length - items.length;
     const list = document.getElementById('favoritesList');
     if (items.length === 0) {
-      list.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:30px; line-height:1.8;">还没有收藏任何嘉宾<br>打开嘉宾资料，点「⭐ 收藏」即可加入这里</div>';
+      list.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:30px; line-height:1.8;">还没有收藏任何嘉宾<br>打开嘉宾资料，点「⭐ 收藏」即可加入这里</div>' +
+        (missing > 0 ? '<div style="text-align:center; color:var(--text-muted); font-size:12px; padding:0 20px 20px;">（有 ' + missing + ' 条收藏的资料已被作者或管理员下架）</div>' : '');
     } else {
       list.innerHTML = items.map(function(p) {
         const main = getMainMedia(p.mediaList || []);
@@ -3092,15 +3455,25 @@
               ? '<video src="' + main.url + '" muted preload="metadata" style="width:100%; height:100%; object-fit:cover;"></video>'
               : '<img src="' + main.url + '" loading="lazy" decoding="async" style="width:100%; height:100%; object-fit:cover;">')
           : '<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:16px;">📷</div>';
-        return '<div style="display:flex; align-items:center; gap:10px; padding:10px; border:1px solid var(--border); border-radius:10px; margin-bottom:8px; cursor:pointer;" onclick="toggleModal(\'favoritesModal\', false); openDetail(' + p.id + ');">' +
+        return '<div style="display:flex; align-items:center; gap:10px; padding:10px; border:1px solid var(--border); border-radius:10px; margin-bottom:8px;">' +
+          '<div style="display:flex; align-items:center; gap:10px; flex:1; min-width:0; cursor:pointer;" onclick="toggleModal(\'favoritesModal\', false); openDetail(' + p.id + ');">' +
           '<div style="width:46px; height:46px; border-radius:8px; overflow:hidden; flex-shrink:0; background:#000;">' + thumb + '</div>' +
-          '<div style="flex:1;">' +
+          '<div style="flex:1; min-width:0;">' +
           '<div style="font-weight:700;">' + escapeHtml(p['姓名'] || '未填') + ' <small style="color:var(--text-muted); font-weight:normal;">(' + escapeHtml(p['性别'] || '-') + ')</small></div>' +
           '<div style="font-size:12px; color:var(--text-muted);">' + escapeHtml(p['国家/城市'] || '') + ' · ' + escapeHtml(p['年龄'] || '') + '岁</div>' +
-          '</div><span style="color:var(--primary); font-size:18px;">›</span></div>';
-      }).join('');
+          '</div></div>' +
+          '<button class="btn btn-outline" title="取消收藏" style="flex-shrink:0; font-size:11px; padding:4px 9px; color:var(--text-muted);" onclick="event.stopPropagation(); unfavoriteFromList(' + p.id + ')">⭐ 取消</button>' +
+          '<span style="color:var(--primary); font-size:18px; flex-shrink:0;">›</span></div>';
+      }).join('') +
+      (missing > 0 ? '<div style="text-align:center; color:var(--text-muted); font-size:12px; padding:10px 0 4px;">另有 ' + missing + ' 条收藏的资料已被下架，不再显示</div>' : '');
     }
     toggleModal('favoritesModal', true);
+  }
+
+  // 在收藏列表里直接取消收藏（取消后列表原地刷新，不用关掉再开）
+  async function unfavoriteFromList(pid) {
+    await toggleFavorite(pid);
+    if (document.getElementById('favoritesModal').style.display === 'flex') openMyFavorites();
   }
 
   // 刷新所有身份相关 UI 状态
@@ -3126,6 +3499,10 @@
   }
 
   // ===== 点赞 / 收藏 / 留言（详情页）=====
+  // 说明：这三个操作都会改 data.json。以前直接 saveToGitHub() 整体覆盖写回，
+  // 容易把别人同时段的改动抹掉（表现：收藏/点赞莫名其妙消失、别人的新资料不见），
+  // 多人同时操作还会 sha 冲突报 409，失败后本地又不回滚，状态越点越乱。
+  // 现在统一走 patchRemoteState()：以远端最新数据为基线做增量修改，失败自动回滚。
   function isLikedByMe(item) {
     const user = getCurrentUser();
     if (!user || !item) return false;
@@ -3134,8 +3511,24 @@
   function isFavoritedByMe(item) {
     const user = getCurrentUser();
     if (!user || !item) return false;
-    const fresh = (appState.users || []).find(u => u.id === user.id);
+    const fresh = (appState.users || []).find(function(u) { return String(u.id) === String(user.id); });
     return ((fresh ? (fresh.favorites || []) : [])).some(function(fid) { return String(fid) === String(item.id); });
+  }
+  // 在远端基线里找到某条资料（用于打补丁）
+  function findProfileIn(base, id) {
+    return (base.profiles || []).find(function(p) { return String(p.id) === String(id); });
+  }
+
+  // 操作锁：点赞/收藏/留言同一时间只允许一个请求，避免连点造成并发写冲突
+  let __interactLock = false;
+  // 让操作栏按钮进入/退出"处理中"状态，给用户即时反馈
+  function setActionBarBusy(busy) {
+    const bar = document.getElementById('actionBar');
+    if (!bar) return;
+    bar.querySelectorAll('button').forEach(function(b) {
+      if (busy) { b.dataset._txt = b.dataset._txt || b.textContent; b.disabled = true; b.style.opacity = '.6'; }
+      else { b.disabled = false; b.style.opacity = ''; }
+    });
   }
 
   // 渲染详情页操作栏（点赞/收藏/留言入口）
@@ -3155,41 +3548,113 @@
   async function toggleLike(id) {
     const user = getCurrentUser();
     if (!user) { showAlert('请先登录，才能点赞'); toggleModal('userModal', true); return; }
-    const item = appState.profiles.find(p => p.id === id);
+    let item = appState.profiles.find(function(p) { return String(p.id) === String(id); });
     if (!item) return;
+    if (__interactLock) return;
+    __interactLock = true;
+    setActionBarBusy(true);
+    const turnOn = !isLikedByMe(item);          // 本次意图：true=点赞，false=取消
+    // 乐观更新：先改本地并立刻刷新按钮，点下去马上有反应
     if (!Array.isArray(item.likes)) item.likes = [];
-    const idx = item.likes.findIndex(function(uid) { return String(uid) === String(user.id); });
-    if (idx >= 0) item.likes.splice(idx, 1);
-    else item.likes.push(user.id);
+    const li = item.likes.findIndex(function(uid) { return String(uid) === String(user.id); });
+    if (!turnOn && li >= 0) item.likes.splice(li, 1);
+    if (turnOn && li < 0) item.likes.push(user.id);
+    renderActionBar(item);
     try {
-      await saveToGitHub();
+      await patchRemoteState(function(base) {
+        const p = findProfileIn(base, id);
+        if (!p) return;
+        if (!Array.isArray(p.likes)) p.likes = [];
+        const i = p.likes.findIndex(function(uid) { return String(uid) === String(user.id); });
+        if (!turnOn && i >= 0) p.likes.splice(i, 1);
+        if (turnOn && i < 0) p.likes.push(user.id);
+      }, (turnOn ? 'like ' : 'unlike ') + id);
+      // 远端写成功后，本地换成远端最新那份资料，计数以远端为准
+      item = findProfileIn(appState, id) || item;
       renderActionBar(item);
-      pushNotification(item.uploaderUid, 'like', item.id, user.id, user.name,
-        '赞了你的嘉宾资料「' + (item['姓名'] || '未填') + '」');
+      if (turnOn) {
+        pushNotification(item.uploaderUid, 'like', item.id, user.id, user.name,
+          '赞了你的嘉宾资料「' + (item['姓名'] || '未填') + '」');
+        toast('👍 已点赞');
+      } else {
+        toast('已取消点赞');
+      }
     } catch (err) {
-      showAlert('❌ 同步失败：' + err.message);
+      // 失败回滚：把刚才的乐观更新还原，避免本地和仓库不一致
+      const back = findProfileIn(appState, id);
+      if (back && Array.isArray(back.likes)) {
+        const i = back.likes.findIndex(function(uid) { return String(uid) === String(user.id); });
+        if (turnOn && i >= 0) back.likes.splice(i, 1);
+        if (!turnOn && i < 0) back.likes.push(user.id);
+      }
+      renderActionBar(findProfileIn(appState, id) || item);
+      showAlert('❌ 点赞没能保存：' + err.message + '\n请检查网络后重试');
+    } finally {
+      __interactLock = false;
+      setActionBarBusy(false);
     }
   }
 
   async function toggleFavorite(id) {
     const user = getCurrentUser();
     if (!user) { showAlert('请先登录，才能收藏'); toggleModal('userModal', true); return; }
-    const item = appState.profiles.find(p => p.id === id);
+    let item = appState.profiles.find(function(p) { return String(p.id) === String(id); });
     if (!item) return;
-    const freshUser = (appState.users || []).find(u => u.id === user.id);
-    if (!freshUser) { showAlert('用户数据异常，请重新登录'); return; }
-    if (!Array.isArray(freshUser.favorites)) freshUser.favorites = [];
-    const idx = freshUser.favorites.findIndex(function(fid) { return String(fid) === String(id); });
-    if (idx >= 0) freshUser.favorites.splice(idx, 1);
-    else freshUser.favorites.push(id);
-    setCurrentUser(freshUser);
+    if (__interactLock) return;
+    __interactLock = true;
+    setActionBarBusy(true);
+    const turnOn = !isFavoritedByMe(item);      // 本次意图：true=收藏，false=取消
+
+    // 本地乐观更新（改 appState.users 里自己的账号）
+    const applyLocal = function(on) {
+      if (!Array.isArray(appState.users)) appState.users = [];
+      let me = appState.users.find(function(x) { return String(x.id) === String(user.id); });
+      if (!me) {
+        me = { id: user.id, name: user.name, password: '', groupName: user.groupName || '', avatar: user.avatar || '', createdAt: Date.now(), favorites: [] };
+        appState.users.push(me);
+      }
+      if (!Array.isArray(me.favorites)) me.favorites = [];
+      const i = me.favorites.findIndex(function(f) { return String(f) === String(id); });
+      if (on && i < 0) me.favorites.push(id);
+      if (!on && i >= 0) me.favorites.splice(i, 1);
+      setCurrentUser(me);
+    };
+    applyLocal(turnOn);
+    renderActionBar(item);
     try {
-      await saveToGitHub();
+      await patchRemoteState(function(base) {
+        if (!Array.isArray(base.users)) base.users = [];
+        let me = base.users.find(function(x) { return String(x.id) === String(user.id); });
+        if (!me) {
+          // 远端还没有这个账号（罕见：被清库/数据回滚），用本地信息补回来，别让收藏丢
+          const localMe = (appState.users || []).find(function(x) { return String(x.id) === String(user.id); });
+          me = { id: user.id, name: user.name, password: (localMe && localMe.password) || '', groupName: user.groupName || '', avatar: (localMe && localMe.avatar) || '', createdAt: (localMe && localMe.createdAt) || Date.now(), favorites: [] };
+          base.users.push(me);
+        }
+        if (!Array.isArray(me.favorites)) me.favorites = [];
+        const i = me.favorites.findIndex(function(f) { return String(f) === String(id); });
+        if (turnOn && i < 0) me.favorites.push(id);
+        if (!turnOn && i >= 0) me.favorites.splice(i, 1);
+      }, (turnOn ? 'favorite ' : 'unfavorite ') + id);
+      // 远端写成功后本地已同步为最新，重新对齐并刷新
+      applyLocal(turnOn);
+      item = findProfileIn(appState, id) || item;
       renderActionBar(item);
-      pushNotification(item.uploaderUid, 'favorite', item.id, user.id, user.name,
-        '收藏了你的嘉宾资料「' + (item['姓名'] || '未填') + '」');
+      if (turnOn) {
+        pushNotification(item.uploaderUid, 'favorite', item.id, user.id, user.name,
+          '收藏了你的嘉宾资料「' + (item['姓名'] || '未填') + '」');
+        toast('⭐ 已加入我的收藏');
+      } else {
+        toast('已取消收藏');
+      }
     } catch (err) {
-      showAlert('❌ 同步失败：' + err.message);
+      applyLocal(!turnOn);                       // 失败回滚，本地跟仓库保持一致
+      item = findProfileIn(appState, id) || item;
+      renderActionBar(item);
+      showAlert('❌ 收藏没能保存：' + err.message + '\n请检查网络后重试');
+    } finally {
+      __interactLock = false;
+      setActionBarBusy(false);
     }
   }
 
@@ -3209,9 +3674,11 @@
         const ts = t.getFullYear() + '-' + pad(t.getMonth() + 1) + '-' + pad(t.getDate()) + ' ' + pad(t.getHours()) + ':' + pad(t.getMinutes());
         const cu = getCurrentUser();
         const canDel = (cu && String(cu.id) === String(c.uid)) || isSuper() || isStaff();
+        // 留言者是注册用户就显示其头像，否则用昵称首字母兜底
+        const cUser = (appState.users || []).find(function(x) { return String(x.id) === String(c.uid); });
         return '<div style="padding:8px 0; border-bottom:1px dashed var(--border);">' +
           '<div style="display:flex; align-items:center; gap:8px;">' +
-          '<span style="background:var(--primary); color:#fff; width:22px; height:22px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:11px; flex-shrink:0;">' + escapeHtml((c.name || '?').charAt(0)) + '</span>' +
+          '<span style="width:22px; height:22px; border-radius:50%; overflow:hidden; flex-shrink:0;">' + avatarHtml({ name: c.name, avatar: cUser ? cUser.avatar : '' }, 22, 11) + '</span>' +
           '<span style="font-weight:700; font-size:12px;">' + escapeHtml(c.name) + '</span>' +
           '<span style="font-size:10px; color:var(--text-muted);">' + ts + '</span>' +
           (canDel ? '<span style="margin-left:auto;"><button class="btn btn-outline" style="font-size:10px; padding:2px 8px; color:var(--danger); border-color:#fca5a5;" onclick="deleteComment(' + item.id + ', ' + c.id + ')">删除</button></span>' : '') +
@@ -3231,33 +3698,56 @@
     const input = document.getElementById('commentInput');
     const text = (input ? input.value : '').trim();
     if (!text) { showAlert('留言内容不能为空'); return; }
-    const item = appState.profiles.find(p => p.id === profileId);
+    const item = appState.profiles.find(function(p) { return String(p.id) === String(profileId); });
     if (!item) return;
-    if (!Array.isArray(item.comments)) item.comments = [];
-    const newComment = { id: Date.now() + Math.floor(Math.random() * 1000), uid: user.id, name: user.name, text: text, time: Date.now() };
-    item.comments.push(newComment);
+    if (__interactLock) return;
+    __interactLock = true;
+    const btn = document.querySelector('#commentsArea button');
+    if (btn) { btn.disabled = true; btn.textContent = '发送中'; }
+    // 评论 id 在远端基线上生成，避免和别人同时留言撞 id
+    const newId = Date.now() + Math.floor(Math.random() * 1000);
     try {
-      await saveToGitHub();
-      renderComments(item);
-      renderActionBar(item);
-      pushNotification(item.uploaderUid, 'comment', item.id, user.id, user.name,
-        '在你的嘉宾资料《' + (item['姓名'] || '未填') + '》留言：' + (text.length > 20 ? text.slice(0, 20) + '…' : text));
+      await patchRemoteState(function(base) {
+        const p = findProfileIn(base, profileId);
+        if (!p) return;
+        if (!Array.isArray(p.comments)) p.comments = [];
+        p.comments.push({ id: newId, uid: user.id, name: user.name, text: text, time: Date.now() });
+      }, 'comment ' + profileId);
+      const fresh = findProfileIn(appState, profileId) || item;
+      if (input) input.value = '';
+      renderComments(fresh);      // 远端是最新基线，别人的新留言也会一起显示
+      renderActionBar(fresh);
+      pushNotification(fresh.uploaderUid, 'comment', fresh.id, user.id, user.name,
+        '在你的嘉宾资料《' + (fresh['姓名'] || '未填') + '》留言：' + (text.length > 20 ? text.slice(0, 20) + '…' : text));
+      toast('💬 留言已发布');
     } catch (err) {
-      showAlert('❌ 同步失败：' + err.message);
+      showAlert('❌ 留言没能保存：' + err.message + '\n请检查网络后重试');
+    } finally {
+      __interactLock = false;
+      if (btn) { btn.disabled = false; btn.textContent = '发送'; }
     }
   }
 
   function deleteComment(profileId, commentId) {
-    const item = appState.profiles.find(p => p.id === profileId);
+    const item = appState.profiles.find(function(p) { return String(p.id) === String(profileId); });
     if (!item) return;
     confirmAction('确定删除这条留言吗？', async () => {
-      if (Array.isArray(item.comments)) item.comments = item.comments.filter(function(c) { return c.id !== commentId; });
+      if (__interactLock) return;
+      __interactLock = true;
       try {
-        await saveToGitHub();
-        renderComments(item);
-        renderActionBar(item);
+        await patchRemoteState(function(base) {
+          const p = findProfileIn(base, profileId);
+          if (!p || !Array.isArray(p.comments)) return;
+          p.comments = p.comments.filter(function(c) { return String(c.id) !== String(commentId); });
+        }, 'delete comment ' + commentId);
+        const fresh = findProfileIn(appState, profileId) || item;
+        renderComments(fresh);
+        renderActionBar(fresh);
+        toast('🗑️ 留言已删除');
       } catch (err) {
-        showAlert('❌ 同步失败：' + err.message);
+        showAlert('❌ 删除失败：' + err.message);
+      } finally {
+        __interactLock = false;
       }
     });
   }
@@ -3376,11 +3866,13 @@
     const fresh = (appState.users || []).find(function(x) { return x.id === u.id; }) || u;
     document.getElementById('profileHeader').innerHTML =
       '<div style="display:flex; align-items:center; gap:14px; padding:20px; background:var(--card-bg); border:1px solid var(--border); border-radius:12px; margin-bottom:12px;">' +
-      '<div style="width:64px; height:64px; border-radius:50%; background:var(--primary); color:#fff; display:flex; align-items:center; justify-content:center; font-size:26px; font-weight:700; flex-shrink:0;">' + escapeHtml((fresh.name || '?').charAt(0)) + '</div>' +
-      '<div style="flex:1;">' +
+      '<div style="width:64px; height:64px; border-radius:50%; overflow:hidden; flex-shrink:0; border:2px solid var(--border);">' + avatarHtml(fresh, 64, 26) + '</div>' +
+      '<div style="flex:1; min-width:0;">' +
       '<div style="font-size:18px; font-weight:700;">' + escapeHtml(fresh.name) + '</div>' +
       (fresh.groupName ? '<div style="font-size:12px; color:var(--text-muted);">群名：' + escapeHtml(fresh.groupName) + '</div>' : '<div style="font-size:12px; color:var(--text-muted);">（注册时未填群名）</div>') +
-      '</div></div>';
+      '</div>' +
+      '<button class="btn btn-outline" style="font-size:12px; padding:7px 12px; flex-shrink:0;" onclick="openEditProfileModal()">✏️ 编辑</button>' +
+      '</div>';
     // 我发布的资料
     const myProfiles = (appState.profiles || []).filter(function(p) { return p.uploaderUid === u.id; })
       .sort(function(a, b) { return (b.createdAt || 0) - (a.createdAt || 0); });
@@ -3444,6 +3936,7 @@
   // 切换底部 Tab
   function switchTab(name) {
     if (!name) return;
+    if (typeof window.showBottomNav === 'function') window.showBottomNav();   // 切页时导航一定回到可见状态
     // 管理视图 tab 不在底部导航里
     ['home', 'publish', 'inbox', 'profile', 'adminlist', 'sponsor'].forEach(function(t) {
       const el = document.getElementById('tab-' + t);
@@ -4580,6 +5073,8 @@
   function toggleModal(id, show) {
     const modal = document.getElementById(id);
     modal.style.display = show ? 'flex' : 'none';
+    // 打开任何弹窗时，把因滚动而收起的底部导航放回来，避免关掉弹窗后找不到导航
+    if (show && typeof window.showBottomNav === 'function') window.showBottomNav();
     if (!show && id === 'detailModal') {
       const video = modal.querySelector('video');
       if (video) video.pause();
