@@ -2050,8 +2050,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.9.0';
+  const APP_VERSION = '6.9.1';
   const CHANGELOG = [
+    { v: '6.9.1', d: '2026-08-30', note: '修复「数据不会同步」：站点无后端，原只在启动时拉一次 data.json，导致多端/多标签页看不到彼此的新提交。新增每 15s 轻量轮询（带 ?t= 缓存击穿绕过 Pages CDN），与服务端指纹比对，变化即合并重渲染；正在编辑表单时跳过重渲染以免打扰；封号状态在多端实时生效（被封账号会被踢下线）；页面切回前台立即同步一次', type: 'fix' },
     { v: '6.9.0', d: '2026-08-30', note: '新增「封号」机制：管理员可在「注册用户」里封禁违规账号，封号后该用户所有留言对其余访客不可见、无法登录与点赞/收藏/留言/投稿；新增「邀请链接记住设备」：访客用带 ?k= 的投稿链接打开过本站后，该浏览器被授权，之后无需再带链接也能提交；并加固数据写入（409 冲突自动重试）与加载（失败重试），修复管理员令牌反复粘贴的问题', type: 'feature' },
     { v: '6.8.0', d: '2026-08-30', note: '投稿收口为「管理员链接授权 + 管理员审核」双道关：管理员可在后台生成带密钥、可限定使用次数的「投稿链接」；访客须用该链接（网址带 ?k=）打开本站才能提交，否则投稿入口锁定；注册用户仍可直接提交但同样进入待审核；提交成功后消耗一次链接次数，用尽即失效', type: 'feature' },
     { v: '6.7.3', d: '2026-08-30', note: '取消提交资料的「年满 18 周岁」硬性拦截，改为由管理员审核把关：所有访客/普通用户提交均进入待审核队列，只有管理员人工通过才公开；待审核卡片对未满 18 周岁申请人显示「🔞 未成年」角标与审核提醒', type: 'feature' },
@@ -3933,6 +3934,103 @@
   function checkAdminState() {
     const isAdmin = sessionStorage.getItem('is_match_admin') === 'true' || localStorage.getItem('is_match_admin') === 'true';
     document.body.classList.toggle('is-admin', isAdmin);
+  }
+
+  // ===== 自动数据同步（修复「数据不会同步」）=====
+  // 站点无后端，data.json 是唯一定源；原代码只在启动时 loadData() 拉一次，之后从不主动再取，
+  // 导致多端 / 多标签页之间看不到彼此的新提交（别人投稿、管理员审核/封号等都不刷新看不到）。
+  // 这里加轻量轮询：每 15s 重新拉取（带 ?t= 缓存击穿绕过 GitHub Pages CDN 缓存），与本地指纹
+  // 比对，变了就合并重渲染；正在编辑表单时跳过重渲染以免打断输入；封号状态多端实时生效。
+  let __syncTimer = null;
+  let __lastSyncSig = '';
+  function __syncSignature(d) {
+    // 廉价指纹：对关键数组/标量做紧凑序列化后做简单哈希，足以检测「是否有变化」
+    try {
+      const sig = JSON.stringify([
+        d.profiles, d.users, d.staffs, d.submitLinks, d.notifications,
+        d.glassMode, d.wechat, d.version, d.hideVersionInfo, d.nextProfileNo
+      ]);
+      let h = 0;
+      for (let i = 0; i < sig.length; i++) h = (h * 31 + sig.charCodeAt(i)) | 0;
+      return String(h);
+    } catch (e) { return ''; }
+  }
+  function __ensureSyncBadge() {
+    let el = document.getElementById('syncBadge');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'syncBadge';
+      el.style.cssText = 'position:fixed;left:8px;bottom:8px;z-index:60;font-size:11px;line-height:1;padding:4px 8px;border-radius:10px;background:rgba(0,0,0,.45);color:#fff;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);pointer-events:none;opacity:.78;';
+      document.body.appendChild(el);
+    }
+    return el;
+  }
+  async function __syncTick() {
+    try {
+      const res = await fetch('./data.json?t=' + Date.now(), { cache: 'no-cache' });
+      if (!res.ok) return;
+      const data = await res.json();
+      const sig = __syncSignature(data);
+      const badge = document.getElementById('syncBadge');
+      if (sig === __lastSyncSig) {
+        if (badge) badge.textContent = '已同步 ' + new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+        return; // 无变化，跳过合并与重渲染
+      }
+      // 合并服务端数据到本地（服务端为权威源；本地的未保存编辑在表单 DOM，不在此处）
+      if (data.wechat) appState.wechat = data.wechat;
+      if (Array.isArray(data.profiles)) appState.profiles = data.profiles;
+      if (Array.isArray(data.staffs)) appState.staffs = data.staffs;
+      if (typeof data.nextProfileNo === 'number') appState.nextProfileNo = data.nextProfileNo;
+      if (typeof data.version === 'string') appState.version = data.version;
+      if (typeof data.hideVersionInfo === 'boolean') appState.hideVersionInfo = data.hideVersionInfo;
+      if (Array.isArray(data.hiddenVersions)) appState.hiddenVersions = data.hiddenVersions;
+      if (Array.isArray(data.adminLogs)) appState.adminLogs = data.adminLogs;
+      if (Array.isArray(data.users)) appState.users = data.users;
+      if (Array.isArray(data.notifications)) appState.notifications = data.notifications;
+      if (typeof data.glassMode === 'boolean') appState.glassMode = data.glassMode;
+      if (Array.isArray(data.submitLinks)) appState.submitLinks = data.submitLinks;
+      __lastSyncSig = sig;
+      // 被封号的当前登录用户立即踢下线（多端实时生效）
+      const cu = getCurrentUser();
+      if (cu) {
+        const fresh = (appState.users || []).find(u => u.id === cu.id);
+        if (fresh && fresh.banned) {
+          setCurrentUser(null);
+          showToast('你的账号已被封禁：' + (fresh.banReason || '违反社区规则'));
+        }
+      }
+      // 正在编辑/填表时不重渲染卡片，避免打断输入；其余情况刷新视图
+      const editing = document.getElementById('formModal') && document.getElementById('formModal').style.display === 'flex';
+      updateWechatUI();
+      applyGlassMode();
+      refreshIdentityUI();
+      refreshUserUI();
+      updateInboxBadge();
+      updateVersionWidget();
+      if (!editing) {
+        renderCards();
+        if (adminMode === 'users') renderUserCards();
+        // 详情弹窗打开且档案仍在，则刷新其内容
+        if (currentDetailId != null) {
+          const still = (appState.profiles || []).find(p => String(p.id) === String(currentDetailId));
+          if (still) openDetail(currentDetailId); else toggleModal('detailModal', false);
+        }
+      }
+      if (badge) badge.textContent = '已同步 ' + new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+    } catch (e) {
+      const badge = document.getElementById('syncBadge');
+      if (badge) badge.textContent = '同步失败，重试中…';
+    }
+  }
+  function startDataSync() {
+    __ensureSyncBadge();
+    __syncTick(); // 立即同步一次，建立基准指纹
+    if (__syncTimer) clearInterval(__syncTimer);
+    __syncTimer = setInterval(__syncTick, 15000);
+    // 页面从后台切回前台时立即同步一次
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden) __syncTick();
+    });
   }
 
   // 打开管理员登录框时，若本机已记住 GitHub 令牌则自动回填，刷新/重开不再需要反复粘贴
@@ -6204,6 +6302,7 @@
   updateVersionWidget();   // 显示版本号 + 按隐藏设置控制可见性
   prefillAdminToken();     // 记住令牌时预填登录框，避免反复粘贴
   loadData();
+  startDataSync();         // 启动自动同步，修复多端/多标签页数据不同步
 </script>
 
 </body>
