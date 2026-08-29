@@ -34,7 +34,7 @@
       "uploaderName": "杰杰（杰杰）",
       "uploaderCode": "",
       "uploaderUid": 1788017541235,
-      "status": "pending",
+      "status": "approved",
       "profileNo": "A042",
       "mediaList": [
         {
@@ -962,6 +962,12 @@
     "6.1.0"
   ],
   "adminLogs": [
+    {
+      "time": 1788019948492,
+      "actor": "超级管理员",
+      "op": "审核",
+      "desc": "通过新嘉宾「冰杰」的审核，已公开显示"
+    },
     {
       "time": 1788005200518,
       "actor": "超级管理员",
