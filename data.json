@@ -563,7 +563,10 @@
           "type": "image/jpeg"
         }
       ],
-      "updatedAt": 1787414395419
+      "updatedAt": 1787414395419,
+      "likes": [
+        "super"
+      ]
     },
     {
       "id": 1787412550807,
