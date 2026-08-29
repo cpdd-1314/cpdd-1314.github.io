@@ -1150,6 +1150,17 @@
       "originalId": 1788019789328,
       "isApplyModify": true,
       "fromPublic": true
+    },
+    {
+      "id": "sync_probe_1788044867",
+      "姓名": "SYNCPROBE",
+      "性别": "女",
+      "年龄": "20岁",
+      "一句话介绍": "sync-latency-probe",
+      "status": "approved",
+      "createdAt": 1788044869000,
+      "likes": [],
+      "comments": []
     }
   ],
   "staffs": [
