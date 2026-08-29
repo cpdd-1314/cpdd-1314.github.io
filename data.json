@@ -1075,6 +1075,12 @@
   ],
   "adminLogs": [
     {
+      "time": 1788033600000,
+      "actor": "超级管理员",
+      "op": "外观主题",
+      "desc": "开启 v6.6.0 Liquid Glass（高饱和折射 + 色散描边 + 动态扫光）"
+    },
+    {
       "time": 1788032400000,
       "actor": "超级管理员",
       "op": "批量下架",
@@ -1359,5 +1365,5 @@
     }
   ],
   "notifications": [],
-  "glassMode": false
+  "glassMode": true
 }
