@@ -1032,6 +1032,12 @@
   ],
   "adminLogs": [
     {
+      "time": 1788027058991,
+      "actor": "超级管理员",
+      "op": "外观主题",
+      "desc": "开启玻璃拟态（Liquid Glass）"
+    },
+    {
       "time": 1788022464782,
       "actor": "超级管理员",
       "op": "外观主题",
@@ -1292,5 +1298,5 @@
     }
   ],
   "notifications": [],
-  "glassMode": false
+  "glassMode": true
 }
