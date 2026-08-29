@@ -590,68 +590,156 @@
     }
 
     /* ============================================================
-       Liquid Glass 玻璃拟态主题（管理员可开关，全站生效）
-       思路：背后铺一层缓慢流动的彩色光斑，所有面板用半透明材质 +
-       backdrop-filter 折射背景，顶部加镜面高光、外圈加柔和投影，
-       接近 iOS 26 的 Liquid Glass 观感。
+    /* ============================================================
+       Liquid Glass 玻璃拟态主题 v4（管理员可开关，全站生效）
+
+       iOS 26 Liquid Glass 的 6 个视觉特征，逐条用纯 CSS 逼近：
+         1. 高模糊 + 高饱和折射：blur 30~48px + saturate 260%
+         2. 色散（棱镜分光）：边缘冷青在上、暖品红在下的彩色描边
+         3. 方向性镜面高光：左上极亮、右下回亮 —— "厚度"的来源
+         4. 体积感：多层内阴影（顶亮 / 侧中 / 底暗）+ 外侧彩色辉光
+         5. 表面流动扫光：光线掠过玻璃的动态反光（::before 动画）
+         6. 背景必须鲜艳 + 带颗粒：没东西可透，玻璃就只是一层灰白
        ============================================================ */
 
-    /* --- 背景层：彩色光斑，玻璃需要有东西可"透"才有折射感 --- */
+    /* --- ① 背景：高饱和流动色块 + 颗粒质感 --- */
     #glassBg {
       position: fixed; inset: 0; z-index: -1; overflow: hidden; display: none;
-      background: linear-gradient(165deg, #eef2ff 0%, #fdf4ff 40%, #ecfeff 75%, #f0f9ff 100%);
+      background:
+        radial-gradient(78% 58% at 14% 6%,  #8b5cf6 0%, transparent 62%),
+        radial-gradient(68% 52% at 90% 4%,  #f472b6 0%, transparent 60%),
+        radial-gradient(74% 62% at 10% 90%, #22d3ee 0%, transparent 62%),
+        radial-gradient(68% 58% at 94% 94%, #fb923c 0%, transparent 60%),
+        linear-gradient(165deg, #dbeafe 0%, #ede9fe 30%, #cffafe 64%, #fce7f3 100%);
     }
     body.glass-mode #glassBg { display: block; }
-    .glass-blob {
-      position: absolute; border-radius: 50%; filter: blur(60px);
-      will-change: transform; opacity: .55;
+    /* 颗粒：真实材质都有细微噪声，纯渐变会显得很"塑料" */
+    #glassBg::after {
+      content: ''; position: absolute; inset: 0; pointer-events: none;
+      opacity: .18; mix-blend-mode: overlay;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
     }
-    .glass-blob.b1 { width: 46vmax; height: 46vmax; left: -12vmax; top: -10vmax;
-      background: radial-gradient(circle at 35% 35%, #a78bfa, #6366f1 60%, transparent 72%);
-      animation: glassFloat1 26s ease-in-out infinite; }
-    .glass-blob.b2 { width: 40vmax; height: 40vmax; right: -10vmax; top: 8vmax;
-      background: radial-gradient(circle at 60% 40%, #f0abfc, #d946ef 58%, transparent 72%);
-      animation: glassFloat2 32s ease-in-out infinite; }
-    .glass-blob.b3 { width: 44vmax; height: 44vmax; left: 18vmax; bottom: -16vmax;
-      background: radial-gradient(circle at 45% 55%, #67e8f9, #06b6d4 60%, transparent 74%);
-      animation: glassFloat3 29s ease-in-out infinite; }
-    .glass-blob.b4 { width: 30vmax; height: 30vmax; right: 6vmax; bottom: 4vmax;
-      background: radial-gradient(circle at 50% 50%, #fcd34d, #fb923c 58%, transparent 72%);
-      opacity: .38; animation: glassFloat2 35s ease-in-out infinite reverse; }
+    .glass-blob { position: absolute; border-radius: 50%; will-change: transform; filter: blur(22px); }
+    .glass-blob.b1 {
+      width: 58vmax; height: 58vmax; left: -20vmax; top: -18vmax;
+      background: radial-gradient(circle at 45% 45%, #6d28d9 0%, #8b5cf6 32%, #a78bfa 52%, rgba(167,139,250,0) 72%);
+      opacity: .72; animation: glassFloat1 24s ease-in-out infinite;
+    }
+    .glass-blob.b2 {
+      width: 52vmax; height: 52vmax; right: -16vmax; top: -2vmax;
+      background: radial-gradient(circle at 55% 45%, #be185d 0%, #ec4899 32%, #f472b6 52%, rgba(244,114,182,0) 72%);
+      opacity: .68; animation: glassFloat2 30s ease-in-out infinite;
+    }
+    .glass-blob.b3 {
+      width: 56vmax; height: 56vmax; left: 2vmax; bottom: -26vmax;
+      background: radial-gradient(circle at 48% 52%, #0e7490 0%, #06b6d4 32%, #67e8f9 52%, rgba(103,232,249,0) 72%);
+      opacity: .64; animation: glassFloat3 27s ease-in-out infinite;
+    }
+    .glass-blob.b4 {
+      width: 42vmax; height: 42vmax; right: -8vmax; bottom: -8vmax;
+      background: radial-gradient(circle at 50% 50%, #c2410c 0%, #f59e0b 34%, #fcd34d 54%, rgba(252,211,77,0) 74%);
+      opacity: .5; animation: glassFloat2 34s ease-in-out infinite reverse;
+    }
     @keyframes glassFloat1 {
       0%,100% { transform: translate3d(0,0,0) scale(1); }
-      33%  { transform: translate3d(6vmax, 4vmax, 0) scale(1.12); }
-      66%  { transform: translate3d(-3vmax, 7vmax, 0) scale(.94); }
+      33%  { transform: translate3d(8vmax, 6vmax, 0) scale(1.18); }
+      66%  { transform: translate3d(-4vmax, 9vmax, 0) scale(.92); }
     }
     @keyframes glassFloat2 {
       0%,100% { transform: translate3d(0,0,0) scale(1); }
-      40%  { transform: translate3d(-7vmax, 5vmax, 0) scale(1.08); }
-      70%  { transform: translate3d(4vmax, -4vmax, 0) scale(.96); }
+      40%  { transform: translate3d(-10vmax, 7vmax, 0) scale(1.12); }
+      70%  { transform: translate3d(6vmax, -6vmax, 0) scale(.94); }
     }
     @keyframes glassFloat3 {
-      0%,100% { transform: translate3d(0,0,0) scale(1.05); }
-      50%  { transform: translate3d(5vmax, -6vmax, 0) scale(.92); }
+      0%,100% { transform: translate3d(0,0,0) scale(1.08); }
+      50%  { transform: translate3d(7vmax, -8vmax, 0) scale(.88); }
     }
-    /* 尊重系统的"减少动态效果"设置 */
+    /* ⑤ 表面扫光：一道亮光斜着掠过玻璃 */
+    @keyframes lgSweep {
+      0%   { background-position: 0% 0;   opacity: 0; }
+      10%  { opacity: .9; }
+      52%  { background-position: 100% 0; opacity: .9; }
+      64%  { opacity: 0; }
+      100% { background-position: 100% 0; opacity: 0; }
+    }
     @media (prefers-reduced-motion: reduce) {
       .glass-blob { animation: none !important; }
+      body.glass-mode .card::before,
+      body.glass-mode header::before,
+      body.glass-mode .bottom-tab::before,
+      body.glass-mode .modal::before,
+      body.glass-mode .profile-section::before { animation: none !important; opacity: 0 !important; }
     }
 
-    /* --- 玻璃模式下的变量：更柔的描边、更透的表面 --- */
+    /* --- ② 材质变量：更透、更艳、更厚 --- */
     body.glass-mode {
       --bg: transparent;
-      --card-bg: rgba(255,255,255,.55);
-      --border: rgba(255,255,255,.75);
-      --text: #172033;
-      --text-muted: #4a5568;
+      --card-bg: rgba(255,255,255,.3);
+      --border: rgba(255,255,255,.72);
+      --text: #0b1220;
+      --text-muted: #33415c;
       background: transparent;
+      /* 悬浮导航抬高，底部需要更多留白 */
+      padding-bottom: 112px;
     }
-    /* 半透明表面上文字要更实一点，保证可读性 */
-    body.glass-mode .card-meta,
-    body.glass-mode .card-loc,
-    body.glass-mode .file-hint { color: #3f4a5f; }
+    @media (max-width: 768px) { body.glass-mode { padding-bottom: 104px; } }
 
-    /* --- 通用玻璃材质 --- */
+    body.glass-mode {
+      /* 填充：极透，让背后色彩大面积透出来 —— 这是 Liquid Glass 的灵魂 */
+      --glass-fill: linear-gradient(135deg,
+          rgba(255,255,255,.36) 0%,
+          rgba(255,255,255,.17) 42%,
+          rgba(255,255,255,.10) 100%);
+      /* 表面光泽：斜向一道更亮的反光 + 右下回亮 */
+      --glass-sheen: linear-gradient(112deg,
+          rgba(255,255,255,.55) 0%,
+          rgba(255,255,255,.24) 24%,
+          rgba(255,255,255,0) 44%,
+          rgba(255,255,255,0) 62%,
+          rgba(255,255,255,.16) 80%,
+          rgba(255,255,255,.38) 100%);
+      /* 色散描边：冷青在上 / 暖品红在下，模拟棱镜把白光分开 */
+      --glass-edge: linear-gradient(135deg,
+          rgba(255,255,255,1)      0%,
+          rgba(165,243,252,.95)    8%,
+          rgba(255,255,255,.62)    18%,
+          rgba(255,255,255,.10)    36%,
+          rgba(255,255,255,0)      54%,
+          rgba(255,255,255,.08)    68%,
+          rgba(251,207,232,.85)    84%,
+          rgba(255,255,255,.98)    100%);
+      /* 厚度：顶极亮 → 侧中 → 底暗，内侧还有一层柔和体积光 */
+      --glass-thick:
+          inset 0  2px  1px rgba(255,255,255,1),
+          inset 0 -2px  1px rgba(255,255,255,.24),
+          inset  2px 0 1px rgba(255,255,255,.44),
+          inset -2px 0 1px rgba(255,255,255,.3),
+          inset 0  12px 18px -12px rgba(255,255,255,.65),
+          inset 0 -14px 18px -14px rgba(31,41,55,.14);
+      /* 色散辉光：左右各一丝冷暖分离，真玻璃边缘的彩虹边 */
+      --glass-chroma:
+          -1.5px 0 0 rgba(34,211,238,.16),
+           1.5px 0 0 rgba(236,72,153,.14),
+           0 -1px 0 rgba(255,255,255,.28);
+      /* 投影：带背景色的深投影，玻璃才会"浮"起来 */
+      --glass-drop:
+          0 1px 2px rgba(30,27,75,.09),
+          0 10px 24px rgba(30,27,75,.13),
+          0 30px 64px rgba(30,27,75,.22);
+
+      /* 浮层：更厚、折射更强 */
+      --glass-fill-strong: linear-gradient(135deg,
+          rgba(255,255,255,.52) 0%,
+          rgba(255,255,255,.28) 45%,
+          rgba(255,255,255,.2) 100%);
+      --glass-sheen-strong: linear-gradient(112deg,
+          rgba(255,255,255,.7) 0%,
+          rgba(255,255,255,.34) 26%,
+          rgba(255,255,255,0) 46%,
+          rgba(255,255,255,.26) 100%);
+    }
+
+    /* --- 通用玻璃材质：面板 / 卡片 / 弹窗 --- */
     body.glass-mode .card,
     body.glass-mode .modal,
     body.glass-mode .profile-section,
@@ -668,126 +756,272 @@
     body.glass-mode .filters,
     body.glass-mode .media-gallery,
     body.glass-mode .form-grid > div {
-      background: rgba(255,255,255,.5);
-      -webkit-backdrop-filter: blur(18px) saturate(165%);
-      backdrop-filter: blur(18px) saturate(165%);
-      border: 1px solid rgba(255,255,255,.7);
-      box-shadow: 0 8px 30px rgba(31,41,55,.10), inset 0 1px 0 rgba(255,255,255,.85);
+      background-color: transparent;
+      background-image: var(--glass-sheen), var(--glass-fill), var(--glass-edge);
+      background-clip: padding-box, padding-box, border-box;
+      background-origin: padding-box, padding-box, border-box;
+      border: 1px solid transparent;
+      -webkit-backdrop-filter: blur(30px) saturate(260%) brightness(1.06);
+      backdrop-filter: blur(30px) saturate(260%) brightness(1.06);
+      box-shadow: var(--glass-drop), var(--glass-chroma), var(--glass-thick);
     }
-    /* 卡片数量多，blur 调低，避免手机上掉帧 */
-    body.glass-mode .card {
-      background: rgba(255,255,255,.46);
-      -webkit-backdrop-filter: blur(12px) saturate(150%);
-      backdrop-filter: blur(12px) saturate(150%);
+    body.glass-mode .card { border-radius: 28px; }
+    body.glass-mode .modal { border-radius: 34px; }
+    body.glass-mode .profile-section,
+    body.glass-mode .brand-block,
+    body.glass-mode .login-prompt { border-radius: 26px; }
+    body.glass-mode .notif-item,
+    body.glass-mode .publish-option,
+    body.glass-mode .admin-action-row { border-radius: 22px; }
+    body.glass-mode .notice { border-radius: 18px; }
+    body.glass-mode .filters { border-radius: 24px; }
+
+    /* --- ⑤ 表面流动扫光：让玻璃"活"起来 --- */
+    body.glass-mode .card,
+    body.glass-mode .modal,
+    body.glass-mode .profile-section,
+    body.glass-mode header { position: relative; isolation: isolate; }
+    body.glass-mode .card::before,
+    body.glass-mode .modal::before,
+    body.glass-mode .profile-section::before,
+    body.glass-mode header::before,
+    body.glass-mode .bottom-tab::before {
+      content: ''; position: absolute; inset: 0; z-index: -1;
+      border-radius: inherit; pointer-events: none;
+      background-image: linear-gradient(105deg,
+          rgba(255,255,255,0)   32%,
+          rgba(255,255,255,.16) 42%,
+          rgba(255,255,255,.7)  50%,
+          rgba(255,255,255,.16) 58%,
+          rgba(255,255,255,0)   68%);
+      background-size: 220% 100%;
+      background-repeat: no-repeat;
+      animation: lgSweep 7.5s ease-in-out infinite;
+      opacity: 0;
     }
-    /* 卡片媒体区在 glass 模式下不再是死黑一片，而是半透明深色玻璃，
-       加载慢或失败时也能透出背后的彩色光斑 */
+    body.glass-mode .bottom-tab::before { animation-duration: 9s; }
+    body.glass-mode .card:nth-of-type(2n)::before { animation-delay: -2.4s; }
+    body.glass-mode .card:nth-of-type(3n)::before { animation-delay: -4.8s; }
+
+    body.glass-mode .card { transition: transform .28s cubic-bezier(.22,1,.36,1), box-shadow .28s ease; }
+    body.glass-mode .card:hover {
+      transform: translateY(-6px) scale(1.012);
+      box-shadow:
+        0 10px 22px rgba(30,27,75,.12),
+        0 42px 80px rgba(30,27,75,.28),
+        var(--glass-chroma),
+        inset 0 2px 1px rgba(255,255,255,1),
+        inset 0 -2px 1px rgba(255,255,255,.3);
+    }
+    body.glass-mode .publish-option:hover,
+    body.glass-mode .notif-item:hover { transform: translateY(-3px); }
+
+    /* 卡片媒体区：半透明深色底，图片加载后会盖住它；没图时也不会死黑 */
     body.glass-mode .card-media-wrap,
     body.glass-mode .media-viewer {
-      background: rgba(0,0,0,.35);
-      -webkit-backdrop-filter: blur(10px) saturate(120%);
-      backdrop-filter: blur(10px) saturate(120%);
-      border-radius: 14px;
+      background: rgba(15,23,42,.2);
+      border-radius: 22px;
       overflow: hidden;
     }
-    body.glass-mode .card:hover {
-      background: rgba(255,255,255,.62);
-      transform: translateY(-3px);
-      box-shadow: 0 14px 40px rgba(31,41,55,.16), inset 0 1px 0 rgba(255,255,255,.9);
-    }
 
-    /* --- 浮在内容之上的层：更强的折射，才压得住背后的内容 --- */
-    body.glass-mode header,
-    body.glass-mode .bottom-tab,
-    body.glass-mode .modal-overlay .modal,
-    body.glass-mode .lightbox-nav,
-    body.glass-mode .media-viewer,
-    body.glass-mode .search-wrap {
-      background: rgba(255,255,255,.62);
-      -webkit-backdrop-filter: blur(26px) saturate(190%);
-      backdrop-filter: blur(26px) saturate(190%);
-    }
+    /* --- 悬浮玻璃胶囊：底部导航（iOS 26 标志性形态）--- */
     body.glass-mode .bottom-tab {
-      border-top: 1px solid rgba(255,255,255,.75);
-      box-shadow: 0 -6px 28px rgba(31,41,55,.12), inset 0 1px 0 rgba(255,255,255,.9);
-      border-radius: 18px 18px 0 0;
+      left: 50%; right: auto; bottom: 16px;
+      width: calc(100% - 32px); max-width: 460px;
+      transform: translateX(-50%);
+      padding: 9px 8px;
+      border-top: none;
+      border-radius: 36px;
+      background-color: transparent;
+      background-image: var(--glass-sheen-strong), var(--glass-fill-strong), var(--glass-edge);
+      background-clip: padding-box, padding-box, border-box;
+      background-origin: padding-box, padding-box, border-box;
+      border: 1px solid transparent;
+      -webkit-backdrop-filter: blur(48px) saturate(280%) brightness(1.08);
+      backdrop-filter: blur(48px) saturate(280%) brightness(1.08);
+      box-shadow:
+        0 4px 14px rgba(30,27,75,.12),
+        0 26px 64px rgba(30,27,75,.3),
+        -1.5px 0 0 rgba(34,211,238,.2),
+         1.5px 0 0 rgba(236,72,153,.18),
+        inset 0 2.5px 1px rgba(255,255,255,1),
+        inset 0 -2px 1px rgba(255,255,255,.34),
+        inset 2.5px 0 1px rgba(255,255,255,.5),
+        inset -2.5px 0 1px rgba(255,255,255,.4),
+        inset 0 14px 22px -14px rgba(255,255,255,.7);
     }
-    body.glass-mode .modal {
-      border-radius: 22px;
-      box-shadow: 0 24px 70px rgba(31,41,55,.24), inset 0 1px 0 rgba(255,255,255,.9);
+    body.glass-mode.nav-hidden .bottom-tab { transform: translateX(-50%) translateY(190%); }
+
+    body.glass-mode .add-icon {
+      background-image: linear-gradient(135deg, #6366f1, #a855f7);
+      border: 1px solid rgba(255,255,255,.5);
+      border-radius: 18px;
+      box-shadow: 0 8px 26px rgba(99,102,241,.5), inset 0 2px 0 rgba(255,255,255,.75);
+      color: #fff;
     }
-    /* 遮罩层本身也轻微模糊，营造景深 */
-    body.glass-mode .modal-overlay {
-      -webkit-backdrop-filter: blur(6px);
-      backdrop-filter: blur(6px);
-      background: rgba(148,163,184,.22);
+    body.glass-mode .tab-btn.active { color: var(--primary); font-weight: 700; }
+    /* 当前 tab：一枚凸起的玻璃小胶囊 */
+    body.glass-mode .tab-btn.active {
+      background-color: transparent;
+      background-image: linear-gradient(160deg,
+          rgba(255,255,255,.85) 0%,
+          rgba(255,255,255,.5) 55%,
+          rgba(255,255,255,.3) 100%);
+      border-radius: 20px;
+      -webkit-backdrop-filter: blur(14px) saturate(200%);
+      backdrop-filter: blur(14px) saturate(200%);
+      box-shadow:
+        inset 0 2px 1px rgba(255,255,255,1),
+        inset 0 -1.5px 1px rgba(255,255,255,.34),
+        inset 0 0 0 .5px rgba(255,255,255,.55),
+        0 4px 14px rgba(99,102,241,.2);
     }
 
-    /* --- 控件：按钮 / 输入框 / 筛选 --- */
+    /* --- 顶部 header 玻璃 --- */
+    body.glass-mode header {
+      background-color: transparent;
+      background-image: var(--glass-sheen-strong), var(--glass-fill-strong), var(--glass-edge);
+      background-clip: padding-box, padding-box, border-box;
+      background-origin: padding-box, padding-box, border-box;
+      border: 1px solid transparent;
+      border-radius: 28px;
+      padding: 12px 16px;
+      -webkit-backdrop-filter: blur(38px) saturate(260%) brightness(1.07);
+      backdrop-filter: blur(38px) saturate(260%) brightness(1.07);
+      box-shadow:
+        0 2px 8px rgba(30,27,75,.08),
+        0 18px 46px rgba(30,27,75,.2),
+        -1.5px 0 0 rgba(34,211,238,.16),
+         1.5px 0 0 rgba(236,72,153,.14),
+        inset 0 2px 1px rgba(255,255,255,1),
+        inset 0 -1.5px 1px rgba(255,255,255,.28);
+    }
+
+    /* --- 按钮 --- */
+    body.glass-mode .btn { border-radius: 18px; }
     body.glass-mode .btn-outline {
-      background: rgba(255,255,255,.5);
-      -webkit-backdrop-filter: blur(10px) saturate(150%);
-      backdrop-filter: blur(10px) saturate(150%);
-      border: 1px solid rgba(255,255,255,.8);
-      box-shadow: 0 2px 10px rgba(31,41,55,.07), inset 0 1px 0 rgba(255,255,255,.85);
+      background-color: transparent;
+      background-image: var(--glass-sheen), var(--glass-fill), var(--glass-edge);
+      background-clip: padding-box, padding-box, border-box;
+      background-origin: padding-box, padding-box, border-box;
+      border: 1px solid transparent;
+      -webkit-backdrop-filter: blur(20px) saturate(230%);
+      backdrop-filter: blur(20px) saturate(230%);
+      box-shadow:
+        0 3px 10px rgba(30,27,75,.1),
+        inset 0 2px 1px rgba(255,255,255,1),
+        inset 0 -1.5px 1px rgba(255,255,255,.24),
+        inset 0 0 0 .5px rgba(255,255,255,.4);
     }
-    body.glass-mode .btn-outline:hover { background: rgba(255,255,255,.78); }
+    body.glass-mode .btn-outline:hover { filter: brightness(1.06); }
     body.glass-mode .btn-primary {
-      background: linear-gradient(135deg, rgba(99,102,241,.92), rgba(124,58,237,.92));
-      -webkit-backdrop-filter: blur(10px) saturate(160%);
-      backdrop-filter: blur(10px) saturate(160%);
-      border: 1px solid rgba(255,255,255,.35);
-      box-shadow: 0 6px 20px rgba(79,70,229,.32), inset 0 1px 0 rgba(255,255,255,.45);
+      background-image: linear-gradient(135deg, #6366f1, #8b5cf6 55%, #a855f7);
+      border: 1px solid rgba(255,255,255,.5);
+      -webkit-backdrop-filter: blur(20px) saturate(230%);
+      backdrop-filter: blur(20px) saturate(230%);
+      box-shadow:
+        0 8px 28px rgba(99,102,241,.48),
+        inset 0 2px 1px rgba(255,255,255,.7),
+        inset 0 -1.5px 1px rgba(0,0,0,.12);
+      color: #fff;
     }
-    body.glass-mode .filter-btn,
-    body.glass-mode .select-control,
+    body.glass-mode .btn-primary:hover { filter: brightness(1.08); }
+    body.glass-mode .btn-wechat {
+      background-image: linear-gradient(135deg, rgba(7,193,96,.92), rgba(6,173,86,.92));
+      border: 1px solid rgba(255,255,255,.45);
+      -webkit-backdrop-filter: blur(20px) saturate(230%);
+      backdrop-filter: blur(20px) saturate(230%);
+      box-shadow: 0 8px 26px rgba(7,193,96,.38), inset 0 2px 1px rgba(255,255,255,.6);
+      color: #fff;
+    }
+    body.glass-mode .btn-wechat:hover { filter: brightness(1.06); }
+
+    /* --- 输入控件：内凹玻璃 --- */
     body.glass-mode .search-input,
+    body.glass-mode .select-control,
     body.glass-mode .form-group input,
     body.glass-mode .form-group textarea,
     body.glass-mode .form-group select,
+    body.glass-mode .filter-btn,
     body.glass-mode .page-num {
-      background: rgba(255,255,255,.55);
-      -webkit-backdrop-filter: blur(10px) saturate(150%);
-      backdrop-filter: blur(10px) saturate(150%);
-      border: 1px solid rgba(255,255,255,.8);
+      background-color: rgba(255,255,255,.3);
+      background-image: linear-gradient(180deg, rgba(255,255,255,.5), rgba(255,255,255,.2)),
+                        var(--glass-edge);
+      background-clip: padding-box, border-box;
+      background-origin: padding-box, border-box;
+      border: 1px solid transparent;
+      border-radius: 18px;
+      -webkit-backdrop-filter: blur(18px) saturate(210%);
+      backdrop-filter: blur(18px) saturate(210%);
+      box-shadow:
+        inset 0 3px 6px rgba(31,41,55,.1),
+        inset 0 1.5px 0 rgba(255,255,255,.55);
     }
+    body.glass-mode .search-input:focus,
     body.glass-mode .form-group input:focus,
     body.glass-mode .form-group textarea:focus,
-    body.glass-mode .search-input:focus {
-      background: rgba(255,255,255,.78);
-      border-color: rgba(99,102,241,.55);
-      box-shadow: 0 0 0 3px rgba(99,102,241,.16);
+    body.glass-mode .form-group select:focus {
+      background-color: rgba(255,255,255,.5);
+      box-shadow:
+        inset 0 2px 4px rgba(31,41,55,.06),
+        inset 0 1.5px 0 rgba(255,255,255,.7),
+        0 0 0 3px rgba(99,102,241,.24);
     }
-    body.glass-mode .filter-btn.active {
-      background: linear-gradient(135deg, rgba(99,102,241,.92), rgba(124,58,237,.92));
-      border-color: rgba(255,255,255,.4);
+    body.glass-mode .filter-btn.active,
+    body.glass-mode .page-num.active {
+      background-image: linear-gradient(135deg, #6366f1, #a855f7);
+      border-color: rgba(255,255,255,.5);
+      color: #fff;
+      box-shadow: 0 6px 20px rgba(99,102,241,.44), inset 0 2px 1px rgba(255,255,255,.6);
     }
 
-    /* --- 徽标 / 小元件 --- */
+    /* --- 小元件玻璃化 --- */
     body.glass-mode .date-badge,
     body.glass-mode .media-badge,
     body.glass-mode .staff-badge,
     body.glass-mode .pin-badge,
-    body.glass-mode .tab-badge,
-    body.glass-mode .notif-dot,
     body.glass-mode .close-btn,
-    body.glass-mode .lightbox-close {
-      -webkit-backdrop-filter: blur(8px) saturate(150%);
-      backdrop-filter: blur(8px) saturate(150%);
+    body.glass-mode .lightbox-counter {
+      background-color: rgba(255,255,255,.28);
+      background-image: var(--glass-fill), var(--glass-edge);
+      background-clip: padding-box, border-box;
+      border: 1px solid transparent;
+      border-radius: 18px;
+      -webkit-backdrop-filter: blur(14px) saturate(200%);
+      backdrop-filter: blur(14px) saturate(200%);
+      box-shadow: inset 0 1.6px 1px rgba(255,255,255,.9);
     }
-    body.glass-mode .card-quote {
-      background: rgba(255,255,255,.5);
-      -webkit-backdrop-filter: blur(8px);
-      backdrop-filter: blur(8px);
+    /* 嵌套在玻璃里的次级面板：必须比外层更透，否则变成"死白块" */
+    body.glass-mode .card-quote,
+    body.glass-mode .modal-row,
+    body.glass-mode .form-grid > div {
+      background-color: transparent;
+      background-image: linear-gradient(135deg,
+          rgba(255,255,255,.3) 0%,
+          rgba(255,255,255,.14) 55%,
+          rgba(255,255,255,.08) 100%);
+      border: 1px solid rgba(255,255,255,.55);
+      border-radius: 18px;
+      -webkit-backdrop-filter: blur(10px) saturate(170%);
+      backdrop-filter: blur(10px) saturate(170%);
+      box-shadow:
+        inset 0 1.6px 1px rgba(255,255,255,.95),
+        inset 0 -1px 1px rgba(255,255,255,.26);
     }
-    /* 分隔线用半透明白，比灰线更贴玻璃质感 */
+    body.glass-mode .card-quote { padding: 8px 12px; }
     body.glass-mode #versionWidget,
     body.glass-mode .profile-section,
-    body.glass-mode .brand-block { border-color: rgba(255,255,255,.75); }
+    body.glass-mode .brand-block { border-color: rgba(255,255,255,.8) !important; }
     body.glass-mode hr,
-    body.glass-mode .modal-row { border-color: rgba(255,255,255,.6); }
+    body.glass-mode .modal-row { border-color: rgba(255,255,255,.7); }
 
-    /* --- 不支持 backdrop-filter 的浏览器：换成更实一点的底色，保证文字可读 --- */
+    body.glass-mode .modal-overlay {
+      -webkit-backdrop-filter: blur(14px) saturate(150%);
+      backdrop-filter: blur(14px) saturate(150%);
+      background: rgba(76,29,149,.2);
+    }
+
+    /* 不支持 backdrop-filter 的浏览器回退 */
     @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
       body.glass-mode .card,
       body.glass-mode .modal,
@@ -799,15 +1033,14 @@
       body.glass-mode .notice,
       body.glass-mode .publish-option,
       body.glass-mode .notif-item,
-      body.glass-mode .filters,
-      body.glass-mode .media-gallery { background: rgba(255,255,255,.86); }
+      body.glass-mode .filters { background-color: rgba(255,255,255,.92); }
       body.glass-mode header,
-      body.glass-mode .bottom-tab { background: rgba(255,255,255,.92); }
+      body.glass-mode .bottom-tab { background-color: rgba(255,255,255,.96); }
     }
 
-    /* 玻璃模式开关按钮（管理面板内） */
+    /* 玻璃模式开关按钮 */
     #glassModeBtn.on {
-      background: linear-gradient(135deg, rgba(99,102,241,.14), rgba(217,70,239,.14));
+      background: linear-gradient(135deg, rgba(99,102,241,.16), rgba(217,70,239,.16));
       border-color: rgba(99,102,241,.55);
       color: var(--primary);
       font-weight: 600;
@@ -1530,7 +1763,7 @@
         </div>
         <div class="form-group">
           <label>年龄</label>
-          <input type="text" name="年龄" placeholder="如：28">
+          <input type="text" name="年龄" placeholder="如：28（必须年满 18 周岁）">
         </div>
         <div class="form-group">
           <label>身高</label>
@@ -1742,8 +1975,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.5.0';
+  const APP_VERSION = '6.6.0';
   const CHANGELOG = [
+    { v: '6.6.0', d: '2026-08-29', note: '① 玻璃拟态重做：更饱和的流动色块背景 + 颗粒质感、极透折射材质、边缘色散（冷青/暖品红分光）、表面动态扫光、更厚的玻璃体积感，观感更接近 iOS 26 Liquid Glass；② 新增年龄校验：发布/编辑资料必须填写真实年龄且年满 18 周岁', type: 'feature' },
     { v: '6.5.0', d: '2026-08-29', note: '新增全站「玻璃拟态（Liquid Glass）」主题：iOS 26 风格半透明折射材质 + 流动彩色背景，管理员可在「我的」→ 管理面板一键开关，对所有访客生效', type: 'feature' },
     { v: '6.4.1', d: '2026-08-29', note: '修复收藏/点赞/留言丢失：改为基于最新数据增量保存，不再整体覆盖（不会抹掉别人的新资料，自己的收藏也不会被别人抹掉）；失败自动回滚、防连点、增加操作提示', type: 'fix' },
     { v: '6.4.0', d: '2026-08-29', note: '注册可上传头像、登录后随时修改头像与昵称；浏览/打字时底部导航自动隐藏，看内容更沉浸', type: 'feature' },
@@ -3008,6 +3242,15 @@
       const year = now.getFullYear();
       const month = String(now.getMonth() + 1).padStart(2, '0');
       const day = String(now.getDate()).padStart(2, '0');
+
+      // 年龄校验：必须填写真实数字，且年满 18 周岁
+      const ageRaw = (formData.get('年龄') || '').toString().trim().replace(/岁/g, '');
+      const ageNum = parseFloat(ageRaw);
+      if (!ageRaw || Number.isNaN(ageNum) || ageNum < 18 || ageNum > 120 || !Number.isFinite(ageNum)) {
+        btn.disabled = false;
+        showAlert('⚠️ 年龄必须填写真实数字，且需年满 18 周岁。');
+        return;
+      }
 
       // 编辑模式：更新已有档案
       if (editingId) {
