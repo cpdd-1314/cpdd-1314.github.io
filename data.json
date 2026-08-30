@@ -1180,7 +1180,10 @@
       "uploaderUid": 1788054038243,
       "status": "pending",
       "profileNo": "A044",
-      "mediaList": []
+      "mediaList": [],
+      "likes": [
+        "super"
+      ]
     }
   ],
   "staffs": [
