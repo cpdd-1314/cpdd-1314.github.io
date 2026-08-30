@@ -17,7 +17,15 @@
   <meta property="og:title" content="🌍 全球找对象 - 快速找到心目中的伴侣">
   <meta property="og:description" content="面向全球华人的公开交友资料展示平台：真人照片视频、城市筛选、条件说清、人工审核。">
   <meta property="og:type" content="website">
-  <meta property="og:image" content="apple-touch-icon.png">
+  <meta property="og:image" content="https://cpdd-1314.github.io/og-image.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="全球找对象">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="🌍 全球找对象 - 快速找到心目中的伴侣">
+  <meta name="twitter:description" content="面向全球华人的公开交友资料展示平台：真人照片视频、城市筛选、条件说清、人工审核。">
+  <meta name="twitter:image" content="https://cpdd-1314.github.io/og-image.jpg">
+  <meta name="weibo:webpage:create" content="https://cpdd-1314.github.io">
   <style>
     :root {
       --primary: #4f46e5;
@@ -832,18 +840,115 @@
     body.glass-mode .card:nth-of-type(2n)::before { animation-delay: -2.4s; }
     body.glass-mode .card:nth-of-type(3n)::before { animation-delay: -4.8s; }
 
-    body.glass-mode .card { transition: transform .28s cubic-bezier(.22,1,.36,1), box-shadow .28s ease; }
+    body.glass-mode .card {
+      transition: transform .28s cubic-bezier(.22,1,.36,1), box-shadow .28s ease;
+      transform-style: preserve-3d;
+      will-change: transform;
+    }
     body.glass-mode .card:hover {
-      transform: translateY(-6px) scale(1.012);
+      transform: translateY(-8px) scale(1.015) rotateX(calc((var(--gy, 0.5) - 0.5) * -8deg)) rotateY(calc((var(--gx, 0.5) - 0.5) * 8deg));
       box-shadow:
-        0 10px 22px rgba(30,27,75,.12),
-        0 42px 80px rgba(30,27,75,.28),
+        0 14px 30px rgba(30,27,75,.14),
+        0 52px 100px rgba(30,27,75,.32),
         var(--glass-chroma),
         inset 0 2px 1px rgba(255,255,255,1),
-        inset 0 -2px 1px rgba(255,255,255,.3);
+        inset 0 -2px 1px rgba(255,255,255,.3),
+        0 0 40px rgba(255,255,255,.15);
     }
+    body.glass-mode .card::after {
+      content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 2;
+      background: radial-gradient(circle at calc(var(--gx, 0.5) * 100%) calc(var(--gy, 0.5) * 100%), rgba(255,255,255,.55) 0%, rgba(255,255,255,0) 45%);
+      opacity: 0; transition: opacity .25s ease;
+    }
+    body.glass-mode .card:hover::after { opacity: 1; }
     body.glass-mode .publish-option:hover,
-    body.glass-mode .notif-item:hover { transform: translateY(-3px); }
+    body.glass-mode .notif-item:hover { transform: translateY(-4px) scale(1.01); }
+
+    /* 按钮触碰特效：磁吸 + 按下涟漪 + 缩放 */
+    body.glass-mode .btn,
+    body.glass-mode .tab-btn,
+    body.glass-mode .filter-btn {
+      transition: transform .12s cubic-bezier(.22,1,.36,1), box-shadow .2s ease, filter .2s ease;
+      position: relative; overflow: hidden; transform-style: preserve-3d;
+    }
+    body.glass-mode .btn:active,
+    body.glass-mode .tab-btn:active,
+    body.glass-mode .filter-btn:active { transform: scale(0.94); }
+    body.glass-mode .btn::after,
+    body.glass-mode .tab-btn::after,
+    body.glass-mode .filter-btn::after {
+      content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+      background: radial-gradient(circle at var(--rx,50%) var(--ry,50%), rgba(255,255,255,.55) 0%, rgba(255,255,255,0) 50%);
+      opacity: 0; transition: opacity .25s ease;
+    }
+    body.glass-mode .btn:hover::after,
+    body.glass-mode .tab-btn:hover::after,
+    body.glass-mode .filter-btn:hover::after { opacity: 1; }
+
+    /* 点击涟漪 */
+    @keyframes glassRipple {
+      0% { transform: scale(0); opacity: .55; }
+      100% { transform: scale(4); opacity: 0; }
+    }
+    .glass-ripple {
+      position: absolute; border-radius: 50%; pointer-events: none;
+      background: radial-gradient(circle, rgba(255,255,255,.55) 0%, rgba(255,255,255,0) 70%);
+      width: 80px; height: 80px; margin-left: -40px; margin-top: -40px;
+      animation: glassRipple .55s cubic-bezier(.22,1,.36,1) forwards;
+      z-index: 10;
+    }
+
+    /* 玻璃呼吸/悬浮动画 */
+    @keyframes glassFloatCard {
+      0%,100% { transform: translateY(0); }
+      50% { transform: translateY(-4px); }
+    }
+    body.glass-mode .card:nth-of-type(4n+1) { animation: glassFloatCard 5s ease-in-out infinite; }
+    body.glass-mode .card:nth-of-type(4n+3) { animation: glassFloatCard 6s ease-in-out infinite .8s; }
+
+    /* 更强的全局模糊与折射 */
+    body.glass-mode .card,
+    body.glass-mode .modal,
+    body.glass-mode .profile-section,
+    body.glass-mode .brand-block,
+    body.glass-mode .brand-hero,
+    body.glass-mode .sponsor-hero,
+    body.glass-mode .sponsor-usage,
+    body.glass-mode .login-prompt,
+    body.glass-mode .notice,
+    body.glass-mode .publish-option,
+    body.glass-mode .notif-item,
+    body.glass-mode .admin-action-row,
+    body.glass-mode .modal-box,
+    body.glass-mode .filters,
+    body.glass-mode .media-gallery,
+    body.glass-mode .form-grid > div {
+      -webkit-backdrop-filter: blur(40px) saturate(300%) brightness(1.08) contrast(1.02);
+      backdrop-filter: blur(40px) saturate(300%) brightness(1.08) contrast(1.02);
+    }
+    body.glass-mode .bottom-tab {
+      -webkit-backdrop-filter: blur(56px) saturate(320%) brightness(1.1) contrast(1.02);
+      backdrop-filter: blur(56px) saturate(320%) brightness(1.1) contrast(1.02);
+    }
+    body.glass-mode header {
+      -webkit-backdrop-filter: blur(48px) saturate(300%) brightness(1.1) contrast(1.02);
+      backdrop-filter: blur(48px) saturate(300%) brightness(1.1) contrast(1.02);
+    }
+
+    /* 背景色块增加一层流动极光 */
+    @keyframes glassAurora {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    #glassBg {
+      background:
+        radial-gradient(78% 58% at 14% 6%,  #8b5cf6 0%, transparent 62%),
+        radial-gradient(68% 52% at 90% 4%,  #f472b6 0%, transparent 60%),
+        radial-gradient(74% 62% at 10% 90%, #22d3ee 0%, transparent 62%),
+        radial-gradient(68% 58% at 94% 94%, #fb923c 0%, transparent 60%),
+        linear-gradient(165deg, #dbeafe 0%, #ede9fe 30%, #cffafe 64%, #fce7f3 100%);
+    }
 
     /* 卡片媒体区：半透明深色底，图片加载后会盖住它；没图时也不会死黑 */
     body.glass-mode .card-media-wrap,
@@ -2050,8 +2155,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.9.5';
+  const APP_VERSION = '6.9.6';
   const CHANGELOG = [
+    { v: '6.9.6', d: '2026-08-30', note: 'Liquid Glass 特效拉满 + 刷新保持位置 + 微信分享图标：① 玻璃模式升级——卡片 3D tilt、鼠标光晕追踪、点击涟漪、按钮磁吸/按下缩放、卡片呼吸悬浮、背景极光流动，backdrop-filter 模糊/饱和/对比度整体提升；② 刷新后记忆并恢复当前 Tab（home/publish/inbox/profile/adminlist/sponsor）和管理子视图（pending/hidden/all/users），不会再跳回首页；③ 新增 og-image.jpg / apple-touch-icon.png / favicon.ico，微信/推特等分享卡片会显示「全球找对象」专属图标与描述', type: 'feat' },
     { v: '6.9.5', d: '2026-08-30', note: '修复「通过审核不会真的通过 / 待审核项不消失 / 修改审核没用 / 删除后刷新又回来」：① 修改申请通过后不再本地删除副本，而是把申请标记终态 applied、删除标记 _deleted，mergeProfiles 在合并时直接丢弃这些终态条目，从而真正从服务端移除（旧逻辑以服务端为基线合并会把被删的旧副本「复活」）；② 审核/隐藏/删除/置顶后改调 refreshViews() 同时刷新管理视图与公共信息流，待审核项立即消失、计数实时更新；③ loadData 给老资料补 statusUpdatedAt，让 v6.9.4 的审核状态粘性对现有数据生效', type: 'fix' },
     { v: '6.9.4', d: '2026-08-30', note: '修复「通过审核 / 审核修改不同步，且注册用户尤其没用」：根因是旧合并对 profiles 整段「本地优先」覆盖——任何持有陈旧本地的设备（尤其是活跃的注册用户）一旦提交/编辑，就把服务端已通过的审核状态(status)覆盖回 pending。改为 profiles 按「最新时间戳合并」(mergeProfiles)：审核状态具粘性（statusUpdatedAt 较新者胜）、其余字段最后写入者胜，杜绝陈旧副本打回审核；并在审核/提交/修改申请时写入 statusUpdatedAt。同步定时器由整段替换改为合并，发布观察改为强制同步并刷新指纹，避免自己刚通过的审核被 CDN 旧副本冲掉', type: 'fix' },
     { v: '6.9.2', d: '2026-08-30', note: '解释并缓解「改了还不同步」：写入后经 GitHub Pages 重建才对外生效（发布延迟 30s~2min），期间所有人拉到的仍是旧数据。新增「发布观察」——保存后每 4s 探测 Pages 是否已发布本次修改，发布成功即提示「已同步到所有设备」；左下角状态条改为可点击手动立即同步；并澄清本地改文件不会自动上线需部署', type: 'fix' },
@@ -3913,12 +4019,14 @@
   let currentDetailMediaList = [];
   let currentDetailId = null;   // 当前详情弹窗打开的档案 id（转发链接用）
 
-  // ===== 刷新状态记忆：刷新后回到刚才的滚动位置与页面（页码/搜索/筛选/排序）=====
+  // ===== 刷新状态记忆：刷新后回到刚才的滚动位置与页面（tab/管理子视图/页码/搜索/筛选/排序）=====
   let __saveTimer = null;
   function savePageState() {
     try {
       const st = {
         scrollY: window.pageYOffset || 0,
+        tab: window.__currentTab || 'home',
+        adminMode: (typeof adminMode !== 'undefined') ? adminMode : 'pending',
         page: currentPage,
         keyword: (document.getElementById('searchInput').value || '').trim(),
         gender: currentGender,
@@ -3946,6 +4054,8 @@
     if (ss && st.sortBy) ss.value = st.sortBy;
     if (typeof st.page === 'number' && st.page >= 1) currentPage = st.page;
     window.__restoreScrollY = (typeof st.scrollY === 'number') ? st.scrollY : 0;
+    window.__restoreTab = (st.tab && typeof st.tab === 'string') ? st.tab : 'home';
+    window.__restoreAdminMode = (st.adminMode && typeof st.adminMode === 'string') ? st.adminMode : 'pending';
   }
 
   async function loadData() {
@@ -4002,6 +4112,18 @@
     // 底部 Tab 栏显示（首次访问即可见）
     const bottomTab = document.getElementById('bottomTab');
     if (bottomTab) bottomTab.style.display = 'flex';
+    // 刷新后恢复之前的 Tab / 管理子视图（避免刷新后跳回首页）
+    const restoreTab = window.__restoreTab || 'home';
+    const restoreAdminMode = window.__restoreAdminMode || 'pending';
+    if (restoreTab !== 'home') {
+      switchTab(restoreTab);
+      if (restoreTab === 'adminlist' && typeof setAdminMode === 'function') {
+        setAdminMode(restoreAdminMode);
+      }
+    } else {
+      // home tab：仍然刷新底部 active 状态
+      document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.toggle('active', b.dataset.tab === 'home'); });
+    }
     // 恢复滚动位置（图片懒加载会让高度变化，分几次校正到位）
     const sy = window.__restoreScrollY || 0;
     if (sy > 0) {
@@ -5071,6 +5193,7 @@
     if (name === 'sponsor') renderSponsorPage();
     window.__currentTab = name;   // 记录当前页面，登录/退出后可精准重渲染
     if (name !== 'home') window.scrollTo(0, 0);
+    savePageState();
   }
 
   function logoutStaff() {
@@ -5295,6 +5418,7 @@
     adminBatchSelected.clear();
     updateAdminBatchUI();
     renderAdminCards();
+    savePageState();
   }
 
   function toggleAdminBatchMode() {
@@ -6466,6 +6590,59 @@
   prefillAdminToken();     // 记住令牌时预填登录框，避免反复粘贴
   loadData();
   startDataSync();         // 启动自动同步，修复多端/多标签页数据不同步
+
+  // ===== Liquid Glass 极致触碰特效 =====
+  (function initGlassFx() {
+    // 卡片 3D tilt + 鼠标光晕追踪（仅 glass-mode）
+    document.addEventListener('mousemove', function(e) {
+      if (!document.body.classList.contains('glass-mode')) return;
+      const card = e.target.closest('.card');
+      if (card) {
+        const r = card.getBoundingClientRect();
+        const gx = (e.clientX - r.left) / r.width;
+        const gy = (e.clientY - r.top) / r.height;
+        card.style.setProperty('--gx', gx.toFixed(3));
+        card.style.setProperty('--gy', gy.toFixed(3));
+      }
+      // 按钮/筛选器光晕
+      const btn = e.target.closest('.btn, .tab-btn, .filter-btn');
+      if (btn) {
+        const r = btn.getBoundingClientRect();
+        btn.style.setProperty('--rx', ((e.clientX - r.left) / r.width * 100).toFixed(1) + '%');
+        btn.style.setProperty('--ry', ((e.clientY - r.top) / r.height * 100).toFixed(1) + '%');
+      }
+    }, { passive: true });
+
+    // 点击涟漪（全局委托，glass-mode 下更亮）
+    document.addEventListener('click', function(e) {
+      const el = e.target.closest('.btn, .tab-btn, .filter-btn, .card, body.glass-mode .bottom-tab');
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const ripple = document.createElement('span');
+      ripple.className = 'glass-ripple';
+      ripple.style.left = (e.clientX - rect.left) + 'px';
+      ripple.style.top = (e.clientY - rect.top) + 'px';
+      if (document.body.classList.contains('glass-mode')) {
+        ripple.style.background = 'radial-gradient(circle, rgba(255,255,255,.8) 0%, rgba(255,255,255,0) 70%)';
+      }
+      el.appendChild(ripple);
+      setTimeout(function() { if (ripple.parentNode) ripple.parentNode.removeChild(ripple); }, 600);
+      // 支持的设备触发轻微触觉反馈
+      try { if (navigator.vibrate) navigator.vibrate(6); } catch (_) {}
+    }, { passive: true });
+
+    // 移动端 touch 也触发光晕/tilt
+    document.addEventListener('touchstart', function(e) {
+      if (!document.body.classList.contains('glass-mode')) return;
+      const t = e.touches[0];
+      const card = document.elementFromPoint(t.clientX, t.clientY).closest('.card');
+      if (card) {
+        const r = card.getBoundingClientRect();
+        card.style.setProperty('--gx', ((t.clientX - r.left) / r.width).toFixed(3));
+        card.style.setProperty('--gy', ((t.clientY - r.top) / r.height).toFixed(3));
+      }
+    }, { passive: true });
+  })();
 </script>
 
 </body>
