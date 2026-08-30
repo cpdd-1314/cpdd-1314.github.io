@@ -148,6 +148,16 @@
       outline: none;
       width: 200px;
     }
+    .glass-theme-select {
+      width: 100%; padding: 8px 12px; border-radius: 12px; border: 1px solid var(--border);
+      background: var(--card-bg); color: var(--text); font-size: 13px; cursor: pointer;
+    }
+    body.glass-mode .glass-theme-select {
+      background-color: rgba(255,255,255,.35);
+      border-color: rgba(255,255,255,.55);
+      -webkit-backdrop-filter: blur(12px) saturate(200%);
+      backdrop-filter: blur(12px) saturate(200%);
+    }
 
     .page-num {
       min-width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border);
@@ -1036,7 +1046,7 @@
       padding: 9px 8px;
       border-top: none;
       border-radius: 36px;
-      position: relative; isolation: isolate;
+      position: fixed; isolation: isolate;
       background-color: transparent;
       background-image: var(--glass-sheen-strong), var(--glass-fill-strong), var(--glass-edge);
       background-clip: padding-box, padding-box, border-box;
@@ -1225,6 +1235,116 @@
       backdrop-filter: blur(14px) saturate(150%);
       background: rgba(76,29,149,.2);
     }
+
+    /* ============================================================
+       Liquid Glass 多主题：默认 + 4 套新风格 + 无敌优化（高可读）
+       ============================================================ */
+    /* ① 冰川极光：冷青 + 紫罗兰 */
+    .glass-theme-aurora #glassBg {
+      background:
+        radial-gradient(80% 60% at 10% 10%, #22d3ee 0%, transparent 62%),
+        radial-gradient(70% 55% at 90% 15%, #a78bfa 0%, transparent 58%),
+        radial-gradient(75% 65% at 12% 92%, #34d399 0%, transparent 62%),
+        radial-gradient(65% 55% at 92% 88%, #60a5fa 0%, transparent 60%),
+        linear-gradient(165deg, #e0f2fe 0%, #ede9fe 40%, #ccfbf1 70%, #f0f9ff 100%);
+    }
+    body.glass-mode.glass-theme-aurora {
+      --glass-fill: linear-gradient(135deg, rgba(255,255,255,.30) 0%, rgba(255,255,255,.13) 42%, rgba(255,255,255,.06) 100%);
+      --glass-sheen: linear-gradient(112deg, rgba(255,255,255,.58) 0%, rgba(255,255,255,.24) 24%, rgba(255,255,255,0) 44%, rgba(255,255,255,0) 62%, rgba(255,255,255,.18) 80%, rgba(255,255,255,.40) 100%);
+      --glass-edge: linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(165,243,252,.95) 8%, rgba(255,255,255,.62) 18%, rgba(255,255,255,.10) 36%, rgba(255,255,255,0) 54%, rgba(255,255,255,.08) 68%, rgba(196,181,253,.85) 84%, rgba(255,255,255,.98) 100%);
+      --glass-drop: 0 1px 2px rgba(15,23,42,.10), 0 10px 24px rgba(15,23,42,.14), 0 30px 64px rgba(15,23,42,.24);
+      --glass-fill-strong: linear-gradient(135deg, rgba(255,255,255,.50) 0%, rgba(255,255,255,.28) 45%, rgba(255,255,255,.20) 100%);
+      --glass-sheen-strong: linear-gradient(112deg, rgba(255,255,255,.72) 0%, rgba(255,255,255,.34) 26%, rgba(255,255,255,0) 46%, rgba(255,255,255,.28) 100%);
+    }
+    /* ② 落日霓虹：暖粉 + 橙黄 */
+    .glass-theme-sunset #glassBg {
+      background:
+        radial-gradient(78% 58% at 14% 6%, #fb7185 0%, transparent 62%),
+        radial-gradient(68% 52% at 90% 4%, #f97316 0%, transparent 60%),
+        radial-gradient(74% 62% at 10% 90%, #f59e0b 0%, transparent 62%),
+        radial-gradient(68% 58% at 94% 94%, #ef4444 0%, transparent 60%),
+        linear-gradient(165deg, #fff7ed 0%, #fff1f2 35%, #fef3c7 68%, #fff7ed 100%);
+    }
+    body.glass-mode.glass-theme-sunset {
+      --glass-fill: linear-gradient(135deg, rgba(255,255,255,.28) 0%, rgba(255,255,255,.12) 42%, rgba(255,255,255,.05) 100%);
+      --glass-sheen: linear-gradient(112deg, rgba(255,255,255,.60) 0%, rgba(255,255,255,.22) 24%, rgba(255,255,255,0) 44%, rgba(255,255,255,0) 62%, rgba(255,255,255,.16) 80%, rgba(255,255,255,.38) 100%);
+      --glass-edge: linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(254,215,170,.95) 8%, rgba(255,255,255,.62) 18%, rgba(255,255,255,.10) 36%, rgba(255,255,255,0) 54%, rgba(255,255,255,.08) 68%, rgba(253,164,175,.85) 84%, rgba(255,255,255,.98) 100%);
+      --glass-drop: 0 1px 2px rgba(60,20,20,.10), 0 10px 24px rgba(60,20,20,.14), 0 30px 64px rgba(60,20,20,.24);
+      --glass-fill-strong: linear-gradient(135deg, rgba(255,255,255,.48) 0%, rgba(255,255,255,.26) 45%, rgba(255,255,255,.18) 100%);
+      --glass-sheen-strong: linear-gradient(112deg, rgba(255,255,255,.70) 0%, rgba(255,255,255,.32) 26%, rgba(255,255,255,0) 46%, rgba(255,255,255,.26) 100%);
+    }
+    /* ③ 森系薄荷：绿 + 青 */
+    .glass-theme-forest #glassBg {
+      background:
+        radial-gradient(78% 58% at 14% 6%, #10b981 0%, transparent 62%),
+        radial-gradient(68% 52% at 90% 4%, #14b8a6 0%, transparent 60%),
+        radial-gradient(74% 62% at 10% 90%, #84cc16 0%, transparent 62%),
+        radial-gradient(68% 58% at 94% 94%, #22c55e 0%, transparent 60%),
+        linear-gradient(165deg, #f0fdf4 0%, #ecfdf5 35%, #f7fee7 65%, #f0fdfa 100%);
+    }
+    body.glass-mode.glass-theme-forest {
+      --glass-fill: linear-gradient(135deg, rgba(255,255,255,.30) 0%, rgba(255,255,255,.13) 42%, rgba(255,255,255,.06) 100%);
+      --glass-sheen: linear-gradient(112deg, rgba(255,255,255,.58) 0%, rgba(255,255,255,.24) 24%, rgba(255,255,255,0) 44%, rgba(255,255,255,0) 62%, rgba(255,255,255,.18) 80%, rgba(255,255,255,.40) 100%);
+      --glass-edge: linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(167,243,208,.95) 8%, rgba(255,255,255,.62) 18%, rgba(255,255,255,.10) 36%, rgba(255,255,255,0) 54%, rgba(255,255,255,.08) 68%, rgba(153,246,228,.85) 84%, rgba(255,255,255,.98) 100%);
+      --glass-drop: 0 1px 2px rgba(12,40,30,.10), 0 10px 24px rgba(12,40,30,.14), 0 30px 64px rgba(12,40,30,.24);
+      --glass-fill-strong: linear-gradient(135deg, rgba(255,255,255,.50) 0%, rgba(255,255,255,.28) 45%, rgba(255,255,255,.20) 100%);
+      --glass-sheen-strong: linear-gradient(112deg, rgba(255,255,255,.72) 0%, rgba(255,255,255,.34) 26%, rgba(255,255,255,0) 46%, rgba(255,255,255,.28) 100%);
+    }
+    /* ④ 赛博霓虹：高饱和青/粉 */
+    .glass-theme-cyber #glassBg {
+      background:
+        radial-gradient(78% 58% at 14% 6%, #00f2ea 0%, transparent 62%),
+        radial-gradient(68% 52% at 90% 4%, #ff2d55 0%, transparent 60%),
+        radial-gradient(74% 62% at 10% 90%, #8b5cf6 0%, transparent 62%),
+        radial-gradient(68% 58% at 94% 94%, #06b6d4 0%, transparent 60%),
+        linear-gradient(165deg, #f8fafc 0%, #ecfeff 30%, #fdf2f8 60%, #eff6ff 100%);
+    }
+    body.glass-mode.glass-theme-cyber {
+      --glass-fill: linear-gradient(135deg, rgba(255,255,255,.26) 0%, rgba(255,255,255,.11) 42%, rgba(255,255,255,.04) 100%);
+      --glass-sheen: linear-gradient(112deg, rgba(255,255,255,.64) 0%, rgba(255,255,255,.24) 22%, rgba(255,255,255,0) 42%, rgba(255,255,255,0) 64%, rgba(255,255,255,.20) 82%, rgba(255,255,255,.44) 100%);
+      --glass-edge: linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(34,211,238,.95) 8%, rgba(255,255,255,.62) 18%, rgba(255,255,255,.10) 36%, rgba(255,255,255,0) 54%, rgba(255,255,255,.08) 68%, rgba(244,114,182,.85) 84%, rgba(255,255,255,.98) 100%);
+      --glass-drop: 0 1px 2px rgba(20,10,40,.10), 0 10px 24px rgba(20,10,40,.16), 0 30px 64px rgba(20,10,40,.28);
+      --glass-fill-strong: linear-gradient(135deg, rgba(255,255,255,.46) 0%, rgba(255,255,255,.24) 45%, rgba(255,255,255,.16) 100%);
+      --glass-sheen-strong: linear-gradient(112deg, rgba(255,255,255,.74) 0%, rgba(255,255,255,.36) 26%, rgba(255,255,255,0) 46%, rgba(255,255,255,.30) 100%);
+    }
+    /* ⑤ 无敌优化：高可读 + 低功耗 + 更稳的白色玻璃 */
+    .glass-theme-invincible #glassBg {
+      background:
+        radial-gradient(70% 52% at 18% 14%, #94a3b8 0%, transparent 58%),
+        radial-gradient(65% 48% at 88% 18%, #cbd5e1 0%, transparent 56%),
+        radial-gradient(70% 55% at 16% 88%, #bfdbfe 0%, transparent 60%),
+        radial-gradient(62% 50% at 90% 86%, #e2e8f0 0%, transparent 56%),
+        linear-gradient(165deg, #f8fafc 0%, #f1f5f9 50%, #e2e8f0 100%);
+    }
+    body.glass-mode.glass-theme-invincible {
+      --text: #081020;
+      --text-muted: #374151;
+      --glass-fill: linear-gradient(135deg, rgba(255,255,255,.46) 0%, rgba(255,255,255,.22) 42%, rgba(255,255,255,.12) 100%);
+      --glass-sheen: linear-gradient(112deg, rgba(255,255,255,.55) 0%, rgba(255,255,255,.20) 24%, rgba(255,255,255,0) 44%, rgba(255,255,255,0) 62%, rgba(255,255,255,.14) 80%, rgba(255,255,255,.34) 100%);
+      --glass-edge: linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(241,245,249,.95) 8%, rgba(255,255,255,.72) 18%, rgba(255,255,255,.16) 36%, rgba(255,255,255,0) 54%, rgba(255,255,255,.12) 68%, rgba(226,232,240,.85) 84%, rgba(255,255,255,.98) 100%);
+      --glass-drop: 0 1px 2px rgba(15,23,42,.12), 0 8px 18px rgba(15,23,42,.14), 0 22px 48px rgba(15,23,42,.22);
+      --glass-fill-strong: linear-gradient(135deg, rgba(255,255,255,.62) 0%, rgba(255,255,255,.38) 45%, rgba(255,255,255,.26) 100%);
+      --glass-sheen-strong: linear-gradient(112deg, rgba(255,255,255,.74) 0%, rgba(255,255,255,.36) 26%, rgba(255,255,255,0) 46%, rgba(255,255,255,.30) 100%);
+    }
+    body.glass-mode.glass-theme-invincible .card,
+    body.glass-mode.glass-theme-invincible .modal,
+    body.glass-mode.glass-theme-invincible .profile-section,
+    body.glass-mode.glass-theme-invincible .filters,
+    body.glass-mode.glass-theme-invincible .guest-chip,
+    body.glass-mode.glass-theme-invincible .form-grid > div {
+      -webkit-backdrop-filter: blur(24px) saturate(220%) brightness(1.05) contrast(1.02);
+      backdrop-filter: blur(24px) saturate(220%) brightness(1.05) contrast(1.02);
+    }
+    body.glass-mode.glass-theme-invincible .bottom-tab,
+    body.glass-mode.glass-theme-invincible header {
+      -webkit-backdrop-filter: blur(32px) saturate(240%) brightness(1.06) contrast(1.02);
+      backdrop-filter: blur(32px) saturate(240%) brightness(1.06) contrast(1.02);
+    }
+    /* 关掉吃性能的呼吸/扫光动画，只保留指针高光 */
+    body.glass-mode.glass-theme-invincible .card,
+    body.glass-mode.glass-theme-invincible .card::before,
+    body.glass-mode.glass-theme-invincible header::before,
+    body.glass-mode.glass-theme-invincible .bottom-tab::before { animation: none !important; opacity: 0 !important; }
 
     /* 不支持 backdrop-filter 的浏览器回退 */
     @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
@@ -1495,6 +1615,17 @@
         <button class="btn btn-outline admin-only" onclick="toggleModal('wechatConfigModal', true)">⚙️ 修改微信名片</button>
         <button class="btn btn-outline admin-only" onclick="openSubmitLinkModal()">📨 投稿链接</button>
         <button class="btn btn-outline admin-only" id="glassModeBtn" onclick="toggleGlassMode()">🪟 玻璃拟态：关</button>
+        <div class="admin-only" style="margin-top:2px;">
+          <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:4px;">🎨 玻璃风格（仅管理员）</label>
+          <select id="glassThemeSelect" class="glass-theme-select" onchange="setGlassTheme(this.value)">
+            <option value="default">🌈 流光幻彩</option>
+            <option value="aurora">❄️ 冰川极光</option>
+            <option value="sunset">🌇 落日霓虹</option>
+            <option value="forest">🌿 森系薄荷</option>
+            <option value="cyber">🌃 赛博霓虹</option>
+            <option value="invincible">⚡ 无敌优化</option>
+          </select>
+        </div>
         <button class="btn btn-outline super-only" onclick="openVersionAdmin()">⚙️ 版本管理</button>
         <button class="btn btn-outline admin-only" onclick="logoutAdmin()">🚪 退出管理</button>
       </div>
@@ -2233,8 +2364,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.9.7';
+  const APP_VERSION = '6.9.8';
   const CHANGELOG = [
+    { v: '6.9.8', d: '2026-08-30', note: '修复玻璃模式显示异常并新增 5 套 Liquid Glass 风格：① 修复底部导航胶囊因 position 被覆盖成 relative 导致不会正常吸附的问题，恢复 fixed 定位；② 新增「🌈 流光幻彩 / ❄️ 冰川极光 / 🌇 落日霓虹 / 🌿 森系薄荷 / 🌃 赛博霓虹 / ⚡ 无敌优化」6 套主题，管理员可在「我的 → 管理面板」切换，风格随数据同步到所有访客；③ 「无敌优化」主题专门做高可读 + 低功耗：玻璃填充更实、关闭呼吸/扫光动画、降低 backdrop-filter 强度，长时间浏览更稳', type: 'feat' },
     { v: '6.9.7', d: '2026-08-30', note: '① 管理视图新增「📇 嘉宾一览」：紧凑列表展示所有已上线嘉宾——小头像图 + 姓名(性别) + 年龄 + 城市/身高/职业 + 一句话简介，点卡片即可勾选，选择可跨页累积并在底部显示「已选 N 位」、可一键清空；② Liquid Glass 升级到更贴近 iOS 26——玻璃更透更"湿"（填充透明度下调）、backdrop 模糊/饱和/对比度整体再拉高呈磨砂质感、新增玻璃表面磨砂颗粒层，并把"指针跟随高光"从卡片扩展到顶栏 / 底部胶囊导航 / 弹窗 / 资料区 / 嘉宾卡片，整片玻璃随手指滑动反光', type: 'feat' },
     { v: '6.9.6', d: '2026-08-30', note: 'Liquid Glass 特效拉满 + 刷新保持位置 + 微信分享图标：① 玻璃模式升级——卡片 3D tilt、鼠标光晕追踪、点击涟漪、按钮磁吸/按下缩放、卡片呼吸悬浮、背景极光流动，backdrop-filter 模糊/饱和/对比度整体提升；② 刷新后记忆并恢复当前 Tab（home/publish/inbox/profile/adminlist/sponsor）和管理子视图（pending/hidden/all/users），不会再跳回首页；③ 新增 og-image.jpg / apple-touch-icon.png / favicon.ico，微信/推特等分享卡片会显示「全球找对象」专属图标与描述', type: 'feat' },
     { v: '6.9.5', d: '2026-08-30', note: '修复「通过审核不会真的通过 / 待审核项不消失 / 修改审核没用 / 删除后刷新又回来」：① 修改申请通过后不再本地删除副本，而是把申请标记终态 applied、删除标记 _deleted，mergeProfiles 在合并时直接丢弃这些终态条目，从而真正从服务端移除（旧逻辑以服务端为基线合并会把被删的旧副本「复活」）；② 审核/隐藏/删除/置顶后改调 refreshViews() 同时刷新管理视图与公共信息流，待审核项立即消失、计数实时更新；③ loadData 给老资料补 statusUpdatedAt，让 v6.9.4 的审核状态粘性对现有数据生效', type: 'fix' },
@@ -2713,6 +2845,7 @@
     users: [],           // 注册用户列表 [{id, name, password, groupName, avatar, createdAt, favorites:[]}]
     notifications: [],   // 站内通知 [{id, toUid, type, profileId, actorUid, actorName, text, time, read}]
     glassMode: false,    // 全站玻璃拟态主题开关（管理员控制，对所有访客生效）
+    glassTheme: 'default', // 玻璃风格：default / aurora / sunset / forest / cyber / invincible
     submitLinks: []      // 投稿链接 [{key:hash, maxUses, used, note, createdAt}]；访客须凭有效链接(?k=)才能提交
   };
 
@@ -3067,7 +3200,7 @@
   // 业务标量设置（玻璃模式/微信号/版本信息等）以本地为准。
   function mergeStateSafe(base, local) {
     const out = JSON.parse(JSON.stringify(base || {}));
-    const scalars = ['glassMode', 'wechat', 'version', 'hideVersionInfo', 'nextProfileNo'];
+    const scalars = ['glassMode', 'glassTheme', 'wechat', 'version', 'hideVersionInfo', 'nextProfileNo'];
     scalars.forEach(function (k) { if (local[k] !== undefined) out[k] = local[k]; });
     if (Array.isArray(local.hiddenVersions)) out.hiddenVersions = local.hiddenVersions;
     if (Array.isArray(local.staffs)) out.staffs = local.staffs;
@@ -3345,19 +3478,67 @@
   }
 
   // ===== 玻璃拟态主题（管理员开关，对所有访客生效）=====
+  const GLASS_THEMES = ['default', 'aurora', 'sunset', 'forest', 'cyber', 'invincible'];
+  const GLASS_THEME_COLORS = {
+    default: '#eef2ff',
+    aurora: '#e0f2fe',
+    sunset: '#fff7ed',
+    forest: '#f0fdf4',
+    cyber: '#ecfeff',
+    invincible: '#f1f5f9'
+  };
   function isGlassMode() { return appState.glassMode === true; }
+  function currentGlassTheme() { return GLASS_THEMES.indexOf(appState.glassTheme) >= 0 ? appState.glassTheme : 'default'; }
+
+  // 把当前玻璃风格类套到 body 上，并同步下拉框
+  function applyGlassTheme() {
+    const theme = currentGlassTheme();
+    GLASS_THEMES.forEach(function (t) { document.body.classList.toggle('glass-theme-' + t, t === theme); });
+    const sel = document.getElementById('glassThemeSelect');
+    if (sel) sel.value = theme;
+  }
 
   // 把当前开关状态套到页面上，并同步管理面板按钮的文案
   function applyGlassMode() {
     const on = isGlassMode();
     document.body.classList.toggle('glass-mode', on);
+    applyGlassTheme();
     // theme-color 跟着变，手机浏览器地址栏颜色才不会跟玻璃主题打架
     const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute('content', on ? '#eef2ff' : '#4f46e5');
+    if (meta) meta.setAttribute('content', on ? (GLASS_THEME_COLORS[currentGlassTheme()] || '#eef2ff') : '#4f46e5');
     const btn = document.getElementById('glassModeBtn');
     if (btn) {
       btn.classList.toggle('on', on);
       btn.textContent = on ? '🪟 玻璃拟态：开' : '🪟 玻璃拟态：关';
+    }
+  }
+
+  // 管理员切换玻璃风格（写入远端，所有访客同步）
+  async function setGlassTheme(theme) {
+    if (!isSuper() && !isStaff()) { showAlert('只有管理员可以切换玻璃风格'); return; }
+    if (GLASS_THEMES.indexOf(theme) < 0) return;
+    const sel = document.getElementById('glassThemeSelect');
+    if (sel) sel.disabled = true;
+    try {
+      await patchRemoteState(function (base) {
+        base.glassTheme = theme;
+        const ident = getCurrentIdentity();
+        const actor = ident ? (ident.type === 'super' ? '超级管理员' : (ident.name || '内部管理员')) : '管理员';
+        if (!Array.isArray(base.adminLogs)) base.adminLogs = [];
+        base.adminLogs.unshift({
+          time: Date.now(), actor, op: '外观主题',
+          desc: '切换玻璃风格为「' + theme + '」'
+        });
+        if (base.adminLogs.length > 200) base.adminLogs.length = 200;
+      }, 'glass theme ' + theme);
+      appState.glassTheme = theme;
+      applyGlassMode();
+      toast('🎨 已切换玻璃风格');
+    } catch (err) {
+      showAlert('❌ 切换失败：' + err.message);
+      applyGlassMode();
+    } finally {
+      if (sel) sel.disabled = false;
     }
   }
 
@@ -4162,6 +4343,7 @@
       if (Array.isArray(data.users)) appState.users = data.users;
       if (Array.isArray(data.notifications)) appState.notifications = data.notifications;
       if (typeof data.glassMode === 'boolean') appState.glassMode = data.glassMode;
+      if (typeof data.glassTheme === 'string') appState.glassTheme = data.glassTheme;
       if (Array.isArray(data.submitLinks)) appState.submitLinks = data.submitLinks;
       // 兼容老数据：v6.9.4 起的审核状态粘性依赖 statusUpdatedAt；旧资料没有该字段时
       // 退化成 createdAt 比较，并发合并可能把已通过的审核打回 pending。这里在加载时补默认时间戳。
@@ -4245,7 +4427,7 @@
     try {
       const sig = JSON.stringify([
         d.profiles, d.users, d.staffs, d.submitLinks, d.notifications,
-        d.glassMode, d.wechat, d.version, d.hideVersionInfo, d.nextProfileNo
+        d.glassMode, d.glassTheme, d.wechat, d.version, d.hideVersionInfo, d.nextProfileNo
       ]);
       let h = 0;
       for (let i = 0; i < sig.length; i++) h = (h * 31 + sig.charCodeAt(i)) | 0;
@@ -4299,6 +4481,7 @@
       if (Array.isArray(data.users)) appState.users = data.users;
       if (Array.isArray(data.notifications)) appState.notifications = data.notifications;
       if (typeof data.glassMode === 'boolean') appState.glassMode = data.glassMode;
+      if (typeof data.glassTheme === 'string') appState.glassTheme = data.glassTheme;
       if (Array.isArray(data.submitLinks)) appState.submitLinks = data.submitLinks;
       __lastSyncSig = sig;
       // 被封号的当前登录用户立即踢下线（多端实时生效）
