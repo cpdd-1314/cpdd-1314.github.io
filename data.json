@@ -213,7 +213,7 @@
       "uploaderName": "网友",
       "uploaderCode": "",
       "fromPublic": true,
-      "status": "removed",
+      "status": "approved",
       "profileNo": "A039",
       "mediaList": [
         {
@@ -222,9 +222,7 @@
           "isMain": true
         }
       ],
-      "isHidden": true,
-      "hiddenAt": 1788032400000,
-      "hiddenReason": "年龄未满18岁，不符合平台要求",
+      "isHidden": false,
       "statusUpdatedAt": 1787911216010
     },
     {
@@ -343,7 +341,7 @@
       "uploaderName": "网友",
       "uploaderCode": "",
       "fromPublic": true,
-      "status": "removed",
+      "status": "approved",
       "profileNo": "A036",
       "mediaList": [
         {
@@ -352,9 +350,7 @@
           "isMain": true
         }
       ],
-      "isHidden": true,
-      "hiddenAt": 1788032400000,
-      "hiddenReason": "年龄未满18岁，不符合平台要求",
+      "isHidden": false,
       "statusUpdatedAt": 1787848900338
     },
     {
@@ -381,7 +377,7 @@
       "uploaderName": "网友",
       "uploaderCode": "",
       "fromPublic": true,
-      "status": "removed",
+      "status": "approved",
       "profileNo": "A035",
       "mediaList": [
         {
@@ -391,9 +387,7 @@
         }
       ],
       "updatedAt": 1787912749882,
-      "isHidden": true,
-      "hiddenAt": 1788032400000,
-      "hiddenReason": "年龄未满18岁，不符合平台要求",
+      "isHidden": false,
       "statusUpdatedAt": 1787912749882
     },
     {
@@ -461,7 +455,7 @@
       "uploaderName": "网友",
       "uploaderCode": "",
       "fromPublic": true,
-      "status": "removed",
+      "status": "approved",
       "profileNo": "A032",
       "mediaList": [
         {
@@ -470,9 +464,7 @@
           "isMain": true
         }
       ],
-      "isHidden": true,
-      "hiddenAt": 1788032400000,
-      "hiddenReason": "年龄未满18岁，不符合平台要求",
+      "isHidden": false,
       "statusUpdatedAt": 1787499885177
     },
     {
@@ -587,7 +579,7 @@
       "uploaderName": "网友",
       "uploaderCode": "",
       "fromPublic": true,
-      "status": "removed",
+      "status": "approved",
       "profileNo": "A026",
       "mediaList": [
         {
@@ -599,9 +591,7 @@
       "likes": [
         "super"
       ],
-      "isHidden": true,
-      "hiddenAt": 1788032400000,
-      "hiddenReason": "年龄未满18岁，不符合平台要求",
+      "isHidden": false,
       "statusUpdatedAt": 1787462799374
     },
     {
@@ -713,7 +703,7 @@
       "uploaderName": "网友",
       "uploaderCode": "",
       "fromPublic": true,
-      "status": "removed",
+      "status": "approved",
       "profileNo": "A022",
       "mediaList": [],
       "comments": [
@@ -725,9 +715,7 @@
           "time": 1788021100115
         }
       ],
-      "isHidden": true,
-      "hiddenAt": 1788032400000,
-      "hiddenReason": "年龄未满18岁，不符合平台要求",
+      "isHidden": false,
       "statusUpdatedAt": 1787415201147
     },
     {
@@ -755,7 +743,7 @@
       "uploaderName": "网友",
       "uploaderCode": "",
       "fromPublic": true,
-      "status": "removed",
+      "status": "approved",
       "profileNo": "A020",
       "mediaList": [
         {
@@ -769,9 +757,7 @@
       ],
       "updatedAt": 1787414395419,
       "comments": [],
-      "isHidden": true,
-      "hiddenAt": 1788032400000,
-      "hiddenReason": "年龄未满18岁，不符合平台要求",
+      "isHidden": false,
       "statusUpdatedAt": 1787414395419
     },
     {
@@ -799,12 +785,10 @@
       "uploaderName": "网友",
       "uploaderCode": "",
       "fromPublic": true,
-      "status": "removed",
+      "status": "approved",
       "profileNo": "A019",
       "mediaList": [],
-      "isHidden": true,
-      "hiddenAt": 1788032400000,
-      "hiddenReason": "年龄未满18岁，不符合平台要求",
+      "isHidden": false,
       "statusUpdatedAt": 1787412550799
     },
     {
@@ -902,10 +886,8 @@
           "type": "video/mp4"
         }
       ],
-      "isHidden": true,
-      "status": "removed",
-      "hiddenAt": 1788032400000,
-      "hiddenReason": "年龄未满18岁，不符合平台要求",
+      "isHidden": false,
+      "status": "approved",
       "statusUpdatedAt": 1787348572473
     },
     {
@@ -937,10 +919,8 @@
       "profileNo": "A008",
       "mediaList": [],
       "updatedAt": 1787346010354,
-      "isHidden": true,
-      "status": "removed",
-      "hiddenAt": 1788032400000,
-      "hiddenReason": "年龄未满18岁，不符合平台要求",
+      "isHidden": false,
+      "status": "approved",
       "statusUpdatedAt": 1787346010354
     },
     {
@@ -1010,10 +990,8 @@
         }
       ],
       "updatedAt": 1787342006042,
-      "isHidden": true,
-      "status": "removed",
-      "hiddenAt": 1788032400000,
-      "hiddenReason": "年龄未满18岁，不符合平台要求",
+      "isHidden": false,
+      "status": "approved",
       "statusUpdatedAt": 1787342006042
     },
     {
@@ -1048,10 +1026,8 @@
       ],
       "guestNo": "A005",
       "updatedAt": 1787413723143,
-      "isHidden": true,
-      "status": "removed",
-      "hiddenAt": 1788032400000,
-      "hiddenReason": "年龄不符合平台要求（未满18岁）",
+      "isHidden": false,
+      "status": "approved",
       "statusUpdatedAt": 1787413723143
     },
     {
@@ -1075,7 +1051,7 @@
       "createdAt": 1700000000001,
       "isPinned": false,
       "mediaList": [],
-      "isHidden": true,
+      "isHidden": false,
       "statusUpdatedAt": 1700000000001
     },
     {
@@ -1099,7 +1075,7 @@
       "createdAt": 1700000000002,
       "isPinned": false,
       "mediaList": [],
-      "isHidden": true,
+      "isHidden": false,
       "statusUpdatedAt": 1700000000002
     },
     {
@@ -1123,7 +1099,7 @@
       "createdAt": 1700000000003,
       "isPinned": false,
       "mediaList": [],
-      "isHidden": true,
+      "isHidden": false,
       "statusUpdatedAt": 1700000000003
     },
     {
@@ -1184,6 +1160,12 @@
     "6.1.0"
   ],
   "adminLogs": [
+    {
+      "time": 1788054800275,
+      "actor": "超级管理员",
+      "op": "批量取消隐藏",
+      "desc": "恢复显示 15 条档案"
+    },
     {
       "time": 1788054738856,
       "actor": "超级管理员",
