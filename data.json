@@ -31,7 +31,7 @@
       "createdAt": 1788033108165,
       "isPinned": false,
       "uploaderType": "public",
-      "uploaderName": "网友",
+      "uploaderName": "杰杰",
       "uploaderCode": "",
       "uploaderUid": 1788017541235,
       "status": "pending",
@@ -62,7 +62,8 @@
       "originalId": 1788019789328,
       "isApplyModify": true,
       "fromPublic": true,
-      "statusUpdatedAt": 1788033108165
+      "statusUpdatedAt": 1788033108165,
+      "uploaderGroupName": "杰杰"
     },
     {
       "id": 1788020818392,
@@ -120,7 +121,7 @@
       "createdAt": 1788019789328,
       "isPinned": false,
       "uploaderType": "user",
-      "uploaderName": "杰杰（杰杰）",
+      "uploaderName": "杰杰",
       "uploaderCode": "",
       "uploaderUid": 1788017541235,
       "status": "approved",
@@ -149,7 +150,8 @@
         }
       ],
       "updatedAt": 1788054525448,
-      "statusUpdatedAt": 1788054525448
+      "statusUpdatedAt": 1788054525448,
+      "uploaderGroupName": "杰杰"
     },
     {
       "id": 1787920638746,
