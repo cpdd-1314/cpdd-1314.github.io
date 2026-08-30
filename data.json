@@ -1169,8 +1169,8 @@
       "生活习惯": "作息不规律，有时候熬夜。",
       "要求": "三观正，会做饭，性格好，而且是年上，是那种性格成熟稳重",
       "一句话介绍": "",
-      "updatedAt": 1788054302715,
-      "statusUpdatedAt": 1788054302715,
+      "updatedAt": 1788054516959,
+      "statusUpdatedAt": 1788054516959,
       "uploadDate": "2026-08-30",
       "createdAt": 1788054302715,
       "isPinned": false,
@@ -1178,7 +1178,7 @@
       "uploaderName": "周子恩（此用户没心没肺08🇮🇹）",
       "uploaderCode": "",
       "uploaderUid": 1788054038243,
-      "status": "pending",
+      "status": "approved",
       "profileNo": "A044",
       "mediaList": [],
       "likes": [
@@ -1209,6 +1209,12 @@
     "6.1.0"
   ],
   "adminLogs": [
+    {
+      "time": 1788054516959,
+      "actor": "超级管理员",
+      "op": "审核",
+      "desc": "通过新嘉宾「周子恩」的审核，已公开显示"
+    },
     {
       "time": 1788053466714,
       "actor": "超级管理员",
@@ -1647,6 +1653,17 @@
       "actorName": "管理员",
       "text": "赞了你的嘉宾资料「冰杰」",
       "time": 1788044551781,
+      "read": false
+    },
+    {
+      "id": 1788054515725,
+      "toUid": 1788054038243,
+      "type": "like",
+      "profileId": 1788054302723,
+      "actorUid": "super",
+      "actorName": "超级管理员",
+      "text": "赞了你的嘉宾资料「周子恩」",
+      "time": 1788054515491,
       "read": false
     }
   ],
