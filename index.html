@@ -2050,8 +2050,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.9.3';
+  const APP_VERSION = '6.9.4';
   const CHANGELOG = [
+    { v: '6.9.4', d: '2026-08-30', note: '修复「通过审核 / 审核修改不同步，且注册用户尤其没用」：根因是旧合并对 profiles 整段「本地优先」覆盖——任何持有陈旧本地的设备（尤其是活跃的注册用户）一旦提交/编辑，就把服务端已通过的审核状态(status)覆盖回 pending。改为 profiles 按「最新时间戳合并」(mergeProfiles)：审核状态具粘性（statusUpdatedAt 较新者胜）、其余字段最后写入者胜，杜绝陈旧副本打回审核；并在审核/提交/修改申请时写入 statusUpdatedAt。同步定时器由整段替换改为合并，发布观察改为强制同步并刷新指纹，避免自己刚通过的审核被 CDN 旧副本冲掉', type: 'fix' },
     { v: '6.9.2', d: '2026-08-30', note: '解释并缓解「改了还不同步」：写入后经 GitHub Pages 重建才对外生效（发布延迟 30s~2min），期间所有人拉到的仍是旧数据。新增「发布观察」——保存后每 4s 探测 Pages 是否已发布本次修改，发布成功即提示「已同步到所有设备」；左下角状态条改为可点击手动立即同步；并澄清本地改文件不会自动上线需部署', type: 'fix' },
     { v: '6.9.3', d: '2026-08-30', note: '修复「审核/生成链接/很多操作不同步」的真正根因：① saveToGitHub 的合并函数漏合并 submitLinks 数组，导致生成的投稿链接、链接 used 计数、删除链接每次保存都被整体丢弃（连本地 appState 也被覆盖成不含新链接）；新增 mergeByKey 按 key 安全合并投稿链接。② 15s 自动同步会在保存的网络请求进行中把 appState 替换成服务端旧副本（Pages CDN 滞后），污染正在保存的本地改动 → 审核/编辑被覆盖写丢；新增写锁 __saving 与「保存后 45s 内不回拉覆盖」保护', type: 'fix' },
     { v: '6.9.1', d: '2026-08-30', note: '修复「数据不会同步」：站点无后端，原只在启动时拉一次 data.json，导致多端/多标签页看不到彼此的新提交。新增每 15s 轻量轮询（带 ?t= 缓存击穿绕过 Pages CDN），与服务端指纹比对，变化即合并重渲染；正在编辑表单时跳过重渲染以免打扰；封号状态在多端实时生效（被封账号会被踢下线）；页面切回前台立即同步一次', type: 'fix' },
@@ -2885,7 +2886,9 @@
     if (Array.isArray(local.hiddenVersions)) out.hiddenVersions = local.hiddenVersions;
     if (Array.isArray(local.staffs)) out.staffs = local.staffs;
     if (Array.isArray(local.adminLogs)) out.adminLogs = local.adminLogs;
-    out.profiles = mergeById(base.profiles, local.profiles);
+    // profiles 改用「按最新时间戳合并」(mergeProfiles)：审核状态粘性 + 最后写入者胜，
+    // 杜绝陈旧本地副本把已通过的审核/别人的新评论覆盖回旧值。
+    out.profiles = mergeProfiles(base.profiles, local.profiles);
     out.users = mergeById(base.users, local.users);
     out.notifications = mergeById(base.notifications, local.notifications);
     // 关键修复：投稿链接数组曾漏合并，导致「生成链接 / 链接 used 计数 / 删除链接」
@@ -2901,6 +2904,41 @@
     baseArr.forEach(function (x) { if (x && x.id != null) map.set(String(x.id), x); });
     localArr.forEach(function (x) { if (x && x.id != null) map.set(String(x.id), x); });
     return Array.from(map.values());
+  }
+  // 资料数组的安全合并（替代 mergeById 用于 profiles）：解决"陈旧本地数据把服务端已通过的审核打回 pending"的并发 bug。
+  // 规则：
+  //   1) 同一 id 的资料，status 取「statusUpdatedAt 较新」的一侧 —— 审核状态具有粘性，
+  //      别人刚通过的审核(statusUpdatedAt 更新)不会被你手里那份旧的 pending 副本覆盖；
+  //   2) 其余字段取「updatedAt/createdAt 较新」的一侧（最后写入者胜），避免你本地旧副本
+  //      把别人新加的评论/点赞/编辑整体冲掉；
+  //   3) 仅一侧存在的资料直接保留（新增/删除各自生效）。
+  // 关键点：必须在「审核」「提交」「编辑」等任何改动 status 的地方写入 statusUpdatedAt，否则退化为 createdAt 比较。
+  function __profileTs(x) {
+    if (!x || x === null) return 0;
+    // 新鲜度取「状态时间 / 编辑时间 / 创建时间」的最大值：只改了普通字段(updatedAt 更新)
+    // 而 status 未变的资料，也应被视为较新，避免编辑被陈旧副本覆盖。
+    return Math.max(Number(x.statusUpdatedAt) || 0, Number(x.updatedAt) || 0, Number(x.createdAt) || 0) || 0;
+  }
+  function mergeProfiles(baseArr, localArr) {
+    baseArr = Array.isArray(baseArr) ? baseArr : [];
+    localArr = Array.isArray(localArr) ? localArr : [];
+    const map = new Map();
+    const put = function (x, side) {
+      if (!x || x.id == null) return;
+      const k = String(x.id);
+      const cur = map.get(k);
+      if (!cur) { map.set(k, { x: x, side: side, t: __profileTs(x) }); return; }
+      const lt = __profileTs(x), ct = cur.t;
+      const ls = Number(x.statusUpdatedAt) || 0, cs = Number(cur.x.statusUpdatedAt) || 0;
+      let winner;
+      if (ls !== cs) winner = ls > cs ? side : cur.side;        // 审核状态粘性优先
+      else if (lt !== ct) winner = lt > ct ? side : cur.side;   // 再比整体时间戳
+      else winner = cur.side;                                   // 完全相等保留已有（服务端优先）
+      if (winner === side) map.set(k, { x: x, side: side, t: lt });
+    };
+    baseArr.forEach(function (x) { put(x, 'base'); });
+    localArr.forEach(function (x) { put(x, 'local'); });
+    return Array.from(map.values()).map(function (v) { return v.x; });
   }
   // 与 mergeById 类似，但主键优先取 key（投稿链接用 key 而非 id 做唯一标识），
   // 找不到 key 时退回 id。用于 submitLinks 的安全合并，避免链接被整体冲掉。
@@ -3580,7 +3618,9 @@
             uploaderName: '网友',
             uploaderCode: '',
             fromPublic: true,
-            createdAt: now.getTime()
+            createdAt: now.getTime(),
+            updatedAt: now.getTime(),
+            statusUpdatedAt: now.getTime()
           });
           editableFields.forEach(f => {
             const v = formData.get(f);
@@ -3673,6 +3713,8 @@
         // 新增模式
         const newProfile = { id: Date.now() };
         formData.forEach((val, key) => { if (typeof val === 'string') newProfile[key] = val.trim(); });
+        newProfile.updatedAt = now.getTime();
+        newProfile.statusUpdatedAt = now.getTime();   // 提交即 pending，记录状态时间戳
         // 安全保护：新增时不允许自编编号（编号只能管理员在编辑时设置）
         delete newProfile.guestNo;
         newProfile.uploadDate = `${year}-${month}-${day}`;
@@ -4003,7 +4045,7 @@
     }
     return el;
   }
-  async function __syncTick() {
+  async function __syncTick(force) {
     // 写锁：保存的网络请求进行中不要拉取，否则会把 appState 替换成服务端旧副本，
     // 覆盖我们正在保存的本地改动（审核/编辑/生成链接等）
     if (__saving) return;
@@ -4013,10 +4055,11 @@
       const data = await res.json();
       const sig = __syncSignature(data);
       const badge = document.getElementById('syncBadge');
-      // 刚保存完（<45s）时，GitHub Pages CDN 常常还没发布新数据，拉到的仍是旧副本；
-      // 若直接替换本地，会把我刚保存的审核/链接/编辑覆盖回旧值（表现就是「审核了又变回去」）。
-      // 先跳过拉取，等 CDN 跟上（约 30s）后的下一次轮询再正常同步。
-      if (Date.now() - __lastSavedAt < 45000) {
+      // 刚保存完（<45s）时，GitHub Pages CDN 常常还没发布新数据，拉到的仍是旧副本。
+      // 现在 profiles 走「按最新时间戳合并」(mergeProfiles)，即使拉到旧副本也不会把刚通过的审核
+      // 打回 pending（本地 statusUpdatedAt 更新，合并时本地胜），所以这里只需作为「避免冗余请求」
+      // 的优化；force=true 时（发布观察确认已发布）强制同步并刷新指纹，避免基准指纹一直停留在旧值。
+      if (!force && Date.now() - __lastSavedAt < 45000) {
         if (badge) badge.textContent = '已同步 ' + new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
         return;
       }
@@ -4024,9 +4067,10 @@
         if (badge) badge.textContent = '已同步 ' + new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
         return; // 无变化，跳过合并与重渲染
       }
-      // 合并服务端数据到本地（服务端为权威源；本地的未保存编辑在表单 DOM，不在此处）
+      // 合并服务端数据到本地：profiles 用 mergeProfiles（审核状态粘性 + 最后写入者胜），
+      // 其余数组/标量以服务端为权威源（本地的未保存编辑在表单 DOM，不在此处）。
       if (data.wechat) appState.wechat = data.wechat;
-      if (Array.isArray(data.profiles)) appState.profiles = data.profiles;
+      if (Array.isArray(data.profiles)) appState.profiles = mergeProfiles(data.profiles, appState.profiles);
       if (Array.isArray(data.staffs)) appState.staffs = data.staffs;
       if (typeof data.nextProfileNo === 'number') appState.nextProfileNo = data.nextProfileNo;
       if (typeof data.version === 'string') appState.version = data.version;
@@ -4100,9 +4144,9 @@
         const data = await res.json();
         const sig = __syncSignature(data);
         if (sig === __publishWatchSig) {
-          // Pages 已发布我们的修改
+          // Pages 已发布我们的修改：强制同步一次（绕过 45s 守卫、刷新基准指纹），让本机立刻对齐
           clearInterval(__publishWatchTimer); __publishWatchTimer = null; __publishWatchSig = '';
-          if (typeof __syncTick === 'function') __syncTick();
+          if (typeof __syncTick === 'function') __syncTick(true);
           showToast('🚀 已发布：你的修改已同步到所有设备');
         } else if (Date.now() > __publishWatchDeadline) {
           clearInterval(__publishWatchTimer); __publishWatchTimer = null; __publishWatchSig = '';
@@ -6228,6 +6272,7 @@
           fields.forEach(f => { if (item[f] !== undefined) orig[f] = item[f]; });
           if (Array.isArray(item.mediaList)) orig.mediaList = item.mediaList;
           orig.updatedAt = Date.now();
+          orig.statusUpdatedAt = Date.now();   // 审核状态时间戳：让"已通过"在合并时具有粘性
         }
         appState.profiles = appState.profiles.filter(p => p.id !== item.id);
         addAdminLog('审核', '通过「' + (orig ? orig['姓名'] : item['姓名']) + '」的修改申请，档案已更新');
@@ -6240,6 +6285,8 @@
       } else {
         // 新上传档案：直接公开
         item.status = 'approved';
+        item.statusUpdatedAt = Date.now();   // 审核状态时间戳：让"已通过"在合并时具有粘性
+        item.updatedAt = Date.now();
         addAdminLog('审核', '通过新嘉宾「' + (item['姓名'] || '未填') + '」的审核，已公开显示');
         showAlertHtml(
           '✅ 已通过审核，资料现在展示给所有人了！<br><br>📋 点下方按钮复制通知文案，<b>粘贴到微信群</b>通知大家吧。',
