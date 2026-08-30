@@ -1588,7 +1588,9 @@
       "password": "wang120206",
       "groupName": "奶茶🇮🇹2.6",
       "createdAt": 1787938757950,
-      "favorites": []
+      "favorites": [
+        1700000000001
+      ]
     },
     {
       "id": 1787956758001,
