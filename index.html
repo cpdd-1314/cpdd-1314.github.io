@@ -2050,8 +2050,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.9.4';
+  const APP_VERSION = '6.9.5';
   const CHANGELOG = [
+    { v: '6.9.5', d: '2026-08-30', note: '修复「通过审核不会真的通过 / 待审核项不消失 / 修改审核没用 / 删除后刷新又回来」：① 修改申请通过后不再本地删除副本，而是把申请标记终态 applied、删除标记 _deleted，mergeProfiles 在合并时直接丢弃这些终态条目，从而真正从服务端移除（旧逻辑以服务端为基线合并会把被删的旧副本「复活」）；② 审核/隐藏/删除/置顶后改调 refreshViews() 同时刷新管理视图与公共信息流，待审核项立即消失、计数实时更新；③ loadData 给老资料补 statusUpdatedAt，让 v6.9.4 的审核状态粘性对现有数据生效', type: 'fix' },
     { v: '6.9.4', d: '2026-08-30', note: '修复「通过审核 / 审核修改不同步，且注册用户尤其没用」：根因是旧合并对 profiles 整段「本地优先」覆盖——任何持有陈旧本地的设备（尤其是活跃的注册用户）一旦提交/编辑，就把服务端已通过的审核状态(status)覆盖回 pending。改为 profiles 按「最新时间戳合并」(mergeProfiles)：审核状态具粘性（statusUpdatedAt 较新者胜）、其余字段最后写入者胜，杜绝陈旧副本打回审核；并在审核/提交/修改申请时写入 statusUpdatedAt。同步定时器由整段替换改为合并，发布观察改为强制同步并刷新指纹，避免自己刚通过的审核被 CDN 旧副本冲掉', type: 'fix' },
     { v: '6.9.2', d: '2026-08-30', note: '解释并缓解「改了还不同步」：写入后经 GitHub Pages 重建才对外生效（发布延迟 30s~2min），期间所有人拉到的仍是旧数据。新增「发布观察」——保存后每 4s 探测 Pages 是否已发布本次修改，发布成功即提示「已同步到所有设备」；左下角状态条改为可点击手动立即同步；并澄清本地改文件不会自动上线需部署', type: 'fix' },
     { v: '6.9.3', d: '2026-08-30', note: '修复「审核/生成链接/很多操作不同步」的真正根因：① saveToGitHub 的合并函数漏合并 submitLinks 数组，导致生成的投稿链接、链接 used 计数、删除链接每次保存都被整体丢弃（连本地 appState 也被覆盖成不含新链接）；新增 mergeByKey 按 key 安全合并投稿链接。② 15s 自动同步会在保存的网络请求进行中把 appState 替换成服务端旧副本（Pages CDN 滞后），污染正在保存的本地改动 → 审核/编辑被覆盖写丢；新增写锁 __saving 与「保存后 45s 内不回拉覆盖」保护', type: 'fix' },
@@ -2922,9 +2923,17 @@
   function mergeProfiles(baseArr, localArr) {
     baseArr = Array.isArray(baseArr) ? baseArr : [];
     localArr = Array.isArray(localArr) ? localArr : [];
+    // 终态条目：修改申请已合并(applied) 或 已软删除(_deleted) —— 合并时两侧都丢弃，
+    // 否则 saveToGitHub 以服务端为基线合并会把「仅服务端有」的旧副本写回，表现为
+    // 「通过修改审核后申请仍留在待审核」「删除后刷新又回来」。
+    const dropIds = new Set();
+    baseArr.concat(localArr).forEach(function (x) {
+      if (x && x.id != null && (x.status === 'applied' || x._deleted === true)) dropIds.add(String(x.id));
+    });
     const map = new Map();
     const put = function (x, side) {
       if (!x || x.id == null) return;
+      if (dropIds.has(String(x.id))) return;   // 终态条目：本地与服务端副本都丢弃
       const k = String(x.id);
       const cur = map.get(k);
       if (!cur) { map.set(k, { x: x, side: side, t: __profileTs(x) }); return; }
@@ -3965,6 +3974,15 @@
       if (Array.isArray(data.notifications)) appState.notifications = data.notifications;
       if (typeof data.glassMode === 'boolean') appState.glassMode = data.glassMode;
       if (Array.isArray(data.submitLinks)) appState.submitLinks = data.submitLinks;
+      // 兼容老数据：v6.9.4 起的审核状态粘性依赖 statusUpdatedAt；旧资料没有该字段时
+      // 退化成 createdAt 比较，并发合并可能把已通过的审核打回 pending。这里在加载时补默认时间戳。
+      if (Array.isArray(appState.profiles)) {
+        appState.profiles.forEach(function (p) {
+          if (p && p.statusUpdatedAt == null) {
+            p.statusUpdatedAt = Number(p.updatedAt) || Number(p.createdAt) || 0;
+          }
+        });
+      }
     }
     if (!loaded) {
       // 取不到仓库数据时（本地预览 / 分享链接 / 直接双击打开）用内置示例兜底，避免白屏
@@ -5470,7 +5488,7 @@
 
     // 首页只展示已通过且未隐藏的档案；待审核/已隐藏统一到独立管理视图
     let filtered = (appState.profiles || []).filter(item => {
-      if (item.status === 'pending' || item.isHidden) return false;
+      if (item.status === 'pending' || item.isHidden || item.status === 'applied' || item._deleted === true) return false;
       const matchGender = currentGender === '全部' || item['性别'] === currentGender;
       const fullStr = Object.values(item).filter(v => typeof v === 'string').join(' ').toLowerCase();
       return matchGender && (!keyword || fullStr.includes(keyword));
@@ -5601,9 +5619,10 @@
     }
 
     let filtered = (appState.profiles || []).filter(item => {
+      if (item._deleted === true) return false;
       if (adminMode === 'pending') return item.status === 'pending';
       if (adminMode === 'hidden') return item.isHidden;
-      if (adminMode === 'all') return true;
+      if (adminMode === 'all') return item.status !== 'applied';   // 已合并的修改申请不显示在「全部」
       return false;
     });
 
@@ -6221,7 +6240,7 @@
     addAdminLog('置顶', (item.isPinned ? '置顶' : '取消置顶') + '「' + (item['姓名'] || '未填') + '」');
     try {
       await saveToGitHub();
-      renderCards();
+      refreshViews();
       openDetail(id);
     } catch (err) {
       showAlert("❌ 同步失败：" + err.message);
@@ -6236,7 +6255,7 @@
     addAdminLog('隐藏', (item.isHidden ? '隐藏档案' : '恢复显示') + '「' + (item['姓名'] || '未填') + '」');
     try {
       await saveToGitHub();
-      renderCards();
+      refreshViews();
       openDetail(id);
     } catch (err) {
       showAlert("❌ 同步失败：" + err.message);
@@ -6246,7 +6265,10 @@
   function deleteProfile(id) {
     confirmAction("确定要删除这份嘉宾档案吗？", async () => {
       const victim = appState.profiles.find(p => p.id === id);
-      appState.profiles = appState.profiles.filter(p => p.id !== id);
+      // 不本地删除副本：saveToGitHub 以服务端为基线合并会保留「仅服务端有」的条目，
+      // 直接删本地会被服务端旧副本「复活」（删除后刷新又出现）。改为标记软删除 _deleted，
+      // mergeProfiles 合并时丢弃该条目，从而真正从服务端移除。
+      if (victim) victim._deleted = true;
       addAdminLog('删除', '删除档案「' + ((victim && victim['姓名']) || '未填') + '」');
       try {
         await saveToGitHub();
@@ -6257,6 +6279,15 @@
         showAlert("❌ 同步失败：" + err.message);
       }
     });
+  }
+
+  // 重新渲染「当前可见视图」：管理员停在待审核/已隐藏/全部/注册用户标签时，
+  // 可见容器是 #adminCardsContainer（由 renderAdminCards 负责）；公共信息流是 #cardsContainer
+  // （由 renderCards 负责）。此前审核/隐藏/删除等只在保存后调 renderCards，导致管理视图里的
+  // 那条资料「看起来没消失、计数不减」——其实数据已改，只是没刷新可见视图。
+  function refreshViews() {
+    try { if (typeof renderAdminCards === 'function') renderAdminCards(); } catch (e) {}
+    try { if (typeof renderCards === 'function') renderCards(); } catch (e) {}
   }
 
   // 审核通过：待审核 → 公开显示
@@ -6274,12 +6305,18 @@
           orig.updatedAt = Date.now();
           orig.statusUpdatedAt = Date.now();   // 审核状态时间戳：让"已通过"在合并时具有粘性
         }
-        appState.profiles = appState.profiles.filter(p => p.id !== item.id);
-        addAdminLog('审核', '通过「' + (orig ? orig['姓名'] : item['姓名']) + '」的修改申请，档案已更新');
+        // 不本地删除副本：saveToGitHub 以服务端为基线合并，直接删本地会被服务端旧副本「复活」。
+        // 改为标记终态 'applied'，mergeProfiles 合并时丢弃该条目，从而真正从服务端删除。
+        const noticeId = (orig && orig.id) || item.id;
+        item.status = 'applied';
+        item.statusUpdatedAt = Date.now();
+        item.isApplyModify = false;
+        item.originalId = null;
+        addAdminLog('审核', '通过「' + (orig && orig['姓名'] ? orig['姓名'] : item['姓名']) + '」的修改申请，档案已更新');
         showAlertHtml(
           '✅ 已通过审核，档案已更新为最新内容！<br><br>📋 点下方按钮复制更新文案，<b>粘贴到微信群</b>通知大家吧。',
           '审核通过',
-          '<button class="btn btn-outline" style="flex:1;" onclick="copyGuestNotice(' + (item.originalId || item.id) + ')">📋 复制通知文案</button>' +
+          '<button class="btn btn-outline" style="flex:1;" onclick="copyGuestNotice(' + noticeId + ')">📋 复制通知文案</button>' +
           '<button class="btn btn-primary" style="flex:1;" onclick="closeCustomDialog()">知道了</button>'
         );
       } else {
@@ -6296,7 +6333,7 @@
         );
       }
       await saveToGitHub();
-      renderCards();
+      refreshViews();          // 同时刷新管理视图与公共信息流，待审核项才会真正消失、计数才更新
       toggleModal('detailModal', false);
     } catch (err) {
       showAlert("❌ 同步失败：" + err.message);
