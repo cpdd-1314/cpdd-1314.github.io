@@ -86,6 +86,8 @@
     .btn-primary:hover { background: var(--primary-hover); }
     .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
     .btn-outline:hover { background: #e2e8f0; }
+    .btn-danger { background: #ef4444; color: #fff; border: 1px solid #dc2626; }
+    .btn-danger:hover { background: #dc2626; }
 
     .admin-only { display: none !important; }
     body.is-admin .admin-only { display: inline-flex !important; }
@@ -1253,6 +1255,18 @@
       color: #fff;
     }
     body.glass-mode .btn-primary:hover { filter: brightness(1.08); }
+    body.glass-mode .btn-danger {
+      background-image: linear-gradient(135deg, rgba(239,68,68,.92), rgba(220,38,38,.92));
+      border: 1px solid rgba(255,255,255,.5);
+      -webkit-backdrop-filter: blur(20px) saturate(230%);
+      backdrop-filter: blur(20px) saturate(230%);
+      box-shadow:
+        0 8px 28px rgba(239,68,68,.45),
+        inset 0 2px 1px rgba(255,255,255,.6),
+        inset 0 -1.5px 1px rgba(0,0,0,.14);
+      color: #fff;
+    }
+    body.glass-mode .btn-danger:hover { filter: brightness(1.08); }
     body.glass-mode .btn-wechat {
       background-image: linear-gradient(135deg, rgba(7,193,96,.92), rgba(6,173,86,.92));
       border: 1px solid rgba(255,255,255,.45);
@@ -1972,6 +1986,7 @@
     <div class="batch-bar" id="adminGuestBar" style="display:none; align-items:center; gap:10px; flex-wrap:wrap;">
       <span id="adminGuestCount" style="font-size:13px; color:var(--text-muted);"></span>
       <button class="btn btn-primary" id="adminGuestViewBtn" style="font-size:13px; padding:7px 14px;" onclick="openGuestSelectionModal()">👀 查看已选 (0)</button>
+      <button class="btn btn-danger" id="adminGuestDeleteBtn" style="font-size:13px; padding:7px 14px; display:none;" onclick="deleteSelectedGuests()">🗑 删除选中 (0)</button>
       <button class="btn btn-outline" style="margin-left:auto; font-size:13px; padding:7px 14px;" onclick="clearGuestSelect()">🧹 清空选择</button>
     </div>
 
@@ -2510,6 +2525,7 @@
     <div class="guest-sel-hint">选好后可关闭此弹窗回到「嘉宾一览」继续操作</div>
     <div style="display:flex; gap:10px; margin-top:14px;">
       <button class="btn btn-outline" style="flex:1;" onclick="toggleModal('guestSelModal', false)">关闭</button>
+      <button class="btn btn-danger" id="guestSelDeleteBtn" style="flex:1;" onclick="deleteSelectedGuests()">🗑 删除选中</button>
       <button class="btn btn-primary" style="flex:1;" onclick="clearGuestSelect(); toggleModal('guestSelModal', false);">🧹 清空全部选择</button>
     </div>
   </div>
@@ -2642,8 +2658,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.9.13';
+  const APP_VERSION = '6.9.14';
   const CHANGELOG = [
+    { v: '6.9.14', d: '2026-08-31', note: '管理视图「嘉宾一览」新增多选删除：① 选择栏在「👀 查看已选 (N)」旁新增「🗑 删除选中 (N)」红色按钮（有勾选才出现、数字实时跟随）；② 汇总弹窗底部也加「🗑 删除选中」按钮。点任意一处都会二次弹窗确认数量与「不可恢复」提示，确认后把勾选的所有嘉宾一次性软删除（标记 _deleted，由服务端合并真正移除，避免刷新复活），单次 saveToGitHub 同步、刷新管理视图与公共信息流、清空选择并 Toast 提示。需管理员权限', type: 'feat' },
     { v: '6.9.13', d: '2026-08-31', note: '① Liquid Glass 流畅度优化（解决「有点卡」）：把指针跟随高光从「每次 mousemove 重绘全站玻璃」改为 rAF 合并 + 只更新当前悬停的单个元素（离开即清变量），并把每张卡片的常驻扫光(lgSweep)与无限悬浮(glassFloatCard)动画关掉——这两者是每帧重绘 backdrop-filter 的主要卡顿源，关掉后滚动/移动明显顺滑；同时把过大的模糊半径从 56/52/48/42px 降到 44/44/40/34px，观感依旧是「湿玻璃」，但更省 GPU；并尊重系统「减少动态效果」偏好自动降级动画。② 管理视图「嘉宾一览」多选新增汇总弹窗：选择栏多出「👀 查看已选 (N)」按钮，点开把所有已选嘉宾（小图+年龄+城市/职业+简介）集中展示在一个站内弹窗里，点卡片或 ✕ 即取消选择并同步回底层卡片，底部可一键清空', type: 'feat' },
     { v: '6.9.12', d: '2026-08-31', note: '「网站正在更新」升级为全屏维护模式 + 普通用户功能拦截 + 动画拉满：① 开启后整站被全屏玻璃维护遮罩覆盖（极光流动背景 + 星点闪烁 + 中央玻璃卡「轨道环 + 漂浮火箭」+ 流光标题「网站正在焕新升级」+ 来回扫光的进度条 + 跳动省略号），普通用户被遮罩拦截无法点任何按钮/卡片/导航（看得到模糊的网站但碰不了），真正「更新中不可用」；② 管理员专属——遮罩右上角出现「✕ 退出更新模式」与「👁 预览网站（绕过维护页）」：前者一键关掉维护，后者本地隐藏遮罩让你照常进后台改东西，右下角悬浮「维护预览中·退出预览」可随时回来；③ 流程优化：维护遮罩淡入缩放登场、关闭淡出，不再像旧版只推下 46px 顶栏；④ 动画更牛，并尊重系统「减少动态效果」偏好自动降级', type: 'feat' },
     { v: '6.9.11', d: '2026-08-31', note: '修复品牌介绍弹窗在玻璃模式下顶部白字看不见 + 内容贴边溢出；新增「🚀 网站正在更新」动态横幅：管理员在「我的 → 管理面板」一键开启，全站访客同步看到顶部渐变流动、火箭旋转、文字闪烁、光脉动的升级提示，文字更温柔好听「网站正在焕新升级，更多精彩即将上线，敬请期待」', type: 'feat' },
@@ -6625,6 +6642,42 @@
     }
     const viewBtn = document.getElementById('adminGuestViewBtn');
     if (viewBtn) viewBtn.textContent = `👀 查看已选 (${adminGuestSelected.size})`;
+    const delBtn = document.getElementById('adminGuestDeleteBtn');
+    if (delBtn) {
+      delBtn.textContent = `🗑 删除选中 (${adminGuestSelected.size})`;
+      delBtn.style.display = adminGuestSelected.size > 0 ? 'inline-block' : 'none';
+    }
+  }
+
+  // 多选删除：把「嘉宾一览」里勾选的所有嘉宾一次性软删除并同步到服务端。
+  // 复用单删 deleteProfile 的软删除策略（标记 _deleted，由 mergeProfiles 合并时丢弃），
+  // 避免「直接本地删除数组 → 服务端旧副本在合并时把条目复活」的问题。
+  async function deleteSelectedGuests() {
+    if (adminGuestSelected.size === 0) { toast('还没有选择任何嘉宾'); return; }
+    if (!isSuper() && !isStaff()) { toast('仅管理员可删除嘉宾'); return; }
+    const n = adminGuestSelected.size;
+    confirmAction(`确定要永久删除已勾选的 ${n} 位嘉宾吗？\n删除后无法恢复，所有访客都将看不到他们。`, async function () {
+      let removed = 0;
+      adminGuestSelected.forEach(function (k) {
+        const victim = appState.profiles.find(function (p) { return String(p.id) === k; });
+        if (victim) {
+          victim._deleted = true;     // 软删除：保留数组引用，服务端合并时真正移除
+          addAdminLog('批量删除', '删除嘉宾「' + (victim['姓名'] || '未填') + '」');
+          removed++;
+        }
+      });
+      try {
+        await saveToGitHub();
+        adminGuestSelected.clear();
+        toggleModal('guestSelModal', false);
+        refreshViews();           // 同时刷新管理视图与公共信息流
+        if (adminMode === 'guests') renderGuestCards();
+        updateGuestCount();
+        toast(`✅ 已删除 ${removed} 位嘉宾`);
+      } catch (err) {
+        showAlert('❌ 同步失败：' + err.message);
+      }
+    }, '批量删除嘉宾');
   }
 
   // 把已选嘉宾汇总到一个弹窗里展示（管理视图「嘉宾一览」多选后调用）
