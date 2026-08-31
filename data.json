@@ -1181,36 +1181,6 @@
       "guestNo": "A044",
       "isHidden": true,
       "hiddenAt": 1788121325400
-    },
-    {
-      "id": 1788170226342,
-      "姓名": "1",
-      "性别": "男",
-      "性取向": "",
-      "国家/城市": "",
-      "生日": "",
-      "年龄": "1",
-      "身高": "",
-      "体重": "",
-      "星座": "",
-      "职业/学生": "",
-      "性格": "",
-      "兴趣爱好": "",
-      "生活习惯": "",
-      "要求": "",
-      "一句话介绍": "",
-      "updatedAt": 1788170239973,
-      "statusUpdatedAt": 1788170239973,
-      "uploadDate": "2026-08-31",
-      "createdAt": 1788170226342,
-      "isPinned": false,
-      "uploaderType": "super",
-      "uploaderName": "管理员",
-      "uploaderCode": "ADMIN",
-      "uploaderUid": "super",
-      "status": "approved",
-      "profileNo": "A045",
-      "mediaList": []
     }
   ],
   "staffs": [
@@ -1236,6 +1206,12 @@
     "6.1.0"
   ],
   "adminLogs": [
+    {
+      "time": 1788170250061,
+      "actor": "超级管理员",
+      "op": "删除",
+      "desc": "删除档案「1」"
+    },
     {
       "time": 1788170239974,
       "actor": "超级管理员",
