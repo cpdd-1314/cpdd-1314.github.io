@@ -264,6 +264,31 @@
       font-size: 15px; color: #fff; transition: all .15s ease;
     }
     .guest-chip.is-selected .guest-check { background: var(--primary); border-color: var(--primary); }
+    /* 已选嘉宾弹窗：把多选的嘉宾汇总到一个弹窗里展示，点卡片/✕ 即取消选择 */
+    #guestSelList { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 12px; }
+    @media (min-width: 560px) { #guestSelList { grid-template-columns: 1fr 1fr; } }
+    .guest-sel-card {
+      display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 16px; cursor: pointer;
+      background: var(--card-bg); border: 1px solid var(--border); position: relative; overflow: hidden;
+      transition: transform .14s ease, box-shadow .2s ease, border-color .2s ease;
+    }
+    .guest-sel-card:hover { box-shadow: 0 8px 20px rgba(15,23,42,.12); border-color: var(--primary); transform: translateY(-2px); }
+    .guest-sel-card .guest-thumb { width: 56px; height: 56px; min-width: 56px; }
+    .guest-sel-remove {
+      position: absolute; top: 8px; right: 8px; width: 24px; height: 24px; border-radius: 50%;
+      border: none; background: rgba(15,23,42,.55); color: #fff; font-size: 13px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; transition: background .2s ease, transform .14s ease;
+    }
+    .guest-sel-remove:hover { background: #ef4444; }
+    .guest-sel-remove:active { transform: scale(.9); }
+    .guest-sel-hint { font-size: 12px; color: var(--text-muted); margin-top: 8px; text-align: center; }
+    body.glass-mode .guest-sel-card {
+      background-color: transparent; background-image: var(--glass-fill);
+      border-color: rgba(255,255,255,.55);
+      -webkit-backdrop-filter: blur(20px) saturate(220%); backdrop-filter: blur(20px) saturate(220%);
+    }
+    body.glass-mode .guest-sel-card .guest-name,
+    body.glass-mode .guest-sel-card .guest-quote { color: var(--text); }
     .card:hover { transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0,0,0,0.06); }
     .card-media-wrap { width: 100%; height: 260px; background: #000; position: relative; overflow: hidden; }
     .card-media-wrap img, .card-media-wrap video {
@@ -1076,16 +1101,30 @@
     body.glass-mode .media-gallery,
     body.glass-mode .guest-chip,
     body.glass-mode .form-grid > div {
-      -webkit-backdrop-filter: blur(42px) saturate(280%) brightness(1.02) contrast(1.02);
-      backdrop-filter: blur(42px) saturate(280%) brightness(1.02) contrast(1.02);
+      -webkit-backdrop-filter: blur(34px) saturate(260%) brightness(1.02) contrast(1.02);
+      backdrop-filter: blur(34px) saturate(260%) brightness(1.02) contrast(1.02);
     }
     body.glass-mode .bottom-tab {
-      -webkit-backdrop-filter: blur(56px) saturate(300%) brightness(1.03) contrast(1.02);
-      backdrop-filter: blur(56px) saturate(300%) brightness(1.03) contrast(1.02);
+      -webkit-backdrop-filter: blur(44px) saturate(280%) brightness(1.03) contrast(1.02);
+      backdrop-filter: blur(44px) saturate(280%) brightness(1.03) contrast(1.02);
     }
     body.glass-mode header {
-      -webkit-backdrop-filter: blur(48px) saturate(280%) brightness(1.03) contrast(1.02);
-      backdrop-filter: blur(48px) saturate(280%) brightness(1.03) contrast(1.02);
+      -webkit-backdrop-filter: blur(40px) saturate(260%) brightness(1.03) contrast(1.02);
+      backdrop-filter: blur(40px) saturate(260%) brightness(1.03) contrast(1.02);
+    }
+
+    /* 性能优化（v6.9.13）：关闭卡片的常驻扫光与无限悬浮动画——每张卡片每帧重绘
+       backdrop-filter 是主要卡顿源。指针跟随高光与入场动画保留，依旧是「湿玻璃」观感。
+       并尊重系统「减少动态效果」偏好自动降级。 */
+    body.glass-mode .card::before { animation: none !important; opacity: 0 !important; }
+    body.glass-mode .card:not(.card-enter):nth-of-type(4n+1),
+    body.glass-mode .card:not(.card-enter):nth-of-type(4n+3) { animation: none !important; }
+    @media (prefers-reduced-motion: reduce) {
+      body.glass-mode .card::before,
+      body.glass-mode .modal::before,
+      body.glass-mode .profile-section::before,
+      body.glass-mode header::before,
+      body.glass-mode .bottom-tab::before { animation: none !important; }
     }
 
     /* 背景色块增加一层流动极光 */
@@ -1125,8 +1164,8 @@
       background-clip: padding-box, padding-box, border-box;
       background-origin: padding-box, padding-box, border-box;
       border: 1px solid transparent;
-      -webkit-backdrop-filter: blur(52px) saturate(300%) brightness(1.02);
-      backdrop-filter: blur(52px) saturate(300%) brightness(1.02);
+      -webkit-backdrop-filter: blur(44px) saturate(280%) brightness(1.02);
+      backdrop-filter: blur(44px) saturate(280%) brightness(1.02);
       box-shadow:
         0 4px 14px rgba(30,27,75,.12),
         0 26px 64px rgba(30,27,75,.3),
@@ -1930,8 +1969,9 @@
     </div>
 
     <!-- 嘉宾一览选择栏：点选紧凑卡片勾选，可累积 -->
-    <div class="batch-bar" id="adminGuestBar" style="display:none; align-items:center; gap:10px;">
+    <div class="batch-bar" id="adminGuestBar" style="display:none; align-items:center; gap:10px; flex-wrap:wrap;">
       <span id="adminGuestCount" style="font-size:13px; color:var(--text-muted);"></span>
+      <button class="btn btn-primary" id="adminGuestViewBtn" style="font-size:13px; padding:7px 14px;" onclick="openGuestSelectionModal()">👀 查看已选 (0)</button>
       <button class="btn btn-outline" style="margin-left:auto; font-size:13px; padding:7px 14px;" onclick="clearGuestSelect()">🧹 清空选择</button>
     </div>
 
@@ -2460,6 +2500,21 @@
   </div>
 </div>
 
+<!-- 已选嘉宾汇总弹窗：管理视图「嘉宾一览」多选后，把所有已选嘉宾集中展示在这里 -->
+<div class="modal-overlay" id="guestSelModal" onclick="handleOverlayClick(event, 'guestSelModal')">
+  <div class="modal" style="max-width:720px;">
+    <button class="close-btn" onclick="toggleModal('guestSelModal', false)">×</button>
+    <h2 style="font-size:18px; margin-bottom:4px;">👀 已选嘉宾汇总</h2>
+    <div style="font-size:12px; color:var(--text-muted); margin-bottom:4px;">共已选 <b id="guestSelCount">0</b> 位嘉宾 · 点卡片或右上角 ✕ 可取消选择</div>
+    <div id="guestSelList"></div>
+    <div class="guest-sel-hint">选好后可关闭此弹窗回到「嘉宾一览」继续操作</div>
+    <div style="display:flex; gap:10px; margin-top:14px;">
+      <button class="btn btn-outline" style="flex:1;" onclick="toggleModal('guestSelModal', false)">关闭</button>
+      <button class="btn btn-primary" style="flex:1;" onclick="clearGuestSelect(); toggleModal('guestSelModal', false);">🧹 清空全部选择</button>
+    </div>
+  </div>
+</div>
+
 <!-- 左下角动态浮动入口（可收起为小圆球，点击重新弹出） -->
 <div id="floatBall" onclick="expandFloats()" title="展开入口">
   <svg viewBox="0 0 24 24" style="width:22px; height:22px; fill:#fff;">
@@ -2587,8 +2642,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.9.12';
+  const APP_VERSION = '6.9.13';
   const CHANGELOG = [
+    { v: '6.9.13', d: '2026-08-31', note: '① Liquid Glass 流畅度优化（解决「有点卡」）：把指针跟随高光从「每次 mousemove 重绘全站玻璃」改为 rAF 合并 + 只更新当前悬停的单个元素（离开即清变量），并把每张卡片的常驻扫光(lgSweep)与无限悬浮(glassFloatCard)动画关掉——这两者是每帧重绘 backdrop-filter 的主要卡顿源，关掉后滚动/移动明显顺滑；同时把过大的模糊半径从 56/52/48/42px 降到 44/44/40/34px，观感依旧是「湿玻璃」，但更省 GPU；并尊重系统「减少动态效果」偏好自动降级动画。② 管理视图「嘉宾一览」多选新增汇总弹窗：选择栏多出「👀 查看已选 (N)」按钮，点开把所有已选嘉宾（小图+年龄+城市/职业+简介）集中展示在一个站内弹窗里，点卡片或 ✕ 即取消选择并同步回底层卡片，底部可一键清空', type: 'feat' },
     { v: '6.9.12', d: '2026-08-31', note: '「网站正在更新」升级为全屏维护模式 + 普通用户功能拦截 + 动画拉满：① 开启后整站被全屏玻璃维护遮罩覆盖（极光流动背景 + 星点闪烁 + 中央玻璃卡「轨道环 + 漂浮火箭」+ 流光标题「网站正在焕新升级」+ 来回扫光的进度条 + 跳动省略号），普通用户被遮罩拦截无法点任何按钮/卡片/导航（看得到模糊的网站但碰不了），真正「更新中不可用」；② 管理员专属——遮罩右上角出现「✕ 退出更新模式」与「👁 预览网站（绕过维护页）」：前者一键关掉维护，后者本地隐藏遮罩让你照常进后台改东西，右下角悬浮「维护预览中·退出预览」可随时回来；③ 流程优化：维护遮罩淡入缩放登场、关闭淡出，不再像旧版只推下 46px 顶栏；④ 动画更牛，并尊重系统「减少动态效果」偏好自动降级', type: 'feat' },
     { v: '6.9.11', d: '2026-08-31', note: '修复品牌介绍弹窗在玻璃模式下顶部白字看不见 + 内容贴边溢出；新增「🚀 网站正在更新」动态横幅：管理员在「我的 → 管理面板」一键开启，全站访客同步看到顶部渐变流动、火箭旋转、文字闪烁、光脉动的升级提示，文字更温柔好听「网站正在焕新升级，更多精彩即将上线，敬请期待」', type: 'feat' },
     { v: '6.9.10', d: '2026-08-31', note: '修复 Liquid Glass 过曝 + 全站弹窗彻底站内化 + 动画再升级：① 大幅降低背景色块透明度、提升卡片/弹窗填充不透明度、降低 brightness 到过曝线以下，文字与图片显示更清晰；② 修复品牌介绍/使用条款弹窗在玻璃模式下硬编码白色背景导致的"死白块"；③ 全面清查并替换剩余浏览器原生 confirm/prompt（删除投稿链接、封禁用户），现在所有弹窗100%走站内 customDialog；④ 动画增强——Tab切换淡入上滑、卡片翻页staggered依次入场、图片hover缩放、按钮elastic按压、涟漪改成pointerdown即时触发且更亮更舒展、Toast弹簧缩放', type: 'feat' },
@@ -6557,6 +6613,7 @@
       const c = el.querySelector('.guest-check'); if (c) c.textContent = '';
     });
     updateGuestCount();
+    if (document.getElementById('guestSelModal')) renderGuestSelection();
   }
 
   function updateGuestCount() {
@@ -6566,6 +6623,62 @@
         ? `已选 ${adminGuestSelected.size} 位嘉宾（点卡片可取消）`
         : '尚未选择嘉宾，点任意卡片即可勾选';
     }
+    const viewBtn = document.getElementById('adminGuestViewBtn');
+    if (viewBtn) viewBtn.textContent = `👀 查看已选 (${adminGuestSelected.size})`;
+  }
+
+  // 把已选嘉宾汇总到一个弹窗里展示（管理视图「嘉宾一览」多选后调用）
+  function openGuestSelectionModal() {
+    if (adminGuestSelected.size === 0) { toast('还没有选择任何嘉宾'); return; }
+    renderGuestSelection();
+    toggleModal('guestSelModal', true);
+  }
+
+  function renderGuestSelection() {
+    const box = document.getElementById('guestSelList');
+    if (!box) return;
+    const ids = {};
+    adminGuestSelected.forEach(function (k) { ids[k] = true; });
+    const profs = (appState.profiles || []).filter(function (p) { return ids[String(p.id)]; });
+    profs.sort(function (a, b) { return (a._pos || 0) - (b._pos || 0); });
+    const cnt = document.getElementById('guestSelCount');
+    if (cnt) cnt.textContent = profs.length;
+    if (profs.length === 0) {
+      box.innerHTML = '<p style="padding:24px; text-align:center; color:var(--text-muted);">没有可显示的嘉宾</p>';
+      return;
+    }
+    box.innerHTML = profs.map(buildGuestSelHTML).join('');
+  }
+
+  function buildGuestSelHTML(item) {
+    const mediaList = item.mediaList || [];
+    const mainMedia = getMainMedia(mediaList);
+    let thumb;
+    if (mainMedia && mainMedia.type && mainMedia.type.startsWith('video')) {
+      thumb = `<video src="${mainMedia.url}" muted playsinline preload="metadata"></video>`;
+    } else if (mainMedia) {
+      thumb = `<img src="${mainMedia.url}" alt="${escapeHtml(item['姓名'] || '')}" loading="lazy" decoding="async">`;
+    } else {
+      thumb = `<img src="${placeholderDataURI('无图')}" alt="无图">`;
+    }
+    const ageTxt = item['年龄'] ? (String(item['年龄']).replace(/岁/g, '') + '岁') : '-';
+    return `
+      <div class="guest-sel-card" onclick="removeGuestFromSel(${item.id})" title="点此取消选择">
+        <div class="guest-thumb">${thumb}</div>
+        <div class="guest-info">
+          <div class="guest-name">${escapeHtml(item['姓名'] || '未填')} <span>(${escapeHtml(item['性别'] || '-')})</span> · ${ageTxt}</div>
+          <div class="guest-sub">${escapeHtml(item['国家/城市'] || '')} · ${escapeHtml(item['身高'] || '')} · ${escapeHtml(item['职业/学生'] || '')}</div>
+          <div class="guest-quote">“${escapeHtml(item['一句话介绍'] || '暂无简介')}”</div>
+        </div>
+        <button class="guest-sel-remove" type="button" aria-label="取消选择" onclick="event.stopPropagation(); removeGuestFromSel(${item.id})">✕</button>
+      </div>`;
+  }
+
+  // 从汇总弹窗里取消某位嘉宾的选择（同步更新底层「嘉宾一览」卡片的勾选态）
+  function removeGuestFromSel(id) {
+    const el = document.querySelector('.guest-chip[data-id="' + String(id) + '"]');
+    toggleGuestSelect(id, el);
+    renderGuestSelection();
   }
 
   function changeAdminPage(page) {
@@ -7352,21 +7465,37 @@
   (function initGlassFx() {
     // 指针跟随高光：卡片 / 顶栏 / 底部胶囊 / 弹窗 / 资料区 / 嘉宾卡片（仅 glass-mode）
     const GLASS_SURFACES = '.card, header, .bottom-tab, .modal, .profile-section, .guest-chip';
-    document.addEventListener('mousemove', function(e) {
-      if (!document.body.classList.contains('glass-mode')) return;
+    // 指针跟随高光：用 rAF 合并到每帧最多一次，且只更新「当前悬停」的单个元素，
+    // 离开时清掉上一元素的变量，避免 mousemove 每触发一次就重绘全站玻璃导致卡顿
+    let _gxEvt = null, _gxRAF = null, _gxSurf = null, _gxBtn = null;
+    function _gxFlush() {
+      _gxRAF = null;
+      const e = _gxEvt; if (!e) return;
       const surf = e.target.closest(GLASS_SURFACES);
+      if (surf !== _gxSurf) {
+        if (_gxSurf) { _gxSurf.style.removeProperty('--gx'); _gxSurf.style.removeProperty('--gy'); }
+        _gxSurf = surf || null;
+      }
       if (surf) {
         const r = surf.getBoundingClientRect();
         surf.style.setProperty('--gx', ((e.clientX - r.left) / r.width).toFixed(3));
         surf.style.setProperty('--gy', ((e.clientY - r.top) / r.height).toFixed(3));
       }
-      // 按钮/筛选器光晕
       const btn = e.target.closest('.btn, .tab-btn, .filter-btn');
+      if (btn !== _gxBtn) {
+        if (_gxBtn) { _gxBtn.style.removeProperty('--rx'); _gxBtn.style.removeProperty('--ry'); }
+        _gxBtn = btn || null;
+      }
       if (btn) {
         const r = btn.getBoundingClientRect();
         btn.style.setProperty('--rx', ((e.clientX - r.left) / r.width * 100).toFixed(1) + '%');
         btn.style.setProperty('--ry', ((e.clientY - r.top) / r.height * 100).toFixed(1) + '%');
       }
+    }
+    document.addEventListener('mousemove', function(e) {
+      if (!document.body.classList.contains('glass-mode')) return;
+      _gxEvt = e;
+      if (!_gxRAF) _gxRAF = requestAnimationFrame(_gxFlush);
     }, { passive: true });
 
     // 点击/触碰涟漪（pointerdown：鼠标和触摸都立即触发，无 300ms 延迟）
