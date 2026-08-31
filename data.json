@@ -1199,8 +1199,8 @@
       "生活习惯": "",
       "要求": "",
       "一句话介绍": "",
-      "updatedAt": 1788170226342,
-      "statusUpdatedAt": 1788170226342,
+      "updatedAt": 1788170239973,
+      "statusUpdatedAt": 1788170239973,
       "uploadDate": "2026-08-31",
       "createdAt": 1788170226342,
       "isPinned": false,
@@ -1208,7 +1208,7 @@
       "uploaderName": "管理员",
       "uploaderCode": "ADMIN",
       "uploaderUid": "super",
-      "status": "pending",
+      "status": "approved",
       "profileNo": "A045",
       "mediaList": []
     }
@@ -1236,6 +1236,12 @@
     "6.1.0"
   ],
   "adminLogs": [
+    {
+      "time": 1788170239974,
+      "actor": "超级管理员",
+      "op": "审核",
+      "desc": "通过新嘉宾「1」的审核，已公开显示"
+    },
     {
       "time": 1788168518498,
       "actor": "超级管理员",
