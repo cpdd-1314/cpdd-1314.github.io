@@ -1207,6 +1207,12 @@
   ],
   "adminLogs": [
     {
+      "time": 1788170840528,
+      "actor": "超级管理员",
+      "op": "运维",
+      "desc": "开启网站更新模式"
+    },
+    {
       "time": 1788170250061,
       "actor": "超级管理员",
       "op": "删除",
@@ -1791,5 +1797,6 @@
       "createdAt": 1788051015624
     }
   ],
-  "glassTheme": "forest"
+  "glassTheme": "forest",
+  "updateMode": true
 }
