@@ -69,11 +69,14 @@
       font-size: 13px;
       font-weight: 600;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: transform .12s cubic-bezier(.34,1.8,.64,1), background .15s ease, box-shadow .15s ease;
       display: inline-flex;
       align-items: center;
       gap: 6px;
+      user-select: none; -webkit-tap-highlight-color: transparent;
     }
+    .btn:active { transform: scale(0.94); }
+    .tab-btn:active, .filter-btn:active, .close-btn:active, .page-num:active, .thumb-item:active { transform: scale(0.92); }
 
     .btn-wechat { background: var(--wechat-green); color: white; }
     .btn-wechat:hover { background: var(--wechat-hover); }
@@ -262,10 +265,15 @@
     }
     .guest-chip.is-selected .guest-check { background: var(--primary); border-color: var(--primary); }
     .card:hover { transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0,0,0,0.06); }
-    .card-media-wrap { width: 100%; height: 260px; background: #000; position: relative; }
+    .card-media-wrap { width: 100%; height: 260px; background: #000; position: relative; overflow: hidden; }
     .card-media-wrap img, .card-media-wrap video {
       width: 100%; height: 100%; object-fit: cover;
+      transition: transform .45s cubic-bezier(.22,1,.36,1);
     }
+    .card:hover .card-media-wrap img,
+    .card:hover .card-media-wrap video { transform: scale(1.06); }
+    .media-viewer img, .media-viewer video { transition: transform .4s cubic-bezier(.22,1,.36,1); }
+    .media-viewer:hover img, .media-viewer:hover video { transform: scale(1.02); }
     /* 注册用户卡片：无头像时的首字母占位 */
     .user-avatar-fallback {
       width: 100%; height: 100%;
@@ -298,11 +306,31 @@
     }
     /* 加微信/进微信群弹窗与站内提示永远显示在最前（即使嘉宾详情弹窗开着） */
     #wechatModal, #groupModal, #customDialog { z-index: 200; }
+    /* 页面切换：淡入 + 轻微上滑（让 Tab 切换有"翻页"感） */
+    .tab-page { animation: tabIn .28s cubic-bezier(.22,1,.36,1) both; }
+    @keyframes tabIn {
+      from { opacity: 0; transform: translateY(18px) scale(.995); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* 卡片依次入场：比呼吸动画优先级高，进入完成后再恢复呼吸 */
+    .card.card-enter {
+      animation: cardEnter .46s cubic-bezier(.22,1,.36,1) both;
+      opacity: 0;
+    }
+    @keyframes cardEnter {
+      from { opacity: 0; transform: translateY(18px) scale(.96); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    body.glass-mode .card.card-enter { animation-name: cardEnter; }
+    body.glass-mode .card:not(.card-enter):nth-of-type(4n+1) { animation: glassFloatCard 5s ease-in-out infinite; }
+    body.glass-mode .card:not(.card-enter):nth-of-type(4n+3) { animation: glassFloatCard 6s ease-in-out infinite .8s; }
+
     /* 弹窗动态弹出 / 关闭动画（苹果风弹簧：淡入 + 放大 + 上浮；关闭反向收回） */
     .modal-overlay { animation: overlayIn .22s ease both; }
     .modal-overlay.closing { animation: overlayOut .2s ease both; }
-    .modal { animation: modalIn .32s cubic-bezier(.34,1.4,.5,1) both; }
-    .modal-overlay.closing .modal { animation: modalOut .24s cubic-bezier(.4,0,1,1) both; }
+    .modal { animation: modalIn .34s cubic-bezier(.32,1.4,.42,1) both; }
+    .modal-overlay.closing .modal { animation: modalOut .22s cubic-bezier(.4,0,1,1) both; }
     @keyframes overlayIn  { from { opacity: 0; } to { opacity: 1; } }
     @keyframes overlayOut { from { opacity: 1; } to { opacity: 0; } }
     @keyframes modalIn {
@@ -732,26 +760,26 @@
       opacity: .18; mix-blend-mode: overlay;
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
     }
-    .glass-blob { position: absolute; border-radius: 50%; will-change: transform; filter: blur(22px); }
+    .glass-blob { position: absolute; border-radius: 50%; will-change: transform; filter: blur(26px); }
     .glass-blob.b1 {
       width: 58vmax; height: 58vmax; left: -20vmax; top: -18vmax;
       background: radial-gradient(circle at 45% 45%, #6d28d9 0%, #8b5cf6 32%, #a78bfa 52%, rgba(167,139,250,0) 72%);
-      opacity: .72; animation: glassFloat1 24s ease-in-out infinite;
+      opacity: .38; animation: glassFloat1 24s ease-in-out infinite;
     }
     .glass-blob.b2 {
       width: 52vmax; height: 52vmax; right: -16vmax; top: -2vmax;
       background: radial-gradient(circle at 55% 45%, #be185d 0%, #ec4899 32%, #f472b6 52%, rgba(244,114,182,0) 72%);
-      opacity: .68; animation: glassFloat2 30s ease-in-out infinite;
+      opacity: .34; animation: glassFloat2 30s ease-in-out infinite;
     }
     .glass-blob.b3 {
       width: 56vmax; height: 56vmax; left: 2vmax; bottom: -26vmax;
       background: radial-gradient(circle at 48% 52%, #0e7490 0%, #06b6d4 32%, #67e8f9 52%, rgba(103,232,249,0) 72%);
-      opacity: .64; animation: glassFloat3 27s ease-in-out infinite;
+      opacity: .32; animation: glassFloat3 27s ease-in-out infinite;
     }
     .glass-blob.b4 {
       width: 42vmax; height: 42vmax; right: -8vmax; bottom: -8vmax;
       background: radial-gradient(circle at 50% 50%, #c2410c 0%, #f59e0b 34%, #fcd34d 54%, rgba(252,211,77,0) 74%);
-      opacity: .5; animation: glassFloat2 34s ease-in-out infinite reverse;
+      opacity: .26; animation: glassFloat2 34s ease-in-out infinite reverse;
     }
     @keyframes glassFloat1 {
       0%,100% { transform: translate3d(0,0,0) scale(1); }
@@ -787,10 +815,10 @@
     /* --- ② 材质变量：更透、更艳、更厚 --- */
     body.glass-mode {
       --bg: transparent;
-      --card-bg: rgba(255,255,255,.3);
-      --border: rgba(255,255,255,.72);
-      --text: #0b1220;
-      --text-muted: #33415c;
+      --card-bg: rgba(255,255,255,.62);
+      --border: rgba(255,255,255,.78);
+      --text: #0a1020;
+      --text-muted: #475569;
       background: transparent;
       /* 悬浮导航抬高，底部需要更多留白 */
       padding-bottom: 112px;
@@ -798,13 +826,13 @@
     @media (max-width: 768px) { body.glass-mode { padding-bottom: 104px; } }
 
     body.glass-mode {
-      /* 填充：更透更"湿"，让背后流动的色彩大面积透出来（iOS 26 的液态感来源） */
+      /* 填充：适度"湿"，保证背后色彩透出的同时文字/图片可读（手机上过曝是大忌） */
       --glass-fill: linear-gradient(135deg,
-          rgba(255,255,255,.24) 0%,
-          rgba(255,255,255,.11) 42%,
-          rgba(255,255,255,.05) 100%);
+          rgba(255,255,255,.52) 0%,
+          rgba(255,255,255,.30) 42%,
+          rgba(255,255,255,.18) 100%);
       /* 磨砂颗粒：叠在玻璃上，模拟真实玻璃表面的细微噪点（iOS 26 的"磨砂"质感） */
-      --glass-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='.4'/%3E%3C/svg%3E");
+      --glass-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='.22'/%3E%3C/svg%3E");
       /* 表面光泽：斜向一道更亮的反光 + 右下回亮 */
       --glass-sheen: linear-gradient(112deg,
           rgba(255,255,255,.55) 0%,
@@ -844,9 +872,9 @@
 
       /* 浮层：更厚、折射更强 */
       --glass-fill-strong: linear-gradient(135deg,
-          rgba(255,255,255,.52) 0%,
-          rgba(255,255,255,.28) 45%,
-          rgba(255,255,255,.2) 100%);
+          rgba(255,255,255,.72) 0%,
+          rgba(255,255,255,.48) 45%,
+          rgba(255,255,255,.34) 100%);
       --glass-sheen-strong: linear-gradient(112deg,
           rgba(255,255,255,.7) 0%,
           rgba(255,255,255,.34) 26%,
@@ -981,12 +1009,12 @@
     body.glass-mode .btn,
     body.glass-mode .tab-btn,
     body.glass-mode .filter-btn {
-      transition: transform .12s cubic-bezier(.22,1,.36,1), box-shadow .2s ease, filter .2s ease;
+      transition: transform .14s cubic-bezier(.34,1.8,.64,1), box-shadow .2s ease, filter .2s ease;
       position: relative; overflow: hidden; transform-style: preserve-3d;
     }
     body.glass-mode .btn:active,
     body.glass-mode .tab-btn:active,
-    body.glass-mode .filter-btn:active { transform: scale(0.94); }
+    body.glass-mode .filter-btn:active { transform: scale(0.92); }
     body.glass-mode .btn::after,
     body.glass-mode .tab-btn::after,
     body.glass-mode .filter-btn::after {
@@ -998,16 +1026,17 @@
     body.glass-mode .tab-btn:hover::after,
     body.glass-mode .filter-btn:hover::after { opacity: 1; }
 
-    /* 点击涟漪 */
+    /* 点击涟漪：更舒展、更亮，像 iOS 水波 */
     @keyframes glassRipple {
-      0% { transform: scale(0); opacity: .55; }
-      100% { transform: scale(4); opacity: 0; }
+      0% { transform: scale(0); opacity: .7; }
+      60% { opacity: .35; }
+      100% { transform: scale(5.5); opacity: 0; }
     }
     .glass-ripple {
       position: absolute; border-radius: 50%; pointer-events: none;
-      background: radial-gradient(circle, rgba(255,255,255,.55) 0%, rgba(255,255,255,0) 70%);
-      width: 80px; height: 80px; margin-left: -40px; margin-top: -40px;
-      animation: glassRipple .55s cubic-bezier(.22,1,.36,1) forwards;
+      background: radial-gradient(circle, rgba(255,255,255,.65) 0%, rgba(255,255,255,0) 72%);
+      width: 90px; height: 90px; margin-left: -45px; margin-top: -45px;
+      animation: glassRipple .65s cubic-bezier(.22,1,.36,1) forwards;
       z-index: 10;
     }
 
@@ -1016,10 +1045,8 @@
       0%,100% { transform: translateY(0); }
       50% { transform: translateY(-4px); }
     }
-    body.glass-mode .card:nth-of-type(4n+1) { animation: glassFloatCard 5s ease-in-out infinite; }
-    body.glass-mode .card:nth-of-type(4n+3) { animation: glassFloatCard 6s ease-in-out infinite .8s; }
 
-    /* 更强的全局模糊与折射（更磨砂、更液态） */
+    /* 全局模糊与折射：足够磨砂但不过曝，手机可读优先 */
     body.glass-mode .card,
     body.glass-mode .modal,
     body.glass-mode .profile-section,
@@ -1037,16 +1064,16 @@
     body.glass-mode .media-gallery,
     body.glass-mode .guest-chip,
     body.glass-mode .form-grid > div {
-      -webkit-backdrop-filter: blur(46px) saturate(320%) brightness(1.1) contrast(1.04);
-      backdrop-filter: blur(46px) saturate(320%) brightness(1.1) contrast(1.04);
+      -webkit-backdrop-filter: blur(42px) saturate(280%) brightness(1.02) contrast(1.02);
+      backdrop-filter: blur(42px) saturate(280%) brightness(1.02) contrast(1.02);
     }
     body.glass-mode .bottom-tab {
-      -webkit-backdrop-filter: blur(64px) saturate(340%) brightness(1.12) contrast(1.04);
-      backdrop-filter: blur(64px) saturate(340%) brightness(1.12) contrast(1.04);
+      -webkit-backdrop-filter: blur(56px) saturate(300%) brightness(1.03) contrast(1.02);
+      backdrop-filter: blur(56px) saturate(300%) brightness(1.03) contrast(1.02);
     }
     body.glass-mode header {
-      -webkit-backdrop-filter: blur(56px) saturate(320%) brightness(1.12) contrast(1.04);
-      backdrop-filter: blur(56px) saturate(320%) brightness(1.12) contrast(1.04);
+      -webkit-backdrop-filter: blur(48px) saturate(280%) brightness(1.03) contrast(1.02);
+      backdrop-filter: blur(48px) saturate(280%) brightness(1.03) contrast(1.02);
     }
 
     /* 背景色块增加一层流动极光 */
@@ -1086,8 +1113,8 @@
       background-clip: padding-box, padding-box, border-box;
       background-origin: padding-box, padding-box, border-box;
       border: 1px solid transparent;
-      -webkit-backdrop-filter: blur(48px) saturate(280%) brightness(1.08);
-      backdrop-filter: blur(48px) saturate(280%) brightness(1.08);
+      -webkit-backdrop-filter: blur(52px) saturate(300%) brightness(1.02);
+      backdrop-filter: blur(52px) saturate(300%) brightness(1.02);
       box-shadow:
         0 4px 14px rgba(30,27,75,.12),
         0 26px 64px rgba(30,27,75,.3),
@@ -1135,8 +1162,8 @@
       border: 1px solid transparent;
       border-radius: 28px;
       padding: 12px 16px;
-      -webkit-backdrop-filter: blur(38px) saturate(260%) brightness(1.07);
-      backdrop-filter: blur(38px) saturate(260%) brightness(1.07);
+      -webkit-backdrop-filter: blur(42px) saturate(280%) brightness(1.02);
+      backdrop-filter: blur(42px) saturate(280%) brightness(1.02);
       box-shadow:
         0 2px 8px rgba(30,27,75,.08),
         0 18px 46px rgba(30,27,75,.2),
@@ -1240,22 +1267,22 @@
       backdrop-filter: blur(14px) saturate(200%);
       box-shadow: inset 0 1.6px 1px rgba(255,255,255,.9);
     }
-    /* 嵌套在玻璃里的次级面板：必须比外层更透，否则变成"死白块" */
+    /* 嵌套在玻璃里的次级面板：保持一定透明但确保文字可读 */
     body.glass-mode .card-quote,
     body.glass-mode .modal-row,
     body.glass-mode .form-grid > div {
       background-color: transparent;
       background-image: linear-gradient(135deg,
-          rgba(255,255,255,.3) 0%,
-          rgba(255,255,255,.14) 55%,
-          rgba(255,255,255,.08) 100%);
-      border: 1px solid rgba(255,255,255,.55);
+          rgba(255,255,255,.45) 0%,
+          rgba(255,255,255,.24) 55%,
+          rgba(255,255,255,.14) 100%);
+      border: 1px solid rgba(255,255,255,.62);
       border-radius: 18px;
-      -webkit-backdrop-filter: blur(10px) saturate(170%);
-      backdrop-filter: blur(10px) saturate(170%);
+      -webkit-backdrop-filter: blur(14px) saturate(180%);
+      backdrop-filter: blur(14px) saturate(180%);
       box-shadow:
         inset 0 1.6px 1px rgba(255,255,255,.95),
-        inset 0 -1px 1px rgba(255,255,255,.26);
+        inset 0 -1px 1px rgba(255,255,255,.30);
     }
     body.glass-mode .card-quote { padding: 8px 12px; }
     body.glass-mode #versionWidget,
@@ -1264,10 +1291,19 @@
     body.glass-mode hr,
     body.glass-mode .modal-row { border-color: rgba(255,255,255,.7); }
 
+    /* 站内提示弹窗内容区：在玻璃模式下用半透明底色，避免死白/透明导致文字难读 */
+    body.glass-mode #customDialogMsg {
+      background: rgba(255,255,255,.35) !important;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.55);
+      -webkit-backdrop-filter: blur(12px) saturate(180%);
+      backdrop-filter: blur(12px) saturate(180%);
+    }
+
     body.glass-mode .modal-overlay {
-      -webkit-backdrop-filter: blur(14px) saturate(150%);
-      backdrop-filter: blur(14px) saturate(150%);
-      background: rgba(76,29,149,.2);
+      -webkit-backdrop-filter: blur(18px) saturate(160%);
+      backdrop-filter: blur(18px) saturate(160%);
+      background: rgba(15,23,42,.55);
     }
 
     /* ============================================================
@@ -1283,11 +1319,11 @@
         linear-gradient(165deg, #e0f2fe 0%, #ede9fe 40%, #ccfbf1 70%, #f0f9ff 100%);
     }
     body.glass-mode.glass-theme-aurora {
-      --glass-fill: linear-gradient(135deg, rgba(255,255,255,.30) 0%, rgba(255,255,255,.13) 42%, rgba(255,255,255,.06) 100%);
+      --glass-fill: linear-gradient(135deg, rgba(255,255,255,.58) 0%, rgba(255,255,255,.30) 42%, rgba(255,255,255,.18) 100%);
       --glass-sheen: linear-gradient(112deg, rgba(255,255,255,.58) 0%, rgba(255,255,255,.24) 24%, rgba(255,255,255,0) 44%, rgba(255,255,255,0) 62%, rgba(255,255,255,.18) 80%, rgba(255,255,255,.40) 100%);
       --glass-edge: linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(165,243,252,.95) 8%, rgba(255,255,255,.62) 18%, rgba(255,255,255,.10) 36%, rgba(255,255,255,0) 54%, rgba(255,255,255,.08) 68%, rgba(196,181,253,.85) 84%, rgba(255,255,255,.98) 100%);
       --glass-drop: 0 1px 2px rgba(15,23,42,.10), 0 10px 24px rgba(15,23,42,.14), 0 30px 64px rgba(15,23,42,.24);
-      --glass-fill-strong: linear-gradient(135deg, rgba(255,255,255,.50) 0%, rgba(255,255,255,.28) 45%, rgba(255,255,255,.20) 100%);
+      --glass-fill-strong: linear-gradient(135deg, rgba(255,255,255,.66) 0%, rgba(255,255,255,.42) 45%, rgba(255,255,255,.30) 100%);
       --glass-sheen-strong: linear-gradient(112deg, rgba(255,255,255,.72) 0%, rgba(255,255,255,.34) 26%, rgba(255,255,255,0) 46%, rgba(255,255,255,.28) 100%);
     }
     /* ② 落日霓虹：暖粉 + 橙黄 */
@@ -1300,11 +1336,11 @@
         linear-gradient(165deg, #fff7ed 0%, #fff1f2 35%, #fef3c7 68%, #fff7ed 100%);
     }
     body.glass-mode.glass-theme-sunset {
-      --glass-fill: linear-gradient(135deg, rgba(255,255,255,.28) 0%, rgba(255,255,255,.12) 42%, rgba(255,255,255,.05) 100%);
+      --glass-fill: linear-gradient(135deg, rgba(255,255,255,.44) 0%, rgba(255,255,255,.20) 42%, rgba(255,255,255,.10) 100%);
       --glass-sheen: linear-gradient(112deg, rgba(255,255,255,.60) 0%, rgba(255,255,255,.22) 24%, rgba(255,255,255,0) 44%, rgba(255,255,255,0) 62%, rgba(255,255,255,.16) 80%, rgba(255,255,255,.38) 100%);
       --glass-edge: linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(254,215,170,.95) 8%, rgba(255,255,255,.62) 18%, rgba(255,255,255,.10) 36%, rgba(255,255,255,0) 54%, rgba(255,255,255,.08) 68%, rgba(253,164,175,.85) 84%, rgba(255,255,255,.98) 100%);
       --glass-drop: 0 1px 2px rgba(60,20,20,.10), 0 10px 24px rgba(60,20,20,.14), 0 30px 64px rgba(60,20,20,.24);
-      --glass-fill-strong: linear-gradient(135deg, rgba(255,255,255,.48) 0%, rgba(255,255,255,.26) 45%, rgba(255,255,255,.18) 100%);
+      --glass-fill-strong: linear-gradient(135deg, rgba(255,255,255,.64) 0%, rgba(255,255,255,.40) 45%, rgba(255,255,255,.28) 100%);
       --glass-sheen-strong: linear-gradient(112deg, rgba(255,255,255,.70) 0%, rgba(255,255,255,.32) 26%, rgba(255,255,255,0) 46%, rgba(255,255,255,.26) 100%);
     }
     /* ③ 森系薄荷：绿 + 青 */
@@ -1317,11 +1353,11 @@
         linear-gradient(165deg, #f0fdf4 0%, #ecfdf5 35%, #f7fee7 65%, #f0fdfa 100%);
     }
     body.glass-mode.glass-theme-forest {
-      --glass-fill: linear-gradient(135deg, rgba(255,255,255,.30) 0%, rgba(255,255,255,.13) 42%, rgba(255,255,255,.06) 100%);
+      --glass-fill: linear-gradient(135deg, rgba(255,255,255,.58) 0%, rgba(255,255,255,.30) 42%, rgba(255,255,255,.18) 100%);
       --glass-sheen: linear-gradient(112deg, rgba(255,255,255,.58) 0%, rgba(255,255,255,.24) 24%, rgba(255,255,255,0) 44%, rgba(255,255,255,0) 62%, rgba(255,255,255,.18) 80%, rgba(255,255,255,.40) 100%);
       --glass-edge: linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(167,243,208,.95) 8%, rgba(255,255,255,.62) 18%, rgba(255,255,255,.10) 36%, rgba(255,255,255,0) 54%, rgba(255,255,255,.08) 68%, rgba(153,246,228,.85) 84%, rgba(255,255,255,.98) 100%);
       --glass-drop: 0 1px 2px rgba(12,40,30,.10), 0 10px 24px rgba(12,40,30,.14), 0 30px 64px rgba(12,40,30,.24);
-      --glass-fill-strong: linear-gradient(135deg, rgba(255,255,255,.50) 0%, rgba(255,255,255,.28) 45%, rgba(255,255,255,.20) 100%);
+      --glass-fill-strong: linear-gradient(135deg, rgba(255,255,255,.66) 0%, rgba(255,255,255,.42) 45%, rgba(255,255,255,.30) 100%);
       --glass-sheen-strong: linear-gradient(112deg, rgba(255,255,255,.72) 0%, rgba(255,255,255,.34) 26%, rgba(255,255,255,0) 46%, rgba(255,255,255,.28) 100%);
     }
     /* ④ 赛博霓虹：高饱和青/粉 */
@@ -1334,11 +1370,11 @@
         linear-gradient(165deg, #f8fafc 0%, #ecfeff 30%, #fdf2f8 60%, #eff6ff 100%);
     }
     body.glass-mode.glass-theme-cyber {
-      --glass-fill: linear-gradient(135deg, rgba(255,255,255,.26) 0%, rgba(255,255,255,.11) 42%, rgba(255,255,255,.04) 100%);
+      --glass-fill: linear-gradient(135deg, rgba(255,255,255,.42) 0%, rgba(255,255,255,.20) 42%, rgba(255,255,255,.10) 100%);
       --glass-sheen: linear-gradient(112deg, rgba(255,255,255,.64) 0%, rgba(255,255,255,.24) 22%, rgba(255,255,255,0) 42%, rgba(255,255,255,0) 64%, rgba(255,255,255,.20) 82%, rgba(255,255,255,.44) 100%);
       --glass-edge: linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(34,211,238,.95) 8%, rgba(255,255,255,.62) 18%, rgba(255,255,255,.10) 36%, rgba(255,255,255,0) 54%, rgba(255,255,255,.08) 68%, rgba(244,114,182,.85) 84%, rgba(255,255,255,.98) 100%);
       --glass-drop: 0 1px 2px rgba(20,10,40,.10), 0 10px 24px rgba(20,10,40,.16), 0 30px 64px rgba(20,10,40,.28);
-      --glass-fill-strong: linear-gradient(135deg, rgba(255,255,255,.46) 0%, rgba(255,255,255,.24) 45%, rgba(255,255,255,.16) 100%);
+      --glass-fill-strong: linear-gradient(135deg, rgba(255,255,255,.72) 0%, rgba(255,255,255,.48) 45%, rgba(255,255,255,.36) 100%);
       --glass-sheen-strong: linear-gradient(112deg, rgba(255,255,255,.74) 0%, rgba(255,255,255,.36) 26%, rgba(255,255,255,0) 46%, rgba(255,255,255,.30) 100%);
     }
     /* ⑤ 无敌优化：高可读 + 低功耗 + 更稳的白色玻璃 */
@@ -1353,11 +1389,11 @@
     body.glass-mode.glass-theme-invincible {
       --text: #081020;
       --text-muted: #374151;
-      --glass-fill: linear-gradient(135deg, rgba(255,255,255,.46) 0%, rgba(255,255,255,.22) 42%, rgba(255,255,255,.12) 100%);
+      --glass-fill: linear-gradient(135deg, rgba(255,255,255,.58) 0%, rgba(255,255,255,.30) 42%, rgba(255,255,255,.18) 100%);
       --glass-sheen: linear-gradient(112deg, rgba(255,255,255,.55) 0%, rgba(255,255,255,.20) 24%, rgba(255,255,255,0) 44%, rgba(255,255,255,0) 62%, rgba(255,255,255,.14) 80%, rgba(255,255,255,.34) 100%);
       --glass-edge: linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(241,245,249,.95) 8%, rgba(255,255,255,.72) 18%, rgba(255,255,255,.16) 36%, rgba(255,255,255,0) 54%, rgba(255,255,255,.12) 68%, rgba(226,232,240,.85) 84%, rgba(255,255,255,.98) 100%);
       --glass-drop: 0 1px 2px rgba(15,23,42,.12), 0 8px 18px rgba(15,23,42,.14), 0 22px 48px rgba(15,23,42,.22);
-      --glass-fill-strong: linear-gradient(135deg, rgba(255,255,255,.62) 0%, rgba(255,255,255,.38) 45%, rgba(255,255,255,.26) 100%);
+      --glass-fill-strong: linear-gradient(135deg, rgba(255,255,255,.72) 0%, rgba(255,255,255,.48) 45%, rgba(255,255,255,.36) 100%);
       --glass-sheen-strong: linear-gradient(112deg, rgba(255,255,255,.74) 0%, rgba(255,255,255,.36) 26%, rgba(255,255,255,0) 46%, rgba(255,255,255,.30) 100%);
     }
     body.glass-mode.glass-theme-invincible .card,
@@ -1416,7 +1452,7 @@
   <div class="glass-blob b4"></div>
 </div>
 
-<main id="tab-home">
+<main id="tab-home" class="tab-page">
 <div class="container">
   <header>
     <div class="title-group">
@@ -2387,6 +2423,38 @@
     if (typeof fn === 'function') fn();
   }
 
+  // 自定义输入框（替代浏览器 window.prompt），输入结果通过 onOk(value) 回调返回
+  let __customOnPromptOk = null;
+  function showPrompt(msg, defaultValue, onOk, title) {
+    resetDialogStyle();
+    __customOnPromptOk = onOk;
+    const titleEl = document.getElementById('customDialogTitle');
+    titleEl.textContent = title || '请输入';
+    titleEl.style.color = 'var(--text)';
+    const val = (defaultValue === undefined || defaultValue === null) ? '' : String(defaultValue);
+    document.getElementById('customDialogMsg').innerHTML =
+      '<div style="margin-bottom:10px;">' + escapeHtml(msg) + '</div>' +
+      '<input type="text" id="customPromptInput" value="' + escapeHtml(val) + '" ' +
+      'style="width:100%; padding:10px 12px; font-size:14px; border:1px solid var(--border); border-radius:10px; outline:none; box-sizing:border-box;" ' +
+      'onkeydown="if(event.key===\'Enter\')customPromptOk()">';
+    document.getElementById('customDialogBtns').innerHTML =
+      '<button class="btn btn-outline" style="flex:1;" onclick="closeCustomDialog(); __customOnPromptOk=null;">取消</button>' +
+      '<button class="btn btn-primary" style="flex:1; background:var(--danger);" onclick="customPromptOk()">确定</button>';
+    toggleModal('customDialog', true);
+    setTimeout(function () {
+      const input = document.getElementById('customPromptInput');
+      if (input) { input.focus(); input.select(); }
+    }, 60);
+  }
+  function customPromptOk() {
+    const input = document.getElementById('customPromptInput');
+    const value = input ? input.value.trim() : '';
+    const fn = __customOnPromptOk;
+    __customOnPromptOk = null;
+    closeCustomDialog();
+    if (typeof fn === 'function') fn(value);
+  }
+
   function closeCustomDialog() {
     toggleModal('customDialog', false);
     __customOnConfirm = null;
@@ -2398,8 +2466,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.9.9';
+  const APP_VERSION = '6.9.10';
   const CHANGELOG = [
+    { v: '6.9.10', d: '2026-08-31', note: '修复 Liquid Glass 过曝 + 全站弹窗彻底站内化 + 动画再升级：① 大幅降低背景色块透明度、提升卡片/弹窗填充不透明度、降低 brightness 到过曝线以下，文字与图片显示更清晰；② 修复品牌介绍/使用条款弹窗在玻璃模式下硬编码白色背景导致的"死白块"；③ 全面清查并替换剩余浏览器原生 confirm/prompt（删除投稿链接、封禁用户），现在所有弹窗100%走站内 customDialog；④ 动画增强——Tab切换淡入上滑、卡片翻页staggered依次入场、图片hover缩放、按钮elastic按压、涟漪改成pointerdown即时触发且更亮更舒展、Toast弹簧缩放', type: 'feat' },
     { v: '6.9.9', d: '2026-08-31', note: '弹窗与触碰全面苹果化：① 修复「弹窗像单独网页」——所有弹窗改为站点内的圆角卡片（详情弹窗在手机端变成从底部滑起的 iOS sheet），并补上开/关双向弹簧动画（淡入放大上浮 / 反向收回）；② 站内提示框(alert/confirm)也走同一套开合动画；③ 全站可点元素（按钮/卡片/标签/缩略图/分页/叉子/品牌卡片等）统一加苹果风按压反馈：按下轻缩 + 点击涟漪 + 触觉震动，状态切换（选中/勾选）也带弹簧过渡；④ Toast 改为带缩放的弹簧弹出', type: 'feat' },
     { v: '6.9.8', d: '2026-08-30', note: '修复玻璃模式显示异常并新增 5 套 Liquid Glass 风格：① 修复底部导航胶囊因 position 被覆盖成 relative 导致不会正常吸附的问题，恢复 fixed 定位；② 新增「🌈 流光幻彩 / ❄️ 冰川极光 / 🌇 落日霓虹 / 🌿 森系薄荷 / 🌃 赛博霓虹 / ⚡ 无敌优化」6 套主题，管理员可在「我的 → 管理面板」切换，风格随数据同步到所有访客；③ 「无敌优化」主题专门做高可读 + 低功耗：玻璃填充更实、关闭呼吸/扫光动画、降低 backdrop-filter 强度，长时间浏览更稳', type: 'feat' },
     { v: '6.9.7', d: '2026-08-30', note: '① 管理视图新增「📇 嘉宾一览」：紧凑列表展示所有已上线嘉宾——小头像图 + 姓名(性别) + 年龄 + 城市/身高/职业 + 一句话简介，点卡片即可勾选，选择可跨页累积并在底部显示「已选 N 位」、可一键清空；② Liquid Glass 升级到更贴近 iOS 26——玻璃更透更"湿"（填充透明度下调）、backdrop 模糊/饱和/对比度整体再拉高呈磨砂质感、新增玻璃表面磨砂颗粒层，并把"指针跟随高光"从卡片扩展到顶栏 / 底部胶囊导航 / 弹窗 / 资料区 / 嘉宾卡片，整片玻璃随手指滑动反光', type: 'feat' },
@@ -2695,7 +2764,12 @@
     const modal = dlg ? dlg.querySelector('.modal') : null;
     if (modal) modal.style.maxWidth = '560px';
     const msg = document.getElementById('customDialogMsg');
-    if (msg) { msg.style.maxHeight = '68vh'; msg.style.background = '#ffffff'; }
+    if (msg) {
+      msg.style.maxHeight = '68vh';
+      // 玻璃模式下不要硬编码白色背景，否则会变成死白块；交给 CSS 变量控制
+      if (!document.body.classList.contains('glass-mode')) msg.style.background = '#ffffff';
+      else msg.style.background = '';
+    }
   }
 
   function showChangelog() {
@@ -3750,13 +3824,17 @@
       if (!t) {
         t = document.createElement('div');
         t.id = '__toast';
-        t.style.cssText = 'position:fixed;left:50%;bottom:80px;transform:translateX(-50%);background:rgba(17,24,39,.92);color:#fff;padding:8px 16px;border-radius:999px;font-size:13px;z-index:99999;opacity:0;transition:opacity .2s;pointer-events:none;';
+        t.style.cssText = 'position:fixed;left:50%;bottom:80px;transform:translateX(-50%) scale(.92);background:rgba(17,24,39,.92);color:#fff;padding:8px 16px;border-radius:999px;font-size:13px;z-index:99999;opacity:0;transition:opacity .25s ease, transform .35s cubic-bezier(.34,1.4,.64,1);pointer-events:none;';
         document.body.appendChild(t);
       }
       t.textContent = msg;
       t.style.opacity = '1';
+      t.style.transform = 'translateX(-50%) scale(1)';
       clearTimeout(t.__timer);
-      t.__timer = setTimeout(() => { t.style.opacity = '0'; }, 1400);
+      t.__timer = setTimeout(() => {
+        t.style.opacity = '0';
+        t.style.transform = 'translateX(-50%) scale(.92)';
+      }, 1800);
     } catch (e) {}
   }
   function openSubmitLinkModal() {
@@ -3822,13 +3900,14 @@
       </div>`;
     }).join('');
   }
-  async function deleteSubmitLink(hash) {
-    if (!confirm('确定删除该投稿链接？')) return;
-    appState.submitLinks = (appState.submitLinks || []).filter(l => l.key !== hash);
-    delete window.__issuedKeys[hash];
-    try { await saveToGitHub(); } catch (e) { showAlert('保存失败：' + (e && e.message ? e.message : e)); return; }
-    renderSubmitLinkList();
-    showToast('已删除');
+  function deleteSubmitLink(hash) {
+    confirmAction('确定删除该投稿链接？删除后无法恢复。', async function () {
+      appState.submitLinks = (appState.submitLinks || []).filter(l => l.key !== hash);
+      delete window.__issuedKeys[hash];
+      try { await saveToGitHub(); } catch (e) { showAlert('保存失败：' + (e && e.message ? e.message : e)); return; }
+      renderSubmitLinkList();
+      showToast('已删除');
+    }, '🗑️ 删除投稿链接');
   }
   function publishAsUser() {
     const u = getCurrentUser();
@@ -4690,9 +4769,9 @@
     }
   }
   function banUser(uid) {
-    const reason = (window.prompt('封禁原因（可选，会记录在后台）：', '') || '').trim();
-    if (reason === null) return;   // 取消
-    setUserBanned(uid, true, reason);
+    showPrompt('封禁原因（可选，会记录在后台）：', '', function (reason) {
+      setUserBanned(uid, true, (reason || '').trim());
+    }, '🚫 封禁用户');
   }
   function unbanUser(uid) { setUserBanned(uid, false, ''); }
 
@@ -5478,7 +5557,16 @@
     // 管理视图 tab 不在底部导航里
     ['home', 'publish', 'inbox', 'profile', 'adminlist', 'sponsor'].forEach(function(t) {
       const el = document.getElementById('tab-' + t);
-      if (el) el.style.display = (t === name) ? 'block' : 'none';
+      if (!el) return;
+      if (t === name) {
+        el.style.display = 'block';
+        // 重新触发动画：先清掉 animation，reflow 后再加回来
+        el.style.animation = 'none';
+        void el.offsetWidth;
+        el.style.animation = '';
+      } else {
+        el.style.display = 'none';
+      }
     });
     document.querySelectorAll('.tab-btn').forEach(function(b) {
       b.classList.toggle('active', b.dataset.tab === name);
@@ -5940,6 +6028,17 @@
     const pageItems = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
     container.innerHTML = pageItems.map(buildCardHTML).join('');
+
+    // 卡片依次淡入（staggered entrance），翻页/搜索都有动画
+    container.querySelectorAll('.card').forEach(function(c, i) {
+      c.style.animationDelay = (i * 0.06) + 's';
+      c.classList.add('card-enter');
+      c.addEventListener('animationend', function onEnterEnd() {
+        c.classList.remove('card-enter');
+        c.style.animationDelay = '';
+        c.removeEventListener('animationend', onEnterEnd);
+      });
+    });
 
     // 渲染分页控件 + 更新待审核计数
     renderPagination(filteredTotal);
@@ -7044,8 +7143,8 @@
       }
     }, { passive: true });
 
-    // 点击涟漪（全局委托，覆盖所有可点元素；glass-mode 下更亮）
-    document.addEventListener('click', function(e) {
+    // 点击/触碰涟漪（pointerdown：鼠标和触摸都立即触发，无 300ms 延迟）
+    document.addEventListener('pointerdown', function(e) {
       const el = e.target.closest('.btn, .tab-btn, .filter-btn, .card, .guest-chip, .thumb-item, .close-btn, .share-btn, .page-num, .brand-feature, .notif-item, .publish-option, body.glass-mode .bottom-tab');
       if (!el) return;
       const rect = el.getBoundingClientRect();
