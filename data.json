@@ -1207,6 +1207,12 @@
   ],
   "adminLogs": [
     {
+      "time": 1788170974329,
+      "actor": "超级管理员",
+      "op": "外观主题",
+      "desc": "开启玻璃拟态（Liquid Glass）"
+    },
+    {
       "time": 1788170971871,
       "actor": "超级管理员",
       "op": "运维",
@@ -1792,7 +1798,7 @@
       "read": false
     }
   ],
-  "glassMode": false,
+  "glassMode": true,
   "submitLinks": [
     {
       "key": "skxxb2kp",
