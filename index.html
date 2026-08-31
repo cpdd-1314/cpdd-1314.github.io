@@ -916,6 +916,18 @@
     body.glass-mode .profile-section,
     body.glass-mode .brand-block,
     body.glass-mode .login-prompt { border-radius: 26px; }
+    /* brand-hero 在弹窗/页面中需要保持品牌渐变底，否则白字会在透明玻璃上消失 */
+    body.glass-mode .brand-hero {
+      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%) !important;
+      color: #fff !important;
+      text-shadow: 0 1px 2px rgba(0,0,0,.25);
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+      border: none;
+      box-shadow: 0 10px 30px rgba(79,70,229,.35), inset 0 1px 1px rgba(255,255,255,.4);
+    }
+    body.glass-mode .brand-hero .brand-name,
+    body.glass-mode .brand-hero .brand-slogan { color: #fff !important; }
     body.glass-mode .notif-item,
     body.glass-mode .publish-option,
     body.glass-mode .admin-action-row { border-radius: 22px; }
@@ -1293,11 +1305,26 @@
 
     /* 站内提示弹窗内容区：在玻璃模式下用半透明底色，避免死白/透明导致文字难读 */
     body.glass-mode #customDialogMsg {
-      background: rgba(255,255,255,.35) !important;
+      background: rgba(255,255,255,.42) !important;
       border-radius: 18px;
       border: 1px solid rgba(255,255,255,.55);
       -webkit-backdrop-filter: blur(12px) saturate(180%);
       backdrop-filter: blur(12px) saturate(180%);
+      padding: 16px 18px !important;
+    }
+    /* 品牌介绍弹窗里的内容块：加大间距、防止贴边 */
+    body.glass-mode #customDialogMsg .brand-block,
+    body.glass-mode #customDialogMsg .brand-hero {
+      margin-bottom: 16px;
+    }
+    body.glass-mode #customDialogMsg .brand-feature,
+    body.glass-mode #customDialogMsg .brand-step {
+      padding: 12px 14px;
+    }
+    /* 手机端弹窗内边距收紧，避免内容溢出 */
+    @media (max-width: 600px) {
+      body.glass-mode #customDialog .modal { padding: 18px 14px 16px !important; }
+      body.glass-mode #customDialogMsg { padding: 14px 14px !important; border-radius: 14px; }
     }
 
     body.glass-mode .modal-overlay {
@@ -1434,11 +1461,106 @@
     }
 
     /* 玻璃模式开关按钮 */
-    #glassModeBtn.on {
+    #glassModeBtn.on,
+    #updateModeBtn.on {
       background: linear-gradient(135deg, rgba(99,102,241,.16), rgba(217,70,239,.16));
       border-color: rgba(99,102,241,.55);
       color: var(--primary);
       font-weight: 600;
+    }
+
+    /* ===== 网站更新模式：动态横幅 ===== */
+    .update-bar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 950;
+      padding: 10px 16px;
+      display: flex; justify-content: center; align-items: center;
+      background: linear-gradient(90deg, #4f46e5, #7c3aed, #ec4899, #f59e0b, #4f46e5);
+      background-size: 300% 100%;
+      color: #fff;
+      font-size: 13px; font-weight: 600;
+      text-align: center;
+      box-shadow: 0 4px 20px rgba(79,70,229,.35);
+      animation: updateBarFlow 4s linear infinite, updateBarPulse 2s ease-in-out infinite;
+      transform: translateY(-100%); opacity: 0;
+      transition: transform .45s cubic-bezier(.22,1.36,.36,1), opacity .35s ease;
+      overflow: hidden;
+    }
+    .update-bar-glow {
+      position: absolute; inset: 0;
+      background: radial-gradient(circle at 20% 50%, rgba(255,255,255,.35) 0%, transparent 40%),
+                  radial-gradient(circle at 80% 50%, rgba(255,255,255,.25) 0%, transparent 35%);
+      animation: updateGlowMove 3.5s ease-in-out infinite;
+      pointer-events: none;
+    }
+    .update-bar-content {
+      position: relative; z-index: 2;
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 14px; border-radius: 999px;
+      background: rgba(255,255,255,.18);
+      border: 1px solid rgba(255,255,255,.35);
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    }
+    .update-bar-icon {
+      font-size: 17px;
+      display: inline-block;
+      animation: updateRocket 1.4s ease-in-out infinite;
+    }
+    .update-bar-text {
+      white-space: nowrap;
+      text-shadow: 0 1px 2px rgba(0,0,0,.25);
+      animation: updateTextShine 2.2s ease-in-out infinite;
+    }
+    .update-bar-dots::after {
+      content: '…';
+      display: inline-block;
+      animation: updateDots 1.5s steps(4, end) infinite;
+      width: 1.4em;
+    }
+    body.glass-mode .update-bar {
+      background: linear-gradient(90deg, rgba(99,102,241,.85), rgba(168,85,247,.85), rgba(236,72,153,.85), rgba(245,158,11,.85), rgba(99,102,241,.85));
+      background-size: 300% 100%;
+    }
+    body.glass-mode .update-bar-content {
+      background: rgba(255,255,255,.22);
+      border-color: rgba(255,255,255,.45);
+      box-shadow: 0 0 20px rgba(255,255,255,.15);
+    }
+    /* 有更新横幅时，header 与 main 内容都向下让位 */
+    body.update-mode-on header { top: 46px !important; }
+    body.update-mode-on .tab-page { padding-top: 46px !important; }
+    body.update-mode-on #floatWrap, body.update-mode-on #floatBall { bottom: calc(132px + 46px); }
+    @media (max-width: 600px) {
+      .update-bar { font-size: 12px; padding: 8px 10px; }
+      .update-bar-content { gap: 6px; padding: 4px 10px; }
+      body.update-mode-on header { top: 40px !important; }
+      body.update-mode-on .tab-page { padding-top: 40px !important; }
+    }
+    @keyframes updateBarFlow {
+      0% { background-position: 0% 50%; }
+      100% { background-position: 300% 50%; }
+    }
+    @keyframes updateBarPulse {
+      0%, 100% { box-shadow: 0 4px 20px rgba(79,70,229,.35); }
+      50% { box-shadow: 0 6px 28px rgba(236,72,153,.55); }
+    }
+    @keyframes updateGlowMove {
+      0%, 100% { transform: translateX(-20%); opacity: .6; }
+      50% { transform: translateX(20%); opacity: 1; }
+    }
+    @keyframes updateRocket {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      25% { transform: translateY(-2px) rotate(-6deg); }
+      75% { transform: translateY(-1px) rotate(4deg); }
+    }
+    @keyframes updateTextShine {
+      0%, 100% { opacity: 1; }
+      50% { opacity: .85; }
+    }
+    @keyframes updateDots {
+      0% { content: '…'; }
+      25% { content: ''; }
+      50% { content: '.'; }
+      75% { content: '..'; }
     }
   </style>
 </head>
@@ -1685,6 +1807,7 @@
         <button class="btn btn-outline admin-only" onclick="toggleModal('wechatConfigModal', true)">⚙️ 修改微信名片</button>
         <button class="btn btn-outline admin-only" onclick="openSubmitLinkModal()">📨 投稿链接</button>
         <button class="btn btn-outline admin-only" id="glassModeBtn" onclick="toggleGlassMode()">🪟 玻璃拟态：关</button>
+        <button class="btn btn-outline admin-only" id="updateModeBtn" onclick="toggleUpdateMode()">🚀 更新模式：关</button>
         <div class="admin-only" style="margin-top:2px;">
           <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:4px;">🎨 玻璃风格（仅管理员）</label>
           <select id="glassThemeSelect" class="glass-theme-select" onchange="setGlassTheme(this.value)">
@@ -2466,8 +2589,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.9.10';
+  const APP_VERSION = '6.9.11';
   const CHANGELOG = [
+    { v: '6.9.11', d: '2026-08-31', note: '修复品牌介绍弹窗在玻璃模式下顶部白字看不见 + 内容贴边溢出；新增「🚀 网站正在更新」动态横幅：管理员在「我的 → 管理面板」一键开启，全站访客同步看到顶部渐变流动、火箭旋转、文字闪烁、光脉动的升级提示，文字更温柔好听「网站正在焕新升级，更多精彩即将上线，敬请期待」', type: 'feat' },
     { v: '6.9.10', d: '2026-08-31', note: '修复 Liquid Glass 过曝 + 全站弹窗彻底站内化 + 动画再升级：① 大幅降低背景色块透明度、提升卡片/弹窗填充不透明度、降低 brightness 到过曝线以下，文字与图片显示更清晰；② 修复品牌介绍/使用条款弹窗在玻璃模式下硬编码白色背景导致的"死白块"；③ 全面清查并替换剩余浏览器原生 confirm/prompt（删除投稿链接、封禁用户），现在所有弹窗100%走站内 customDialog；④ 动画增强——Tab切换淡入上滑、卡片翻页staggered依次入场、图片hover缩放、按钮elastic按压、涟漪改成pointerdown即时触发且更亮更舒展、Toast弹簧缩放', type: 'feat' },
     { v: '6.9.9', d: '2026-08-31', note: '弹窗与触碰全面苹果化：① 修复「弹窗像单独网页」——所有弹窗改为站点内的圆角卡片（详情弹窗在手机端变成从底部滑起的 iOS sheet），并补上开/关双向弹簧动画（淡入放大上浮 / 反向收回）；② 站内提示框(alert/confirm)也走同一套开合动画；③ 全站可点元素（按钮/卡片/标签/缩略图/分页/叉子/品牌卡片等）统一加苹果风按压反馈：按下轻缩 + 点击涟漪 + 触觉震动，状态切换（选中/勾选）也带弹簧过渡；④ Toast 改为带缩放的弹簧弹出', type: 'feat' },
     { v: '6.9.8', d: '2026-08-30', note: '修复玻璃模式显示异常并新增 5 套 Liquid Glass 风格：① 修复底部导航胶囊因 position 被覆盖成 relative 导致不会正常吸附的问题，恢复 fixed 定位；② 新增「🌈 流光幻彩 / ❄️ 冰川极光 / 🌇 落日霓虹 / 🌿 森系薄荷 / 🌃 赛博霓虹 / ⚡ 无敌优化」6 套主题，管理员可在「我的 → 管理面板」切换，风格随数据同步到所有访客；③ 「无敌优化」主题专门做高可读 + 低功耗：玻璃填充更实、关闭呼吸/扫光动画、降低 backdrop-filter 强度，长时间浏览更稳', type: 'feat' },
@@ -2955,6 +3079,7 @@
     notifications: [],   // 站内通知 [{id, toUid, type, profileId, actorUid, actorName, text, time, read}]
     glassMode: false,    // 全站玻璃拟态主题开关（管理员控制，对所有访客生效）
     glassTheme: 'default', // 玻璃风格：default / aurora / sunset / forest / cyber / invincible
+    updateMode: false,   // 更新模式：开启后全站显示「网站正在升级」动态横幅
     submitLinks: []      // 投稿链接 [{key:hash, maxUses, used, note, createdAt}]；访客须凭有效链接(?k=)才能提交
   };
 
@@ -3309,7 +3434,7 @@
   // 业务标量设置（玻璃模式/微信号/版本信息等）以本地为准。
   function mergeStateSafe(base, local) {
     const out = JSON.parse(JSON.stringify(base || {}));
-    const scalars = ['glassMode', 'glassTheme', 'wechat', 'version', 'hideVersionInfo', 'nextProfileNo'];
+    const scalars = ['glassMode', 'glassTheme', 'updateMode', 'wechat', 'version', 'hideVersionInfo', 'nextProfileNo'];
     scalars.forEach(function (k) { if (local[k] !== undefined) out[k] = local[k]; });
     if (Array.isArray(local.hiddenVersions)) out.hiddenVersions = local.hiddenVersions;
     if (Array.isArray(local.staffs)) out.staffs = local.staffs;
@@ -3619,6 +3744,68 @@
     if (btn) {
       btn.classList.toggle('on', on);
       btn.textContent = on ? '🪟 玻璃拟态：开' : '🪟 玻璃拟态：关';
+    }
+    applyUpdateMode();
+  }
+
+  // ===== 更新模式（管理员开关，开启后全站显示动态升级横幅） =====
+  function applyUpdateMode() {
+    let bar = document.getElementById('updateModeBar');
+    const on = appState.updateMode === true;
+    document.body.classList.toggle('update-mode-on', on);
+    if (!on) {
+      if (bar) { bar.style.opacity = '0'; bar.style.transform = 'translateY(-100%)'; setTimeout(function () { if (bar && bar.parentNode) bar.parentNode.removeChild(bar); }, 320); }
+      const btn = document.getElementById('updateModeBtn');
+      if (btn) { btn.classList.remove('on'); btn.textContent = '🚀 更新模式：关'; }
+      return;
+    }
+    if (!bar) {
+      bar = document.createElement('div');
+      bar.id = 'updateModeBar';
+      bar.className = 'update-bar';
+      bar.innerHTML = `
+        <div class="update-bar-glow"></div>
+        <div class="update-bar-content">
+          <span class="update-bar-icon">🚀</span>
+          <span class="update-bar-text">网站正在焕新升级，更多精彩即将上线，敬请期待</span>
+          <span class="update-bar-dots"></span>
+        </div>
+      `;
+      document.body.insertBefore(bar, document.body.firstChild);
+    }
+    // 确保在 header 之上； glass 模式下 bar 自带玻璃材质
+    bar.style.opacity = '1';
+    bar.style.transform = 'translateY(0)';
+    const btn = document.getElementById('updateModeBtn');
+    if (btn) { btn.classList.add('on'); btn.textContent = '🚀 更新模式：开'; }
+  }
+
+  // 管理员切换更新模式（写入远端，所有访客同步）
+  async function toggleUpdateMode() {
+    if (!isSuper() && !isStaff()) { showAlert('只有管理员可以开启更新模式'); return; }
+    const btn = document.getElementById('updateModeBtn');
+    const target = appState.updateMode !== true;
+    if (btn) { btn.disabled = true; btn.textContent = target ? '开启中…' : '关闭中…'; }
+    try {
+      await patchRemoteState(function (base) {
+        base.updateMode = target;
+        const ident = getCurrentIdentity();
+        const actor = ident ? (ident.type === 'super' ? '超级管理员' : (ident.name || '内部管理员')) : '管理员';
+        if (!Array.isArray(base.adminLogs)) base.adminLogs = [];
+        base.adminLogs.unshift({
+          time: Date.now(), actor, op: '运维',
+          desc: (target ? '开启' : '关闭') + '网站更新模式'
+        });
+        if (base.adminLogs.length > 200) base.adminLogs.length = 200;
+      }, 'update mode ' + (target ? 'on' : 'off'));
+      appState.updateMode = target;
+      applyUpdateMode();
+      toast(target ? '🚀 更新模式已开启' : '更新模式已关闭');
+    } catch (err) {
+      showAlert('❌ 切换失败：' + err.message);
+      applyUpdateMode();
+    } finally {
+      if (btn) btn.disabled = false;
     }
   }
 
@@ -4458,6 +4645,7 @@
       if (Array.isArray(data.notifications)) appState.notifications = data.notifications;
       if (typeof data.glassMode === 'boolean') appState.glassMode = data.glassMode;
       if (typeof data.glassTheme === 'string') appState.glassTheme = data.glassTheme;
+      if (typeof data.updateMode === 'boolean') appState.updateMode = data.updateMode;
       if (Array.isArray(data.submitLinks)) appState.submitLinks = data.submitLinks;
       // 兼容老数据：v6.9.4 起的审核状态粘性依赖 statusUpdatedAt；旧资料没有该字段时
       // 退化成 createdAt 比较，并发合并可能把已通过的审核打回 pending。这里在加载时补默认时间戳。
@@ -4476,6 +4664,7 @@
     }
     updateWechatUI();
     applyGlassMode();     // 玻璃拟态开关（管理员控制，随数据一起下发）
+    applyUpdateMode();    // 更新模式横幅（管理员控制，随数据一起下发）
     applySubmitKeyFromUrl();   // 解析 ?k= 投稿链接，决定是否解锁访客提交
     // 刷新后恢复：页码/搜索/筛选/排序（在渲染前设置，renderCards 用恢复的状态出页）
     restorePageState();
@@ -4541,7 +4730,7 @@
     try {
       const sig = JSON.stringify([
         d.profiles, d.users, d.staffs, d.submitLinks, d.notifications,
-        d.glassMode, d.glassTheme, d.wechat, d.version, d.hideVersionInfo, d.nextProfileNo
+        d.glassMode, d.glassTheme, d.updateMode, d.wechat, d.version, d.hideVersionInfo, d.nextProfileNo
       ]);
       let h = 0;
       for (let i = 0; i < sig.length; i++) h = (h * 31 + sig.charCodeAt(i)) | 0;
@@ -4596,6 +4785,7 @@
       if (Array.isArray(data.notifications)) appState.notifications = data.notifications;
       if (typeof data.glassMode === 'boolean') appState.glassMode = data.glassMode;
       if (typeof data.glassTheme === 'string') appState.glassTheme = data.glassTheme;
+      if (typeof data.updateMode === 'boolean') appState.updateMode = data.updateMode;
       if (Array.isArray(data.submitLinks)) appState.submitLinks = data.submitLinks;
       __lastSyncSig = sig;
       // 被封号的当前登录用户立即踢下线（多端实时生效）
@@ -4611,6 +4801,7 @@
       const editing = document.getElementById('formModal') && document.getElementById('formModal').style.display === 'flex';
       updateWechatUI();
       applyGlassMode();
+      applyUpdateMode();
       refreshIdentityUI();
       refreshUserUI();
       updateInboxBadge();
