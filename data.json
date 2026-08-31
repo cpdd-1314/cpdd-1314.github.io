@@ -1207,6 +1207,12 @@
   ],
   "adminLogs": [
     {
+      "time": 1788168518498,
+      "actor": "超级管理员",
+      "op": "外观主题",
+      "desc": "切换玻璃风格为「forest」"
+    },
+    {
       "time": 1788136299086,
       "actor": "超级管理员",
       "op": "外观主题",
@@ -1773,5 +1779,5 @@
       "createdAt": 1788051015624
     }
   ],
-  "glassTheme": "default"
+  "glassTheme": "forest"
 }
