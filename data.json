@@ -1207,6 +1207,12 @@
   ],
   "adminLogs": [
     {
+      "time": 1788198594411,
+      "actor": "超级管理员",
+      "op": "外观主题",
+      "desc": "切换玻璃风格为「invincible」"
+    },
+    {
       "time": 1788198590587,
       "actor": "超级管理员",
       "op": "外观主题",
@@ -1864,6 +1870,6 @@
       "createdAt": 1788051015624
     }
   ],
-  "glassTheme": "default",
+  "glassTheme": "invincible",
   "updateMode": true
 }
