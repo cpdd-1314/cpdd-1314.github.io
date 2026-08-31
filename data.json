@@ -1207,6 +1207,12 @@
   ],
   "adminLogs": [
     {
+      "time": 1788136294974,
+      "actor": "超级管理员",
+      "op": "外观主题",
+      "desc": "切换玻璃风格为「cyber」"
+    },
+    {
       "time": 1788136286141,
       "actor": "超级管理员",
       "op": "外观主题",
@@ -1761,5 +1767,5 @@
       "createdAt": 1788051015624
     }
   ],
-  "glassTheme": "aurora"
+  "glassTheme": "cyber"
 }
