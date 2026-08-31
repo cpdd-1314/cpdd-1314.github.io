@@ -1469,98 +1469,96 @@
       font-weight: 600;
     }
 
-    /* ===== 网站更新模式：动态横幅 ===== */
-    .update-bar {
-      position: fixed; top: 0; left: 0; right: 0; z-index: 950;
-      padding: 10px 16px;
-      display: flex; justify-content: center; align-items: center;
-      background: linear-gradient(90deg, #4f46e5, #7c3aed, #ec4899, #f59e0b, #4f46e5);
+    /* ===== 网站更新模式：全屏维护遮罩（普通用户功能拦截 + 炫酷动画） ===== */
+    .update-overlay {
+      position: fixed; inset: 0; z-index: 100000;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; color: #fff; overflow: hidden; padding: 24px;
+      background: rgba(8, 10, 30, .55);
+      -webkit-backdrop-filter: blur(26px) saturate(1.4);
+      backdrop-filter: blur(26px) saturate(1.4);
+      opacity: 0; transform: scale(1.04);
+      transition: opacity .5s ease, transform .6s cubic-bezier(.22, 1, .36, 1);
+      font-family: inherit;
+    }
+    .update-overlay.show { opacity: 1; transform: scale(1); }
+    .update-overlay.closing { opacity: 0; transform: scale(1.06); transition: opacity .45s ease, transform .5s cubic-bezier(.4, 0, .2, 1); }
+    /* 流动极光背景 */
+    .update-aurora { position: absolute; border-radius: 50%; filter: blur(60px); opacity: .55; mix-blend-mode: screen; pointer-events: none; }
+    .update-aurora.a1 { width: 60vmax; height: 60vmax; left: -10vmax; top: -15vmax; background: radial-gradient(circle, #6366f1, transparent 60%); animation: updateDrift1 14s ease-in-out infinite; }
+    .update-aurora.a2 { width: 55vmax; height: 55vmax; right: -12vmax; top: 5vmax; background: radial-gradient(circle, #ec4899, transparent 60%); animation: updateDrift2 17s ease-in-out infinite; }
+    .update-aurora.a3 { width: 50vmax; height: 50vmax; left: 20vmax; bottom: -20vmax; background: radial-gradient(circle, #22d3ee, transparent 60%); animation: updateDrift3 20s ease-in-out infinite; }
+    /* 星点 */
+    .update-stars { position: absolute; inset: 0; pointer-events: none;
+      background-image:
+        radial-gradient(1.5px 1.5px at 20% 30%, rgba(255,255,255,.9), transparent),
+        radial-gradient(1.5px 1.5px at 70% 20%, rgba(255,255,255,.7), transparent),
+        radial-gradient(1px 1px at 40% 70%, rgba(255,255,255,.8), transparent),
+        radial-gradient(1px 1px at 85% 60%, rgba(255,255,255,.6), transparent),
+        radial-gradient(1.5px 1.5px at 60% 85%, rgba(255,255,255,.7), transparent),
+        radial-gradient(1px 1px at 15% 80%, rgba(255,255,255,.6), transparent);
+      animation: updateTwinkle 3.5s ease-in-out infinite; }
+    /* 中央玻璃卡 */
+    .update-card {
+      position: relative; z-index: 3;
+      display: flex; flex-direction: column; align-items: center; gap: 18px;
+      padding: 40px 34px; border-radius: 28px; max-width: 460px; width: 100%;
+      background: rgba(255, 255, 255, .10);
+      border: 1px solid rgba(255, 255, 255, .22);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, .4), inset 0 1px 0 rgba(255, 255, 255, .25);
+      -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
+      animation: updateCardIn .7s cubic-bezier(.22, 1, .36, 1) both;
+    }
+    /* 轨道环 + 火箭 */
+    .update-orbit { position: relative; width: 120px; height: 120px; display: grid; place-items: center; margin-bottom: 4px; }
+    .update-ring { position: absolute; border-radius: 50%; border: 2px solid transparent; }
+    .update-ring.r1 { inset: 0; border-top-color: rgba(99, 102, 241, .9); border-right-color: rgba(99, 102, 241, .35); animation: updateSpin 3.2s linear infinite; }
+    .update-ring.r2 { inset: 14px; border-bottom-color: rgba(236, 72, 153, .9); border-left-color: rgba(236, 72, 153, .35); animation: updateSpin 4.6s linear infinite reverse; }
+    .update-ring.r3 { inset: 30px; border-top-color: rgba(34, 211, 238, .85); animation: updateSpin 2.4s linear infinite; }
+    .update-rocket { font-size: 46px; filter: drop-shadow(0 6px 14px rgba(0, 0, 0, .4)); animation: updateRocketBob 2.4s ease-in-out infinite; }
+    .update-title {
+      margin: 0; font-size: 30px; font-weight: 800; letter-spacing: 1px; line-height: 1.25;
+      background: linear-gradient(90deg, #c7d2fe, #f0abfc, #a5f3fc, #c7d2fe);
       background-size: 300% 100%;
-      color: #fff;
-      font-size: 13px; font-weight: 600;
-      text-align: center;
-      box-shadow: 0 4px 20px rgba(79,70,229,.35);
-      animation: updateBarFlow 4s linear infinite, updateBarPulse 2s ease-in-out infinite;
-      transform: translateY(-100%); opacity: 0;
-      transition: transform .45s cubic-bezier(.22,1.36,.36,1), opacity .35s ease;
-      overflow: hidden;
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+      animation: updateShimmer 4s linear infinite;
+      text-shadow: 0 2px 30px rgba(168, 85, 247, .3);
     }
-    .update-bar-glow {
-      position: absolute; inset: 0;
-      background: radial-gradient(circle at 20% 50%, rgba(255,255,255,.35) 0%, transparent 40%),
-                  radial-gradient(circle at 80% 50%, rgba(255,255,255,.25) 0%, transparent 35%);
-      animation: updateGlowMove 3.5s ease-in-out infinite;
-      pointer-events: none;
-    }
-    .update-bar-content {
-      position: relative; z-index: 2;
-      display: inline-flex; align-items: center; gap: 8px;
-      padding: 6px 14px; border-radius: 999px;
-      background: rgba(255,255,255,.18);
-      border: 1px solid rgba(255,255,255,.35);
-      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-    }
-    .update-bar-icon {
-      font-size: 17px;
-      display: inline-block;
-      animation: updateRocket 1.4s ease-in-out infinite;
-    }
-    .update-bar-text {
-      white-space: nowrap;
-      text-shadow: 0 1px 2px rgba(0,0,0,.25);
-      animation: updateTextShine 2.2s ease-in-out infinite;
-    }
-    .update-bar-dots::after {
-      content: '…';
-      display: inline-block;
-      animation: updateDots 1.5s steps(4, end) infinite;
-      width: 1.4em;
-    }
-    body.glass-mode .update-bar {
-      background: linear-gradient(90deg, rgba(99,102,241,.85), rgba(168,85,247,.85), rgba(236,72,153,.85), rgba(245,158,11,.85), rgba(99,102,241,.85));
-      background-size: 300% 100%;
-    }
-    body.glass-mode .update-bar-content {
-      background: rgba(255,255,255,.22);
-      border-color: rgba(255,255,255,.45);
-      box-shadow: 0 0 20px rgba(255,255,255,.15);
-    }
-    /* 有更新横幅时，header 与 main 内容都向下让位 */
-    body.update-mode-on header { top: 46px !important; }
-    body.update-mode-on .tab-page { padding-top: 46px !important; }
-    body.update-mode-on #floatWrap, body.update-mode-on #floatBall { bottom: calc(132px + 46px); }
+    .update-sub { margin: 0; font-size: 15px; line-height: 1.7; color: rgba(255, 255, 255, .82); }
+    .update-progress { width: 100%; height: 8px; border-radius: 999px; background: rgba(255, 255, 255, .14); overflow: hidden; }
+    .update-progress-bar { height: 100%; width: 42%; border-radius: 999px; background: linear-gradient(90deg, #6366f1, #ec4899, #22d3ee); animation: updateProgress 2.4s ease-in-out infinite; }
+    .update-status { font-size: 13px; color: rgba(255, 255, 255, .7); letter-spacing: .5px; }
+    .update-dots::after { content: '…'; display: inline-block; animation: updateDots 1.5s steps(4, end) infinite; width: 1.4em; }
+    .update-foot { position: absolute; bottom: 22px; left: 0; right: 0; z-index: 3; font-size: 12px; color: rgba(255, 255, 255, .55); }
+    /* 管理员控制（仅管理员可见，普通用户被整屏拦截无法操作） */
+    .update-overlay:not(.admin) .update-admin { display: none; }
+    .update-admin { position: absolute; top: 18px; right: 18px; z-index: 5; display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+    .update-admin-btn { font-family: inherit; font-size: 13px; font-weight: 600; color: #fff; cursor: pointer; padding: 9px 16px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, .35); background: rgba(255, 255, 255, .14); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); transition: transform .15s ease, background .2s ease; }
+    .update-admin-btn:hover { background: rgba(255, 255, 255, .24); }
+    .update-admin-btn:active { transform: scale(.94); }
+    .update-admin-btn.ghost { background: rgba(0, 0, 0, .18); }
+    /* 管理员「预览网站」时本地隐藏遮罩，可照常操作后台 */
+    body.update-preview #updateOverlay { display: none; }
+    .update-preview-pill { position: fixed; right: 16px; bottom: 16px; z-index: 100001; display: none; align-items: center; gap: 6px; font-size: 13px; color: #fff; cursor: pointer; padding: 10px 16px; border-radius: 999px; background: rgba(17, 24, 39, .85); border: 1px solid rgba(255, 255, 255, .2); box-shadow: 0 8px 24px rgba(0, 0, 0, .4); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+    .update-preview-pill b { color: #f0abfc; }
     @media (max-width: 600px) {
-      .update-bar { font-size: 12px; padding: 8px 10px; }
-      .update-bar-content { gap: 6px; padding: 4px 10px; }
-      body.update-mode-on header { top: 40px !important; }
-      body.update-mode-on .tab-page { padding-top: 40px !important; }
+      .update-card { padding: 30px 22px; border-radius: 22px; }
+      .update-title { font-size: 24px; }
+      .update-admin { top: 12px; right: 12px; left: 12px; justify-content: center; }
+      .update-admin-btn { flex: 1 1 auto; }
     }
-    @keyframes updateBarFlow {
-      0% { background-position: 0% 50%; }
-      100% { background-position: 300% 50%; }
-    }
-    @keyframes updateBarPulse {
-      0%, 100% { box-shadow: 0 4px 20px rgba(79,70,229,.35); }
-      50% { box-shadow: 0 6px 28px rgba(236,72,153,.55); }
-    }
-    @keyframes updateGlowMove {
-      0%, 100% { transform: translateX(-20%); opacity: .6; }
-      50% { transform: translateX(20%); opacity: 1; }
-    }
-    @keyframes updateRocket {
-      0%, 100% { transform: translateY(0) rotate(0deg); }
-      25% { transform: translateY(-2px) rotate(-6deg); }
-      75% { transform: translateY(-1px) rotate(4deg); }
-    }
-    @keyframes updateTextShine {
-      0%, 100% { opacity: 1; }
-      50% { opacity: .85; }
-    }
-    @keyframes updateDots {
-      0% { content: '…'; }
-      25% { content: ''; }
-      50% { content: '.'; }
-      75% { content: '..'; }
+    @keyframes updateDrift1 { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(8vmax, 6vmax) scale(1.15); } }
+    @keyframes updateDrift2 { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(-7vmax, 5vmax) scale(1.1); } }
+    @keyframes updateDrift3 { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(4vmax, -6vmax) scale(1.2); } }
+    @keyframes updateTwinkle { 0%, 100% { opacity: .8; } 50% { opacity: .4; } }
+    @keyframes updateSpin { to { transform: rotate(360deg); } }
+    @keyframes updateRocketBob { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-8px) rotate(-6deg); } }
+    @keyframes updateShimmer { 0% { background-position: 0% 50%; } 100% { background-position: 300% 50%; } }
+    @keyframes updateProgress { 0% { transform: translateX(-120%); } 100% { transform: translateX(280%); } }
+    @keyframes updateCardIn { 0% { opacity: 0; transform: translateY(24px) scale(.96); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
+    @keyframes updateDots { 0% { content: '…'; } 25% { content: ''; } 50% { content: '.'; } 75% { content: '..'; } }
+    @media (prefers-reduced-motion: reduce) {
+      .update-aurora, .update-stars, .update-ring, .update-rocket, .update-title, .update-progress-bar, .update-dots::after { animation: none !important; }
     }
   </style>
 </head>
@@ -2589,8 +2587,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.9.11';
+  const APP_VERSION = '6.9.12';
   const CHANGELOG = [
+    { v: '6.9.12', d: '2026-08-31', note: '「网站正在更新」升级为全屏维护模式 + 普通用户功能拦截 + 动画拉满：① 开启后整站被全屏玻璃维护遮罩覆盖（极光流动背景 + 星点闪烁 + 中央玻璃卡「轨道环 + 漂浮火箭」+ 流光标题「网站正在焕新升级」+ 来回扫光的进度条 + 跳动省略号），普通用户被遮罩拦截无法点任何按钮/卡片/导航（看得到模糊的网站但碰不了），真正「更新中不可用」；② 管理员专属——遮罩右上角出现「✕ 退出更新模式」与「👁 预览网站（绕过维护页）」：前者一键关掉维护，后者本地隐藏遮罩让你照常进后台改东西，右下角悬浮「维护预览中·退出预览」可随时回来；③ 流程优化：维护遮罩淡入缩放登场、关闭淡出，不再像旧版只推下 46px 顶栏；④ 动画更牛，并尊重系统「减少动态效果」偏好自动降级', type: 'feat' },
     { v: '6.9.11', d: '2026-08-31', note: '修复品牌介绍弹窗在玻璃模式下顶部白字看不见 + 内容贴边溢出；新增「🚀 网站正在更新」动态横幅：管理员在「我的 → 管理面板」一键开启，全站访客同步看到顶部渐变流动、火箭旋转、文字闪烁、光脉动的升级提示，文字更温柔好听「网站正在焕新升级，更多精彩即将上线，敬请期待」', type: 'feat' },
     { v: '6.9.10', d: '2026-08-31', note: '修复 Liquid Glass 过曝 + 全站弹窗彻底站内化 + 动画再升级：① 大幅降低背景色块透明度、提升卡片/弹窗填充不透明度、降低 brightness 到过曝线以下，文字与图片显示更清晰；② 修复品牌介绍/使用条款弹窗在玻璃模式下硬编码白色背景导致的"死白块"；③ 全面清查并替换剩余浏览器原生 confirm/prompt（删除投稿链接、封禁用户），现在所有弹窗100%走站内 customDialog；④ 动画增强——Tab切换淡入上滑、卡片翻页staggered依次入场、图片hover缩放、按钮elastic按压、涟漪改成pointerdown即时触发且更亮更舒展、Toast弹簧缩放', type: 'feat' },
     { v: '6.9.9', d: '2026-08-31', note: '弹窗与触碰全面苹果化：① 修复「弹窗像单独网页」——所有弹窗改为站点内的圆角卡片（详情弹窗在手机端变成从底部滑起的 iOS sheet），并补上开/关双向弹簧动画（淡入放大上浮 / 反向收回）；② 站内提示框(alert/confirm)也走同一套开合动画；③ 全站可点元素（按钮/卡片/标签/缩略图/分页/叉子/品牌卡片等）统一加苹果风按压反馈：按下轻缩 + 点击涟漪 + 触觉震动，状态切换（选中/勾选）也带弹簧过渡；④ Toast 改为带缩放的弹簧弹出', type: 'feat' },
@@ -3079,7 +3078,7 @@
     notifications: [],   // 站内通知 [{id, toUid, type, profileId, actorUid, actorName, text, time, read}]
     glassMode: false,    // 全站玻璃拟态主题开关（管理员控制，对所有访客生效）
     glassTheme: 'default', // 玻璃风格：default / aurora / sunset / forest / cyber / invincible
-    updateMode: false,   // 更新模式：开启后全站显示「网站正在升级」动态横幅
+    updateMode: false,   // 更新模式：开启后全屏维护遮罩覆盖整站，普通用户无法操作任何功能；管理员可在遮罩上「退出更新模式」或「预览网站」
     submitLinks: []      // 投稿链接 [{key:hash, maxUses, used, note, createdAt}]；访客须凭有效链接(?k=)才能提交
   };
 
@@ -3749,35 +3748,71 @@
   }
 
   // ===== 更新模式（管理员开关，开启后全站显示动态升级横幅） =====
+  let _updatePreviewPill = null;
+  // ===== 更新模式（管理员开关）：全屏维护遮罩 + 普通用户功能拦截 =====
   function applyUpdateMode() {
-    let bar = document.getElementById('updateModeBar');
     const on = appState.updateMode === true;
     document.body.classList.toggle('update-mode-on', on);
+    const btn = document.getElementById('updateModeBtn');
+    if (btn) { btn.classList.toggle('on', on); btn.textContent = on ? '🚀 更新模式：开' : '🚀 更新模式：关'; }
+    let ov = document.getElementById('updateOverlay');
     if (!on) {
-      if (bar) { bar.style.opacity = '0'; bar.style.transform = 'translateY(-100%)'; setTimeout(function () { if (bar && bar.parentNode) bar.parentNode.removeChild(bar); }, 320); }
-      const btn = document.getElementById('updateModeBtn');
-      if (btn) { btn.classList.remove('on'); btn.textContent = '🚀 更新模式：关'; }
+      if (ov) { ov.classList.add('closing'); const o = ov; setTimeout(function () { if (o && o.parentNode) o.parentNode.removeChild(o); }, 520); }
+      if (_updatePreviewPill) _updatePreviewPill.style.display = 'none';
+      document.body.classList.remove('update-preview');
       return;
     }
-    if (!bar) {
-      bar = document.createElement('div');
-      bar.id = 'updateModeBar';
-      bar.className = 'update-bar';
-      bar.innerHTML = `
-        <div class="update-bar-glow"></div>
-        <div class="update-bar-content">
-          <span class="update-bar-icon">🚀</span>
-          <span class="update-bar-text">网站正在焕新升级，更多精彩即将上线，敬请期待</span>
-          <span class="update-bar-dots"></span>
-        </div>
-      `;
-      document.body.insertBefore(bar, document.body.firstChild);
+    const isAdmin = isSuper() || isStaff();
+    if (!ov) {
+      ov = document.createElement('div');
+      ov.id = 'updateOverlay';
+      ov.className = 'update-overlay' + (isAdmin ? ' admin' : '');
+      ov.setAttribute('role', 'alertdialog');
+      ov.setAttribute('aria-label', '网站正在更新维护');
+      ov.innerHTML =
+        '<div class="update-aurora a1"></div>' +
+        '<div class="update-aurora a2"></div>' +
+        '<div class="update-aurora a3"></div>' +
+        '<div class="update-stars"></div>' +
+        '<div class="update-admin">' +
+          '<button class="update-admin-btn" type="button" onclick="toggleUpdateMode()">✕ 退出更新模式</button>' +
+          '<button class="update-admin-btn ghost" type="button" onclick="toggleUpdatePreview()">👁 预览网站（绕过维护页）</button>' +
+        '</div>' +
+        '<div class="update-card">' +
+          '<div class="update-orbit">' +
+            '<span class="update-ring r1"></span>' +
+            '<span class="update-ring r2"></span>' +
+            '<span class="update-ring r3"></span>' +
+            '<span class="update-rocket">🚀</span>' +
+          '</div>' +
+          '<h1 class="update-title">网站正在焕新升级</h1>' +
+          '<p class="update-sub">我们正在为您准备更棒的体验<br>稍作片刻，精彩即将重新上线</p>' +
+          '<div class="update-progress"><div class="update-progress-bar"></div></div>' +
+          '<div class="update-status">系统升级中<span class="update-dots"></span></div>' +
+        '</div>' +
+        '<div class="update-foot">感谢您的耐心等待 · 给您带来不便，敬请谅解</div>';
+      document.body.appendChild(ov);
+      requestAnimationFrame(function () { ov.classList.add('show'); });
+    } else {
+      ov.classList.toggle('admin', isAdmin);
     }
-    // 确保在 header 之上； glass 模式下 bar 自带玻璃材质
-    bar.style.opacity = '1';
-    bar.style.transform = 'translateY(0)';
-    const btn = document.getElementById('updateModeBtn');
-    if (btn) { btn.classList.add('on'); btn.textContent = '🚀 更新模式：开'; }
+  }
+
+  // 管理员在维护遮罩下「预览网站」：本地隐藏遮罩，可照常使用后台，右下角悬浮条可退出预览
+  function toggleUpdatePreview() {
+    const on = document.body.classList.toggle('update-preview');
+    if (on) {
+      if (!_updatePreviewPill) {
+        _updatePreviewPill = document.createElement('div');
+        _updatePreviewPill.className = 'update-preview-pill';
+        _updatePreviewPill.innerHTML = '👁 维护预览中 · <b>退出预览</b>';
+        _updatePreviewPill.addEventListener('click', toggleUpdatePreview);
+        document.body.appendChild(_updatePreviewPill);
+      }
+      _updatePreviewPill.style.display = 'flex';
+    } else if (_updatePreviewPill) {
+      _updatePreviewPill.style.display = 'none';
+    }
   }
 
   // 管理员切换更新模式（写入远端，所有访客同步）
