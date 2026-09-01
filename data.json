@@ -415,7 +415,7 @@
       "uploaderName": "网友",
       "uploaderCode": "",
       "fromPublic": true,
-      "status": "removed",
+      "status": "approved",
       "profileNo": "A029",
       "mediaList": [
         {
@@ -441,9 +441,8 @@
         }
       ],
       "updatedAt": 1787957180433,
-      "isHidden": true,
-      "statusUpdatedAt": 1787957180433,
-      "hiddenAt": 1788121325400
+      "isHidden": false,
+      "statusUpdatedAt": 1787957180433
     },
     {
       "id": 1787481710878,
@@ -544,7 +543,7 @@
       "uploaderType": "super",
       "uploaderName": "管理员",
       "uploaderCode": "ADMIN",
-      "status": "removed",
+      "status": "approved",
       "profileNo": "A025",
       "mediaList": [
         {
@@ -566,9 +565,8 @@
       "sortOrder": 18,
       "guestNo": "A025",
       "updatedAt": 1787652896502,
-      "isHidden": true,
-      "statusUpdatedAt": 1787652896502,
-      "hiddenAt": 1788121325400
+      "isHidden": false,
+      "statusUpdatedAt": 1787652896502
     },
     {
       "id": 1787422835777,
@@ -892,10 +890,9 @@
       ],
       "updatedAt": 1787436725591,
       "sortOrder": 17,
-      "isHidden": true,
+      "isHidden": false,
       "statusUpdatedAt": 1787436725591,
-      "status": "removed",
-      "hiddenAt": 1788121325400
+      "status": "approved"
     },
     {
       "id": 1787341749316,
@@ -1107,6 +1104,12 @@
     "6.1.0"
   ],
   "adminLogs": [
+    {
+      "time": 1788283088280,
+      "actor": "超级管理员",
+      "op": "批量取消隐藏",
+      "desc": "恢复显示 3 条档案"
+    },
     {
       "time": 1788283058354,
       "actor": "超级管理员",
