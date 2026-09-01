@@ -1094,8 +1094,8 @@
       "生活习惯": "不抽烟不喝酒偶尔熬夜",
       "要求": "身高160-165体重40-50一点颜普通",
       "一句话介绍": "所有游戏多少都会一点例如王者和平瓦",
-      "updatedAt": 1788283633222,
-      "statusUpdatedAt": 1788283633222,
+      "updatedAt": 1788284339735,
+      "statusUpdatedAt": 1788284339735,
       "uploadDate": "2026-09-01",
       "createdAt": 1788283633222,
       "isPinned": false,
@@ -1103,7 +1103,7 @@
       "uploaderName": "7.（7.）",
       "uploaderCode": "",
       "uploaderUid": 1788282744258,
-      "status": "pending",
+      "status": "approved",
       "profileNo": "A046",
       "mediaList": [
         {
@@ -1137,6 +1137,12 @@
     "6.1.0"
   ],
   "adminLogs": [
+    {
+      "time": 1788284339736,
+      "actor": "超级管理员",
+      "op": "审核",
+      "desc": "通过新嘉宾「7.」的审核，已公开显示"
+    },
     {
       "time": 1788283517577,
       "actor": "超级管理员",
