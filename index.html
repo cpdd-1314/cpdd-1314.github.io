@@ -1786,12 +1786,15 @@
   </div>
   <div id="profileLoggedIn" style="display:none;">
     <div id="profileHeader"></div>
-    <div class="profile-section" id="coinSection" style="display:flex; align-items:center; justify-content:space-between; gap:12px; background:linear-gradient(135deg, rgba(245,158,11,.12), rgba(236,72,153,.10)); border-color:rgba(245,158,11,.35);">
+    <div class="profile-section" id="coinSection" style="display:flex; align-items:center; justify-content:space-between; gap:10px; background:linear-gradient(135deg, rgba(245,158,11,.12), rgba(236,72,153,.10)); border-color:rgba(245,158,11,.35);">
       <div>
         <div style="font-size:12px; color:var(--text-muted);">我的金币</div>
         <div style="font-size:26px; font-weight:800; color:var(--text);">🪙 <span id="coinBalance">0</span></div>
       </div>
-      <button class="btn btn-primary" style="font-size:13px; padding:9px 16px;" onclick="openRedeemModal()">🎟️ 兑换金币</button>
+      <div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;">
+        <button class="btn btn-primary" style="font-size:12px; padding:7px 12px;" onclick="openRedeemModal()">🎟️ 兑换</button>
+        <button class="btn btn-outline" style="font-size:12px; padding:7px 12px;" onclick="openRedpacketModal()">🧧 红包</button>
+      </div>
     </div>
     <div class="profile-section" id="checkinSection">
       <h3>✨ 每日签到</h3>
@@ -1806,11 +1809,8 @@
     </div>
     <div class="profile-section" id="redpacketSection">
       <h3>🧧 金币红包</h3>
-      <div style="font-size:12px; color:var(--text-muted); margin-bottom:10px; line-height:1.6;">攒够 1000 金币即可兑换 ¥0.01 红包，多攒多兑、随时提现到微信。</div>
-      <div style="display:flex; gap:8px; flex-wrap:wrap;">
-        <button class="btn btn-primary" style="font-size:13px; padding:9px 14px;" onclick="openRedpacketModal()">🧧 兑换红包</button>
-        <button class="btn btn-outline" style="font-size:13px; padding:9px 14px;" onclick="openMyRecordsModal()">🧾 我的兑换记录</button>
-      </div>
+      <div style="font-size:12px; color:var(--text-muted); margin-bottom:10px; line-height:1.6;">攒够 1000 金币即可兑换 ¥0.01 红包，多攒多兑、随时提现到微信。兑换后还能分享给好友一起玩。</div>
+      <button class="btn btn-outline" style="font-size:13px; padding:9px 14px;" onclick="openMyRecordsModal()">🧾 我的兑换记录</button>
     </div>
     <div class="profile-section">
       <h3>📤 我发布的资料</h3>
@@ -2597,14 +2597,15 @@
     <p style="font-size:12px; color:var(--text-muted); margin-bottom:2px;">生成专属兑换码并发给注册用户，自定义金币数量，每个码仅可兑换一次。</p>
     <div style="display:flex; gap:8px; margin:12px 0;">
       <input type="number" id="redeemCoinsInput" min="1" max="999999" placeholder="金币数量" style="flex:1; padding:9px 12px; border:1px solid var(--border); border-radius:10px; font-size:14px; background:var(--bg); color:var(--text);">
-      <button class="btn btn-primary" onclick="genRedeemCode()">🎲 生成兑换码</button>
+      <input type="number" id="redeemCountInput" min="1" max="200" value="1" placeholder="数量" style="width:84px; padding:9px 12px; border:1px solid var(--border); border-radius:10px; font-size:14px; background:var(--bg); color:var(--text);">
+      <button class="btn btn-primary" onclick="genRedeemCode()">🎲 生成</button>
     </div>
     <div id="redeemGenResult" style="display:none; margin-bottom:10px; padding:10px 12px; border-radius:10px; background:rgba(16,185,129,.12); border:1px solid rgba(16,185,129,.4);">
-      <div style="font-size:12px; color:var(--text-muted);">新兑换码（点击复制发给用户）：</div>
-      <div style="display:flex; align-items:center; gap:8px; margin-top:4px;">
-        <code id="redeemGenCode" style="font-size:18px; font-weight:700; letter-spacing:1px; color:var(--text); flex:1; word-break:break-all;"></code>
-        <button class="btn btn-outline" style="font-size:11px; padding:5px 10px;" onclick="copyText(document.getElementById('redeemGenCode').textContent)">复制</button>
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+        <div style="font-size:12px; color:var(--text-muted);">已生成 <b id="redeemGenCount">0</b> 个兑换码（点击复制发给用户）：</div>
+        <button class="btn btn-outline" style="font-size:11px; padding:4px 10px; white-space:nowrap;" onclick="copyAllRedeemCodes()">📋 复制全部</button>
       </div>
+      <div id="redeemGenCodes" style="margin-top:6px; display:flex; flex-direction:column; gap:4px;"></div>
     </div>
     <h3 style="font-size:14px; margin:6px 0;">已生成的兑换码（<span id="redeemCodeTotal">0</span>）</h3>
     <div id="redeemCodeList" style="max-height:38vh; overflow:auto;"></div>
@@ -2616,9 +2617,10 @@
   <div class="modal" style="max-width:420px;">
     <button class="close-btn" onclick="toggleModal('redeemModal', false)">×</button>
     <h2 style="font-size:18px; margin-bottom:6px;">🎟️ 兑换金币</h2>
-    <p style="font-size:12px; color:var(--text-muted); margin-bottom:2px;">输入管理员发给你的兑换码，即可领取金币（仅注册用户可兑换）。</p>
+    <p style="font-size:12px; color:var(--text-muted); margin-bottom:2px;">输入兑换码即可领取金币（仅注册用户可兑换）。通过好友分享链接打开可直接兑换。</p>
     <input type="text" id="redeemInput" placeholder="例如：AB12-CD34-EF56" style="width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:10px; font-size:14px; margin:12px 0; background:var(--bg); color:var(--text); text-transform:uppercase; letter-spacing:1px;">
     <button class="btn btn-primary" style="width:100%;" onclick="redeemCode()">✅ 确认兑换</button>
+    <div id="redeemResult" style="display:none; margin-top:12px; padding:12px; border-radius:10px; background:rgba(16,185,129,.12); border:1px solid rgba(16,185,129,.4);"></div>
   </div>
 </div>
 
@@ -2796,8 +2798,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.9.17';
+  const APP_VERSION = '6.9.18';
   const CHANGELOG = [
+    { v: '6.9.18', d: '2026-09-02', note: '① 红包入口优化：「🧧 金币红包」从独立大按钮改为「我的金币」区里的小按钮（与「🎟️ 兑换」并排），更顺手。② 管理员「🎟️ 兑换码管理」支持一次性批量生成——新增数量输入框，一次生成 N 个兑换码（上限 200），结果区列出全部码并支持「📋 复制全部」一键转发给用户。③ 兑换后分享 + 管理员「已兑换」：用户兑换成功弹窗内出现「📤 分享给微信好友」按钮（优先调系统分享面板/微信，不支持则复制分享链接）；分享链接带 ?redeem= 码，好友打开自动填入并可直接兑换；若打开的是已被使用的码且当前为管理员账号，弹窗显眼展示绿色「✅ 已兑换」按钮', type: 'feat' },
     { v: '6.9.17', d: '2026-09-02', note: '① 新增「每日签到得金币」：注册用户在「我的」页点「📅 签到领金币」即可领火花，每天随机 1-10 个；连续签到越多给越多，按天数从第 1 天的 1-10 平滑升到第 100 天的 10-100 金币（断签自动从第 1 天重算），区块实时显示连续天数🔥与今日是否已签。② 新增「金币红包兑换」：1000 金币 = ¥0.01 红包，可一次兑多个，扣金币并写入兑换记录。③ 兑换记录双端可见——用户侧「🧾 我的兑换记录」汇总自己的红包兑换 + 兑换码领取；管理员侧管理面板新增「💰 兑换记录」，汇总全站所有人的红包兑换（含笔数、累计金币、累计金额统计）。签到/红包/记录全部走增量保存，多端约 1 分钟同步', type: 'feat' },
     { v: '6.9.16', d: '2026-09-01', note: '新增「金币 + 兑换码 + 临时密码」体系：① 金币——注册用户在「我的」页可见余额 🪙 与「🎟️ 兑换金币」入口。② 兑换码——管理员在管理面板「🎟️ 兑换码管理」里自定义金币数量一键生成兑换码（格式 XXXX-XXXX-XXXX，可复制、可查看已生成/已兑换状态），每个码仅能兑换一次；注册用户输入码即领取金币（未登录=未注册无法兑换）。③ 临时密码——管理员在「注册用户」卡片点「🔑 重置密码」生成 8 位临时密码（弹窗显示），用户用临时密码登录后系统强制弹出改密框（不可关闭）必须设置新密码才能继续使用。数据均走增量保存，多端约 1 分钟同步', type: 'feat' },
     { v: '6.9.15', d: '2026-09-01', note: '① 新增「查看用户的所有评论」：管理视图「注册用户」标签每张用户卡片加「💬 查看TA的评论 (N)」按钮（N 为预统计的留言数），点开站内弹窗汇总该用户在所有嘉宾下的全部留言（管理员视角展示全部，含被封禁用户自己的留言），按时间倒序排列，点任意一条可一键跳转查看对应嘉宾资料。② 网站流畅度再优化：玻璃模式下背景 4 个极光光球（最重的持续重绘开销）在滚动时自动暂停动画（停下 150ms 恢复），并把模糊半径从 26px 降到 18px，肉眼几乎无差但明显省 GPU，滚动更顺', type: 'feat' },
@@ -4235,6 +4238,16 @@
       } catch (e) {}
     } catch (e) {}
   }
+  // 解析分享链接里的 ?redeem= 兑换码：记下待兑换码并清掉 URL 参数，登录后自动打开兑换
+  function applyRedeemKeyFromUrl() {
+    try {
+      const code = new URLSearchParams(location.search).get('redeem');
+      if (code) {
+        window.__pendingRedeem = code.toUpperCase().replace(/\s/g, '');
+        try { history.replaceState({}, '', location.pathname); } catch (e) {}
+      }
+    } catch (e) {}
+  }
   // 访客投稿是否解锁：有效链接 或 本设备已被授权（打开过邀请链接）都算解锁
   function isGuestSubmitUnlocked() {
     try { if (localStorage.getItem('__guestAuthorized') === '1') return true; } catch (e) {}
@@ -4384,6 +4397,20 @@
     }
     window.__pendingPublish = false;
     openAddForm('public', 'guest');
+  }
+
+  // 登录/注册成功后，若之前通过分享链接带 ?redeem= 进来，则自动打开兑换弹窗
+  function flushPendingRedeem() {
+    if (!window.__pendingRedeem) return false;
+    const code = window.__pendingRedeem;
+    window.__pendingRedeem = null;
+    if (!getCurrentUser() && !isSuper() && !isStaff()) return false;
+    setTimeout(function () {
+      const inp = document.getElementById('redeemInput');
+      if (inp) inp.value = code;
+      openRedeemModal();
+    }, 300);
+    return true;
   }
 
   // 登录/注册成功后，若之前点过「登录提交」则自动打开上传表单
@@ -4936,6 +4963,8 @@
     applyGlassMode();     // 玻璃拟态开关（管理员控制，随数据一起下发）
     applyUpdateMode();    // 更新模式横幅（管理员控制，随数据一起下发）
     applySubmitKeyFromUrl();   // 解析 ?k= 投稿链接，决定是否解锁访客提交
+    applyRedeemKeyFromUrl();   // 解析 ?redeem= 分享链接，登录后自动打开兑换
+    flushPendingRedeem();      // 若已登录且带分享码，直接打开兑换弹窗
     // 刷新后恢复：页码/搜索/筛选/排序（在渲染前设置，renderCards 用恢复的状态出页）
     restorePageState();
     renderCards();
@@ -5376,6 +5405,8 @@
     document.getElementById('userPwdInput').value = '';
     // 之前点过「登录提交」：登录成功直接打开上传表单
     if (flushPendingPublish()) return;
+    // 通过分享链接带 ?redeem= 进来：登录成功直接打开兑换弹窗
+    if (flushPendingRedeem()) return;
     showAlert('✅ 欢迎回来：' + name + '！');
   }
 
@@ -5888,25 +5919,45 @@
   async function genRedeemCode() {
     if (!isSuper() && !isStaff()) { toast('仅管理员可生成兑换码'); return; }
     const inp = document.getElementById('redeemCoinsInput');
+    const cntInp = document.getElementById('redeemCountInput');
     const coins = parseInt((inp ? inp.value : '').trim(), 10);
+    const count = Math.max(1, Math.min(parseInt((cntInp ? cntInp.value : '1').trim(), 10) || 1, 200));
     if (!coins || coins < 1) { showAlert('请填写有效的金币数量（至少 1）'); return; }
     if (coins > 999999) { showAlert('金币数量过大'); return; }
-    const code = genCodeString();
+    const newCodes = [];
+    for (let i = 0; i < count; i++) newCodes.push(genCodeString());
     try {
       await patchRemoteState(function (base) {
         if (!Array.isArray(base.codes)) base.codes = [];
-        base.codes.push({ code: code, coins: coins, usedBy: null, createdAt: Date.now(), createdBy: (getCurrentIdentity() || {}).name || 'admin' });
-      }, 'gen redeem code ' + code);
+        newCodes.forEach(function (code) {
+          base.codes.push({ code: code, coins: coins, usedBy: null, createdAt: Date.now(), createdBy: (getCurrentIdentity() || {}).name || 'admin' });
+        });
+      }, 'gen redeem codes x' + count);
+      window.__lastGenCodes = newCodes.slice();
       const res = document.getElementById('redeemGenResult');
-      const el = document.getElementById('redeemGenCode');
-      if (el) el.textContent = code;
+      const cntEl = document.getElementById('redeemGenCount');
+      const listEl = document.getElementById('redeemGenCodes');
+      if (cntEl) cntEl.textContent = newCodes.length;
+      if (listEl) listEl.innerHTML = newCodes.map(function (c) {
+        return '<div style="display:flex; align-items:center; gap:6px;">' +
+          '<code style="font-size:14px; font-weight:700; letter-spacing:1px; flex:1; word-break:break-all;">' + c + '</code>' +
+          '<button class="btn btn-outline" style="font-size:10px; padding:3px 8px;" onclick="copyText(\'' + c + '\')">复制</button></div>';
+      }).join('');
       if (res) res.style.display = 'block';
       if (inp) inp.value = '';
+      if (cntInp) cntInp.value = 1;
       renderRedeemCodesAdmin();
-      toast('🎟️ 已生成兑换码（+' + coins + ' 金币）');
+      toast('🎟️ 已生成 ' + newCodes.length + ' 个兑换码（每个 +' + coins + ' 金币）');
     } catch (err) {
       showAlert('❌ 生成失败：' + err.message);
     }
+  }
+
+  function copyAllRedeemCodes() {
+    const arr = window.__lastGenCodes || [];
+    if (!arr.length) { toast('没有可复制的兑换码'); return; }
+    copyText(arr.join('\n'));
+    toast('📋 已复制 ' + arr.length + ' 个兑换码');
   }
 
   function genCodeString() {
@@ -5960,12 +6011,16 @@
     if (__interactLock) return;
     __interactLock = true;
     try {
-      let gained = 0;
+      let gained = 0, usedName = null;
       await patchRemoteState(function (base) {
         if (!Array.isArray(base.codes)) base.codes = [];
         const c = base.codes.find(function (x) { return x.code === raw; });
         if (!c) throw new Error('兑换码不存在');
-        if (c.usedBy != null) throw new Error('该兑换码已被使用');
+        if (c.usedBy != null) {
+          const u = (base.users || []).find(function (x) { return String(x.id) === String(c.usedBy); });
+          usedName = u ? u.name : ('#' + c.usedBy);
+          throw new Error('__USED__');
+        }
         const u = base.users.find(function (x) { return String(x.id) === String(me.id); });
         if (!u) throw new Error('当前账号异常，请重新登录');
         u.coins = (Number(u.coins) || 0) + Number(c.coins);
@@ -5973,21 +6028,84 @@
         c.usedAt = Date.now();
         gained = c.coins;
       }, 'redeem code ' + raw);
-      toggleModal('redeemModal', false);
       if (inp) inp.value = '';
       renderCoinBalance();
-      toast('🪙 兑换成功，获得 ' + gained + ' 金币！');
+      showRedeemSuccess(raw, gained);
     } catch (err) {
-      showAlert('❌ 兑换失败：' + err.message);
+      if (err.message === '__USED__') showRedeemUsed(raw, usedName);
+      else showAlert('❌ 兑换失败：' + err.message);
     } finally {
       __interactLock = false;
     }
   }
 
+  // 兑换成功：弹窗内展示 + 分享按钮（可分享到微信好友）
+  function showRedeemSuccess(code, gained) {
+    const box = document.getElementById('redeemResult');
+    if (!box) return;
+    box.style.display = 'block';
+    box.style.background = 'rgba(16,185,129,.12)';
+    box.style.borderColor = 'rgba(16,185,129,.4)';
+    box.innerHTML =
+      '<div style="font-size:14px; font-weight:700; color:var(--text);">🎉 兑换成功，获得 ' + gained + ' 金币！</div>' +
+      '<div style="font-size:12px; color:var(--text-muted); margin-top:4px;">把这份好运分享给微信好友，邀请他们也来领金币 👇</div>' +
+      '<button class="btn btn-primary" style="width:100%; margin-top:10px; font-size:13px; padding:9px 14px;" onclick="shareRedeem(\'' + code + '\', ' + gained + ')">📤 分享给微信好友</button>';
+    toggleModal('redeemModal', true);
+  }
+
+  // 兑换码已被使用：普通用户提示，管理员额外显示「已兑换」按钮
+  function showRedeemUsed(code, usedName) {
+    const box = document.getElementById('redeemResult');
+    if (!box) return;
+    const isAdm = isSuper() || isStaff();
+    box.style.display = 'block';
+    box.style.background = 'rgba(148,163,184,.12)';
+    box.style.borderColor = 'rgba(148,163,184,.4)';
+    let html = '<div style="font-size:14px; font-weight:700; color:var(--text);">该兑换码已被使用</div>';
+    html += '<div style="font-size:12px; color:var(--text-muted); margin-top:4px;">已被 ' + escapeHtml(usedName || '他人') + ' 兑换，无法重复领取。</div>';
+    if (isAdm) {
+      html += '<button class="btn btn-outline" disabled style="width:100%; margin-top:10px; font-size:13px; padding:9px 14px; color:#16a34a; border-color:#16a34a; opacity:1; cursor:default;">✅ 已兑换</button>';
+    }
+    box.innerHTML = html;
+    toggleModal('redeemModal', true);
+  }
+
+  // 分享兑换（优先调系统分享面板/微信；不支持则复制链接）
+  function shareRedeem(code, gained) {
+    const url = location.origin + location.pathname + '?redeem=' + encodeURIComponent(code);
+    const title = '🪙 我在 CP德D 领到了金币！';
+    const text = '我用兑换码领到了 ' + (gained || 0) + ' 金币，你也快来领属于你的金币吧～ ' + url;
+    if (navigator.share) {
+      navigator.share({ title: title, text: text, url: url }).catch(function () {});
+    } else {
+      copyText(url);
+      toast('📋 分享链接已复制，去微信发给好友吧');
+    }
+  }
+
+  // 打开兑换弹窗：若已预填码（来自分享链接），自动展示状态
   function openRedeemModal() {
     const inp = document.getElementById('redeemInput');
-    if (inp) inp.value = '';
+    const box = document.getElementById('redeemResult');
+    const hasCode = inp && inp.value.trim();
+    if (!hasCode && inp) inp.value = '';
     toggleModal('redeemModal', true);
+    if (hasCode) previewRedeemStatus();
+    else if (box) box.style.display = 'none';
+  }
+
+  function previewRedeemStatus() {
+    const box = document.getElementById('redeemResult');
+    const inp = document.getElementById('redeemInput');
+    if (!box || !inp) return;
+    const raw = (inp.value || '').trim().toUpperCase().replace(/\s/g, '');
+    if (!raw) { box.style.display = 'none'; return; }
+    const c = (appState.codes || []).find(function (x) { return x.code === raw; });
+    if (!c) { box.style.display = 'none'; return; }
+    if (c.usedBy != null) {
+      const u = (appState.users || []).find(function (x) { return String(x.id) === String(c.usedBy); });
+      showRedeemUsed(raw, u ? u.name : ('#' + c.usedBy));
+    }
   }
 
   function renderCoinBalance() {
