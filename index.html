@@ -2594,10 +2594,11 @@
   <div class="modal" style="max-width:560px;">
     <button class="close-btn" onclick="toggleModal('redeemAdminModal', false)">×</button>
     <h2 style="font-size:18px; margin-bottom:6px;">🎟️ 兑换码管理</h2>
-    <p style="font-size:12px; color:var(--text-muted); margin-bottom:2px;">生成专属兑换码并发给注册用户，自定义金币数量，每个码仅可兑换一次。</p>
+    <p style="font-size:12px; color:var(--text-muted); margin-bottom:2px;">生成专属兑换码并发给注册用户，自定义金币数量与使用次数，仅注册用户可兑换。</p>
     <div style="display:flex; gap:8px; margin:12px 0;">
-      <input type="number" id="redeemCoinsInput" min="1" max="999999" placeholder="金币数量" style="flex:1; padding:9px 12px; border:1px solid var(--border); border-radius:10px; font-size:14px; background:var(--bg); color:var(--text);">
-      <input type="number" id="redeemCountInput" min="1" max="200" value="1" placeholder="数量" style="width:84px; padding:9px 12px; border:1px solid var(--border); border-radius:10px; font-size:14px; background:var(--bg); color:var(--text);">
+      <input type="number" id="redeemCoinsInput" min="1" max="999999" placeholder="金币数量" style="flex:1; min-width:0; padding:9px 12px; border:1px solid var(--border); border-radius:10px; font-size:14px; background:var(--bg); color:var(--text);">
+      <input type="number" id="redeemCountInput" min="1" max="200" value="1" placeholder="生成数量" style="width:84px; padding:9px 12px; border:1px solid var(--border); border-radius:10px; font-size:14px; background:var(--bg); color:var(--text);">
+      <input type="number" id="redeemMaxUsesInput" min="1" max="9999" value="1" placeholder="使用次数" title="每个兑换码可被兑换的次数（默认 1 次，留空或 1 表示一次性）" style="width:84px; padding:9px 12px; border:1px solid var(--border); border-radius:10px; font-size:14px; background:var(--bg); color:var(--text);">
       <button class="btn btn-primary" onclick="genRedeemCode()">🎲 生成</button>
     </div>
     <div id="redeemGenResult" style="display:none; margin-bottom:10px; padding:10px 12px; border-radius:10px; background:rgba(16,185,129,.12); border:1px solid rgba(16,185,129,.4);">
@@ -2798,8 +2799,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.9.18';
+  const APP_VERSION = '6.9.19';
   const CHANGELOG = [
+    { v: '6.9.19', d: '2026-09-02', note: '① 兑换红包实时换算：输入红包个数即时显示「消耗多少金币 → 可兑多少 ¥ 红包（N 个）」，金币不足时提示还差多少、最多可兑几个，所见即所得。② 金币数字格式化：余额/兑换/红包/记录等所有金币数字超过 1 万显示「万」、超过 1 亿显示「亿」（如 1.23万 / 2.5亿），不再出现 e+ 科学计数法。③ 兑换码支持多次使用：管理员生成兑换码时新增「使用次数」输入框（默认 1，留空=一次性），一个码可被不同注册用户兑换 N 次；管理面板列表显示「未兑换 / 已用 N/M / 已兑换」状态与 ×N次 标签，分享给多人可反复领取，管理员视角同步显示「已用 N/M」或「已兑换」', type: 'feat' },
     { v: '6.9.18', d: '2026-09-02', note: '① 红包入口优化：「🧧 金币红包」从独立大按钮改为「我的金币」区里的小按钮（与「🎟️ 兑换」并排），更顺手。② 管理员「🎟️ 兑换码管理」支持一次性批量生成——新增数量输入框，一次生成 N 个兑换码（上限 200），结果区列出全部码并支持「📋 复制全部」一键转发给用户。③ 兑换后分享 + 管理员「已兑换」：用户兑换成功弹窗内出现「📤 分享给微信好友」按钮（优先调系统分享面板/微信，不支持则复制分享链接）；分享链接带 ?redeem= 码，好友打开自动填入并可直接兑换；若打开的是已被使用的码且当前为管理员账号，弹窗显眼展示绿色「✅ 已兑换」按钮', type: 'feat' },
     { v: '6.9.17', d: '2026-09-02', note: '① 新增「每日签到得金币」：注册用户在「我的」页点「📅 签到领金币」即可领火花，每天随机 1-10 个；连续签到越多给越多，按天数从第 1 天的 1-10 平滑升到第 100 天的 10-100 金币（断签自动从第 1 天重算），区块实时显示连续天数🔥与今日是否已签。② 新增「金币红包兑换」：1000 金币 = ¥0.01 红包，可一次兑多个，扣金币并写入兑换记录。③ 兑换记录双端可见——用户侧「🧾 我的兑换记录」汇总自己的红包兑换 + 兑换码领取；管理员侧管理面板新增「💰 兑换记录」，汇总全站所有人的红包兑换（含笔数、累计金币、累计金额统计）。签到/红包/记录全部走增量保存，多端约 1 分钟同步', type: 'feat' },
     { v: '6.9.16', d: '2026-09-01', note: '新增「金币 + 兑换码 + 临时密码」体系：① 金币——注册用户在「我的」页可见余额 🪙 与「🎟️ 兑换金币」入口。② 兑换码——管理员在管理面板「🎟️ 兑换码管理」里自定义金币数量一键生成兑换码（格式 XXXX-XXXX-XXXX，可复制、可查看已生成/已兑换状态），每个码仅能兑换一次；注册用户输入码即领取金币（未登录=未注册无法兑换）。③ 临时密码——管理员在「注册用户」卡片点「🔑 重置密码」生成 8 位临时密码（弹窗显示），用户用临时密码登录后系统强制弹出改密框（不可关闭）必须设置新密码才能继续使用。数据均走增量保存，多端约 1 分钟同步', type: 'feat' },
@@ -3297,7 +3299,7 @@
     glassTheme: 'default', // 玻璃风格：default / aurora / sunset / forest / cyber / invincible
     updateMode: false,   // 更新模式：开启后全屏维护遮罩覆盖整站，普通用户无法操作任何功能；管理员可在遮罩上「退出更新模式」或「预览网站」
     submitLinks: [],     // 投稿链接 [{key:hash, maxUses, used, note, createdAt}]；访客须凭有效链接(?k=)才能提交
-    codes: [],           // 金币兑换码 [{code, coins, usedBy, createdAt, createdBy}]；管理员生成、注册用户一次性兑换
+    codes: [],           // 金币兑换码 [{code, coins, maxUses, usedBy, usedList:[{uid,time}], usedAt, createdAt, createdBy}]；管理员生成、注册用户可兑换 maxUses 次
     redemptions: []      // 红包兑换记录 [{id, uid, name, count, coins, amount, time}]；1000 金币 = ¥0.01
   };
 
@@ -5920,8 +5922,12 @@
     if (!isSuper() && !isStaff()) { toast('仅管理员可生成兑换码'); return; }
     const inp = document.getElementById('redeemCoinsInput');
     const cntInp = document.getElementById('redeemCountInput');
+    const useInp = document.getElementById('redeemMaxUsesInput');
     const coins = parseInt((inp ? inp.value : '').trim(), 10);
     const count = Math.max(1, Math.min(parseInt((cntInp ? cntInp.value : '1').trim(), 10) || 1, 200));
+    let maxUses = parseInt((useInp ? (useInp.value || '').trim() : '1'), 10);
+    if (!maxUses || maxUses < 1) maxUses = 1;
+    if (maxUses > 9999) maxUses = 9999;
     if (!coins || coins < 1) { showAlert('请填写有效的金币数量（至少 1）'); return; }
     if (coins > 999999) { showAlert('金币数量过大'); return; }
     const newCodes = [];
@@ -5930,7 +5936,7 @@
       await patchRemoteState(function (base) {
         if (!Array.isArray(base.codes)) base.codes = [];
         newCodes.forEach(function (code) {
-          base.codes.push({ code: code, coins: coins, usedBy: null, createdAt: Date.now(), createdBy: (getCurrentIdentity() || {}).name || 'admin' });
+          base.codes.push({ code: code, coins: coins, maxUses: maxUses, usedBy: null, usedList: [], usedAt: null, createdAt: Date.now(), createdBy: (getCurrentIdentity() || {}).name || 'admin' });
         });
       }, 'gen redeem codes x' + count);
       window.__lastGenCodes = newCodes.slice();
@@ -5946,8 +5952,9 @@
       if (res) res.style.display = 'block';
       if (inp) inp.value = '';
       if (cntInp) cntInp.value = 1;
+      if (useInp) useInp.value = 1;
       renderRedeemCodesAdmin();
-      toast('🎟️ 已生成 ' + newCodes.length + ' 个兑换码（每个 +' + coins + ' 金币）');
+      toast('🎟️ 已生成 ' + newCodes.length + ' 个兑换码（每个 +' + fmtNum(coins) + ' 金币，可用 ' + maxUses + ' 次）');
     } catch (err) {
       showAlert('❌ 生成失败：' + err.message);
     }
@@ -5987,21 +5994,26 @@
     if (total) total.textContent = list.length;
     if (list.length === 0) { box.innerHTML = '<p style="padding:16px; text-align:center; color:var(--text-muted); font-size:12px;">还没有生成任何兑换码</p>'; return; }
     box.innerHTML = list.map(function (c) {
-      const used = c.usedBy != null;
-      const u = used ? (appState.users || []).find(function (x) { return String(x.id) === String(c.usedBy); }) : null;
-      const status = used
-        ? '<span style="color:#16a34a; font-weight:600;">已兑换 · ' + (u ? escapeHtml(u.name) : ('#' + c.usedBy)) + '</span>'
-        : '<span style="color:#d97706; font-weight:600;">未兑换</span>';
+      const uc = codeUsedCount(c);
+      const mu = codeMaxUses(c);
+      const full = uc >= mu;
+      const first = codeFirstRedeemerName(c);
+      let status;
+      if (uc === 0) status = '<span style="color:#d97706; font-weight:600;">未兑换</span>';
+      else if (full) status = '<span style="color:#16a34a; font-weight:600;">已兑换 · ' + escapeHtml(first || '他人') + '</span>';
+      else status = '<span style="color:#16a34a; font-weight:600;">已用 ' + uc + '/' + mu + '</span>';
+      const tag = mu > 1 ? '<span style="font-size:10px; color:var(--text-muted); border:1px solid var(--border); border-radius:6px; padding:1px 5px; white-space:nowrap;">×' + mu + '次</span>' : '';
       return '<div style="display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px dashed var(--border);">' +
         '<code style="font-size:13px; font-weight:700; flex:1; word-break:break-all;">' + escapeHtml(c.code) + '</code>' +
-        '<span style="font-size:12px; color:var(--text-muted);">+' + c.coins + '🪙</span>' +
-        '<span style="font-size:11px;">' + status + '</span>' +
-        (used ? '' : '<button class="btn btn-outline" style="font-size:10px; padding:3px 8px;" onclick="copyText(\'' + c.code + '\')">复制</button>') +
+        tag +
+        '<span style="font-size:12px; color:var(--text-muted); white-space:nowrap;">+' + fmtNum(c.coins) + '🪙</span>' +
+        '<span style="font-size:11px; white-space:nowrap;">' + status + '</span>' +
+        (full ? '' : '<button class="btn btn-outline" style="font-size:10px; padding:3px 8px; white-space:nowrap;" onclick="copyText(\'' + c.code + '\')">复制</button>') +
         '</div>';
     }).join('');
   }
 
-  // 用户：兑换金币（仅注册用户）
+  // 用户：兑换金币（仅注册用户）；支持管理员设置的多次数兑换码
   async function redeemCode() {
     const me = getCurrentUser();
     if (!me) { toggleModal('redeemModal', false); toggleModal('userModal', true); return; }  // 未登录=未注册用户
@@ -6011,28 +6023,32 @@
     if (__interactLock) return;
     __interactLock = true;
     try {
-      let gained = 0, usedName = null;
+      let gained = 0, usedName = null, selfUsed = false;
       await patchRemoteState(function (base) {
         if (!Array.isArray(base.codes)) base.codes = [];
         const c = base.codes.find(function (x) { return x.code === raw; });
         if (!c) throw new Error('兑换码不存在');
-        if (c.usedBy != null) {
-          const u = (base.users || []).find(function (x) { return String(x.id) === String(c.usedBy); });
-          usedName = u ? u.name : ('#' + c.usedBy);
+        if (!Array.isArray(c.usedList)) c.usedList = c.usedBy != null ? [{ uid: c.usedBy, time: c.usedAt || null }] : [];
+        const maxUses = (c.maxUses && c.maxUses > 0) ? c.maxUses : 1;
+        if (c.usedList.length >= maxUses) {
+          const fu = base.users.find(function (x) { return String(x.id) === String(c.usedList[0].uid); });
+          usedName = fu ? fu.name : ('#' + c.usedList[0].uid);
           throw new Error('__USED__');
         }
+        if (c.usedList.some(function (e) { return String(e.uid) === String(me.id); })) { selfUsed = true; throw new Error('__USED__'); }
         const u = base.users.find(function (x) { return String(x.id) === String(me.id); });
         if (!u) throw new Error('当前账号异常，请重新登录');
         u.coins = (Number(u.coins) || 0) + Number(c.coins);
-        c.usedBy = u.id;
-        c.usedAt = Date.now();
+        c.usedList.push({ uid: u.id, time: Date.now() });
+        c.usedBy = c.usedList[0].uid;
+        c.usedAt = c.usedList[0].time;
         gained = c.coins;
       }, 'redeem code ' + raw);
       if (inp) inp.value = '';
       renderCoinBalance();
       showRedeemSuccess(raw, gained);
     } catch (err) {
-      if (err.message === '__USED__') showRedeemUsed(raw, usedName);
+      if (err.message === '__USED__') showRedeemUsed(raw, usedName, selfUsed);
       else showAlert('❌ 兑换失败：' + err.message);
     } finally {
       __interactLock = false;
@@ -6047,24 +6063,36 @@
     box.style.background = 'rgba(16,185,129,.12)';
     box.style.borderColor = 'rgba(16,185,129,.4)';
     box.innerHTML =
-      '<div style="font-size:14px; font-weight:700; color:var(--text);">🎉 兑换成功，获得 ' + gained + ' 金币！</div>' +
+      '<div style="font-size:14px; font-weight:700; color:var(--text);">🎉 兑换成功，获得 ' + fmtNum(gained) + ' 金币！</div>' +
       '<div style="font-size:12px; color:var(--text-muted); margin-top:4px;">把这份好运分享给微信好友，邀请他们也来领金币 👇</div>' +
       '<button class="btn btn-primary" style="width:100%; margin-top:10px; font-size:13px; padding:9px 14px;" onclick="shareRedeem(\'' + code + '\', ' + gained + ')">📤 分享给微信好友</button>';
     toggleModal('redeemModal', true);
   }
 
-  // 兑换码已被使用：普通用户提示，管理员额外显示「已兑换」按钮
-  function showRedeemUsed(code, usedName) {
+  // 兑换码已被使用：普通用户提示，管理员额外显示「已兑换 / 已用 N/M」按钮（多次数码）
+  function showRedeemUsed(code, usedName, selfUsed) {
     const box = document.getElementById('redeemResult');
     if (!box) return;
     const isAdm = isSuper() || isStaff();
+    const c = (appState.codes || []).find(function (x) { return x.code === code; });
+    const uc = codeUsedCount(c);
+    const mu = codeMaxUses(c);
+    const full = uc >= mu;
+    const first = codeFirstRedeemerName(c);
     box.style.display = 'block';
     box.style.background = 'rgba(148,163,184,.12)';
     box.style.borderColor = 'rgba(148,163,184,.4)';
     let html = '<div style="font-size:14px; font-weight:700; color:var(--text);">该兑换码已被使用</div>';
-    html += '<div style="font-size:12px; color:var(--text-muted); margin-top:4px;">已被 ' + escapeHtml(usedName || '他人') + ' 兑换，无法重复领取。</div>';
+    if (selfUsed) {
+      html += '<div style="font-size:12px; color:var(--text-muted); margin-top:4px;">你已经兑换过这个码啦，不能重复领取 🤗</div>';
+    } else if (full) {
+      html += '<div style="font-size:12px; color:var(--text-muted); margin-top:4px;">已被 ' + escapeHtml(first || usedName || '他人') + ' 兑换，无法重复领取。</div>';
+    } else {
+      html += '<div style="font-size:12px; color:var(--text-muted); margin-top:4px;">已被兑换 ' + uc + '/' + mu + ' 次' + (first ? ('（首次：' + escapeHtml(first) + '）') : '') + '，还可继续兑换。</div>';
+    }
     if (isAdm) {
-      html += '<button class="btn btn-outline" disabled style="width:100%; margin-top:10px; font-size:13px; padding:9px 14px; color:#16a34a; border-color:#16a34a; opacity:1; cursor:default;">✅ 已兑换</button>';
+      const label = full ? '✅ 已兑换' : ('已用 ' + uc + '/' + mu);
+      html += '<button class="btn btn-outline" disabled style="width:100%; margin-top:10px; font-size:13px; padding:9px 14px; color:#16a34a; border-color:#16a34a; opacity:1; cursor:default;">' + label + '</button>';
     }
     box.innerHTML = html;
     toggleModal('redeemModal', true);
@@ -6102,10 +6130,7 @@
     if (!raw) { box.style.display = 'none'; return; }
     const c = (appState.codes || []).find(function (x) { return x.code === raw; });
     if (!c) { box.style.display = 'none'; return; }
-    if (c.usedBy != null) {
-      const u = (appState.users || []).find(function (x) { return String(x.id) === String(c.usedBy); });
-      showRedeemUsed(raw, u ? u.name : ('#' + c.usedBy));
-    }
+    if (codeUsedCount(c) > 0) showRedeemUsed(raw, null, false);
   }
 
   function renderCoinBalance() {
@@ -6117,7 +6142,7 @@
       const u = (appState.users || []).find(function (x) { return String(x.id) === String(me.id); });
       coins = u ? (Number(u.coins) || 0) : 0;
     }
-    el.textContent = coins;
+    el.textContent = fmtNum(coins);
   }
 
   // 管理员：重置用户密码（生成临时密码，登录后须改密）
@@ -6196,6 +6221,39 @@
   // 规则：每天随机 1-10 个火花；连续签到越多给越多，第 N 天(上限 100)随天数从 1-10 平滑升到 10-100。
   const REDPACKET_RATE = 1000;     // 1000 金币 = 0.01 元红包
   const REDPACKET_AMOUNT = 0.01;
+
+  // 数字格式化：超过 1 万显示「万」、超过 1 亿显示「亿」，杜绝 e+ 科学计数法
+  function fmtNum(n) {
+    n = Number(n) || 0;
+    if (!isFinite(n)) return '0';
+    const neg = n < 0; n = Math.abs(n);
+    let s;
+    if (n < 10000) s = String(n);
+    else if (n < 1e8) s = trimNum(n / 1e4) + '万';
+    else s = trimNum(n / 1e8) + '亿';
+    return (neg ? '-' : '') + s;
+  }
+  function trimNum(v) {
+    let s = v.toFixed(2);
+    s = s.replace(/\.?0+$/, '');
+    return s;
+  }
+
+  // 兑换码使用次数辅助函数（兼容旧数据：旧码 usedBy 为标量、无 usedList/ maxUses）
+  function codeMaxUses(c) { return (c && c.maxUses && c.maxUses > 0) ? c.maxUses : 1; }
+  function codeUsedList(c) {
+    if (c && Array.isArray(c.usedList)) return c.usedList;
+    if (c && c.usedBy != null) return [{ uid: c.usedBy }];
+    return [];
+  }
+  function codeUsedCount(c) { return codeUsedList(c).length; }
+  function codeIsFull(c) { return codeUsedCount(c) >= codeMaxUses(c); }
+  function codeFirstRedeemerName(c) {
+    const list = codeUsedList(c);
+    if (!list.length) return null;
+    const u = (appState.users || []).find(function (x) { return String(x.id) === String(list[0].uid); });
+    return u ? u.name : ('#' + list[0].uid);
+  }
 
   function dayStr(d) {
     const p = function (n) { return String(n).padStart(2, '0'); };
@@ -6278,7 +6336,7 @@
     if (!me) { toggleModal('userModal', true); return; }
     const coins = myCoins();
     const info = document.getElementById('rpCoinsInfo');
-    if (info) info.textContent = '当前金币：' + coins + ' 🪙（' + REDPACKET_RATE + ' 金币 = ¥' + REDPACKET_AMOUNT.toFixed(2) + '）';
+    if (info) info.innerHTML = '当前金币：<b>' + fmtNum(coins) + '</b> 🪙（' + REDPACKET_RATE + ' 金币 = ¥' + REDPACKET_AMOUNT.toFixed(2) + '，最多可兑 ' + Math.floor(coins / REDPACKET_RATE) + ' 个）';
     const inp = document.getElementById('rpCountInput');
     if (inp) inp.value = coins >= REDPACKET_RATE ? 1 : 0;
     const prev = document.getElementById('rpPreview');
@@ -6292,8 +6350,12 @@
     if (!prev) return;
     if (cnt <= 0) { prev.textContent = '请输入要兑换的红包个数'; return; }
     const need = cnt * REDPACKET_RATE;
-    if (need > coins) prev.textContent = '金币不足，还需 ' + (need - coins) + ' 🪙';
-    else prev.textContent = '将消耗 ' + need + ' 🪙，得到 ¥' + (cnt * REDPACKET_AMOUNT).toFixed(2) + ' 红包';
+    const amount = cnt * REDPACKET_AMOUNT;
+    if (need > coins) {
+      prev.innerHTML = '⚠️ 金币不足，还差 <b style="color:#ef4444;">' + fmtNum(need - coins) + '</b> 🪙（你最多可兑 ' + Math.floor(coins / REDPACKET_RATE) + ' 个）';
+      return;
+    }
+    prev.innerHTML = '✅ 将消耗 <b>' + fmtNum(need) + '</b> 🪙，兑换 🧧 <b style="color:#16a34a;">¥' + amount.toFixed(2) + '</b> 红包（' + cnt + ' 个）';
   }
   async function exchangeRedpacket() {
     const me = getCurrentUser();
@@ -6322,7 +6384,7 @@
       toggleModal('redpacketModal', false);
       renderProfilePage();
       renderCoinBalance();
-      toast('🧧 兑换成功：' + consumed + ' 金币 → ¥' + amount.toFixed(2) + ' 红包');
+      toast('🧧 兑换成功：' + fmtNum(consumed) + ' 金币 → ¥' + amount.toFixed(2) + ' 红包');
     } catch (err) {
       showAlert('❌ 兑换失败：' + err.message);
     } finally {
@@ -6354,7 +6416,7 @@
         html += rps.map(function (r) {
           return '<div style="display:flex; justify-content:space-between; gap:8px; padding:8px 0; border-bottom:1px dashed var(--border); font-size:13px;">' +
             '<span style="color:var(--text-muted);">' + fmtDateTime(r.time) + '</span>' +
-            '<span style="color:var(--text-muted);">-' + r.coins + '🪙</span>' +
+            '<span style="color:var(--text-muted);">-' + fmtNum(r.coins) + '🪙</span>' +
             '<span style="color:#16a34a; font-weight:600;">¥' + (Number(r.amount) || 0).toFixed(2) + '</span></div>';
         }).join('');
       }
@@ -6363,7 +6425,7 @@
         html += codes.map(function (c) {
           return '<div style="display:flex; justify-content:space-between; gap:8px; padding:8px 0; border-bottom:1px dashed var(--border); font-size:13px;">' +
             '<span><code>' + escapeHtml(c.code) + '</code></span>' +
-            '<span style="color:#16a34a; font-weight:600;">+' + c.coins + '🪙</span></div>';
+            '<span style="color:#16a34a; font-weight:600;">+' + fmtNum(c.coins) + '🪙</span></div>';
         }).join('');
       }
       list.innerHTML = html;
@@ -6381,7 +6443,7 @@
     if (totalEl) {
       const totalCoins = all.reduce(function (s, r) { return s + (Number(r.coins) || 0); }, 0);
       const totalAmt = all.reduce(function (s, r) { return s + (Number(r.amount) || 0); }, 0);
-      totalEl.textContent = all.length + ' 笔 · 共 ' + totalCoins + '🪙 · ¥' + totalAmt.toFixed(2);
+      totalEl.textContent = all.length + ' 笔 · 共 ' + fmtNum(totalCoins) + '🪙 · ¥' + totalAmt.toFixed(2);
     }
     if (all.length === 0) {
       list.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:24px;">还没有红包兑换记录</div>';
@@ -6390,7 +6452,7 @@
         return '<div style="display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px dashed var(--border); font-size:13px;">' +
           '<span style="flex:1; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escapeHtml(r.name || '用户') + '</span>' +
           '<span style="color:var(--text-muted); font-size:11px;">' + fmtDateTime(r.time) + '</span>' +
-          '<span style="color:var(--text-muted);">-' + r.coins + '🪙</span>' +
+          '<span style="color:var(--text-muted);">-' + fmtNum(r.coins) + '🪙</span>' +
           '<span style="color:#16a34a; font-weight:600; white-space:nowrap;">¥' + (Number(r.amount) || 0).toFixed(2) + '</span></div>';
       }).join('');
     }
