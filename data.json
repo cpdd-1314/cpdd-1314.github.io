@@ -1986,6 +1986,16 @@
       "usedAt": null,
       "createdAt": 1788282038371,
       "createdBy": "管理员"
+    },
+    {
+      "code": "FWEQ-F22X-4YHN",
+      "coins": 1000,
+      "maxUses": 100,
+      "usedBy": null,
+      "usedList": [],
+      "usedAt": null,
+      "createdAt": 1788282808549,
+      "createdBy": "管理员"
     }
   ],
   "redemptions": [
