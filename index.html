@@ -1793,6 +1793,25 @@
       </div>
       <button class="btn btn-primary" style="font-size:13px; padding:9px 16px;" onclick="openRedeemModal()">🎟️ 兑换金币</button>
     </div>
+    <div class="profile-section" id="checkinSection">
+      <h3>✨ 每日签到</h3>
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+        <div>
+          <div style="font-size:12px; color:var(--text-muted);">连续签到</div>
+          <div style="font-size:22px; font-weight:800;">🔥 <span id="checkinStreak">0</span> 天</div>
+        </div>
+        <button class="btn btn-primary" id="checkinBtn" style="font-size:13px; padding:9px 16px;" onclick="doCheckin()">📅 签到领金币</button>
+      </div>
+      <div id="checkinHint" style="font-size:12px; color:var(--text-muted); margin-top:8px; line-height:1.6;"></div>
+    </div>
+    <div class="profile-section" id="redpacketSection">
+      <h3>🧧 金币红包</h3>
+      <div style="font-size:12px; color:var(--text-muted); margin-bottom:10px; line-height:1.6;">攒够 1000 金币即可兑换 ¥0.01 红包，多攒多兑、随时提现到微信。</div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="btn btn-primary" style="font-size:13px; padding:9px 14px;" onclick="openRedpacketModal()">🧧 兑换红包</button>
+        <button class="btn btn-outline" style="font-size:13px; padding:9px 14px;" onclick="openMyRecordsModal()">🧾 我的兑换记录</button>
+      </div>
+    </div>
     <div class="profile-section">
       <h3>📤 我发布的资料</h3>
       <div id="myPublishedSection"></div>
@@ -1885,6 +1904,7 @@
         <button class="btn btn-outline admin-only" onclick="toggleModal('wechatConfigModal', true)">⚙️ 修改微信名片</button>
         <button class="btn btn-outline admin-only" onclick="openSubmitLinkModal()">📨 投稿链接</button>
         <button class="btn btn-outline admin-only" onclick="openRedeemAdminModal()">🎟️ 兑换码管理</button>
+        <button class="btn btn-outline admin-only" onclick="openRedemptionsAdminModal()">💰 兑换记录</button>
         <button class="btn btn-outline admin-only" id="glassModeBtn" onclick="toggleGlassMode()">🪟 玻璃拟态：关</button>
         <button class="btn btn-outline admin-only" id="updateModeBtn" onclick="toggleUpdateMode()">🚀 更新模式：关</button>
         <div class="admin-only" style="margin-top:2px;">
@@ -2615,6 +2635,40 @@
   </div>
 </div>
 
+<!-- 兑换红包（注册用户）：1000 金币 = ¥0.01 -->
+<div class="modal-overlay" id="redpacketModal" onclick="handleOverlayClick(event, 'redpacketModal')">
+  <div class="modal" style="max-width:420px;">
+    <button class="close-btn" onclick="toggleModal('redpacketModal', false)">×</button>
+    <h2 style="font-size:18px; margin-bottom:6px;">🧧 兑换红包</h2>
+    <p id="rpCoinsInfo" style="font-size:12px; color:var(--text-muted); margin-bottom:2px;"></p>
+    <div style="display:flex; gap:8px; margin:12px 0;">
+      <input type="number" id="rpCountInput" min="1" placeholder="红包个数" style="flex:1; padding:9px 12px; border:1px solid var(--border); border-radius:10px; font-size:14px; background:var(--bg); color:var(--text);" oninput="previewRedpacket()">
+      <span style="align-self:center; font-size:13px; color:var(--text-muted); white-space:nowrap;">个（×1000🪙）</span>
+    </div>
+    <div id="rpPreview" style="font-size:12px; color:var(--text-muted); min-height:18px; margin-bottom:10px;"></div>
+    <button class="btn btn-primary" style="width:100%;" onclick="exchangeRedpacket()">✅ 确认兑换</button>
+  </div>
+</div>
+
+<!-- 我的兑换记录（注册用户）：红包兑换 + 兑换码领取 -->
+<div class="modal-overlay" id="myRecordsModal" onclick="handleOverlayClick(event, 'myRecordsModal')">
+  <div class="modal" style="max-width:480px;">
+    <button class="close-btn" onclick="toggleModal('myRecordsModal', false)">×</button>
+    <h2 style="font-size:18px; margin-bottom:6px;">🧾 我的兑换记录</h2>
+    <div id="myRecordsList" style="max-height:52vh; overflow:auto;"></div>
+  </div>
+</div>
+
+<!-- 兑换记录（管理员）：全站红包兑换汇总 -->
+<div class="modal-overlay" id="redemptionsAdminModal" onclick="handleOverlayClick(event, 'redemptionsAdminModal')">
+  <div class="modal" style="max-width:560px;">
+    <button class="close-btn" onclick="toggleModal('redemptionsAdminModal', false)">×</button>
+    <h2 style="font-size:18px; margin-bottom:4px;">💰 红包兑换记录</h2>
+    <div style="font-size:12px; color:var(--text-muted); margin-bottom:6px;">共 <b id="redemptionsAdminTotal">0</b> 笔</div>
+    <div id="redemptionsAdminList" style="max-height:54vh; overflow:auto;"></div>
+  </div>
+</div>
+
 <!-- 左下角动态浮动入口（可收起为小圆球，点击重新弹出） -->
 <div id="floatBall" onclick="expandFloats()" title="展开入口">
   <svg viewBox="0 0 24 24" style="width:22px; height:22px; fill:#fff;">
@@ -2742,8 +2796,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.9.16';
+  const APP_VERSION = '6.9.17';
   const CHANGELOG = [
+    { v: '6.9.17', d: '2026-09-02', note: '① 新增「每日签到得金币」：注册用户在「我的」页点「📅 签到领金币」即可领火花，每天随机 1-10 个；连续签到越多给越多，按天数从第 1 天的 1-10 平滑升到第 100 天的 10-100 金币（断签自动从第 1 天重算），区块实时显示连续天数🔥与今日是否已签。② 新增「金币红包兑换」：1000 金币 = ¥0.01 红包，可一次兑多个，扣金币并写入兑换记录。③ 兑换记录双端可见——用户侧「🧾 我的兑换记录」汇总自己的红包兑换 + 兑换码领取；管理员侧管理面板新增「💰 兑换记录」，汇总全站所有人的红包兑换（含笔数、累计金币、累计金额统计）。签到/红包/记录全部走增量保存，多端约 1 分钟同步', type: 'feat' },
     { v: '6.9.16', d: '2026-09-01', note: '新增「金币 + 兑换码 + 临时密码」体系：① 金币——注册用户在「我的」页可见余额 🪙 与「🎟️ 兑换金币」入口。② 兑换码——管理员在管理面板「🎟️ 兑换码管理」里自定义金币数量一键生成兑换码（格式 XXXX-XXXX-XXXX，可复制、可查看已生成/已兑换状态），每个码仅能兑换一次；注册用户输入码即领取金币（未登录=未注册无法兑换）。③ 临时密码——管理员在「注册用户」卡片点「🔑 重置密码」生成 8 位临时密码（弹窗显示），用户用临时密码登录后系统强制弹出改密框（不可关闭）必须设置新密码才能继续使用。数据均走增量保存，多端约 1 分钟同步', type: 'feat' },
     { v: '6.9.15', d: '2026-09-01', note: '① 新增「查看用户的所有评论」：管理视图「注册用户」标签每张用户卡片加「💬 查看TA的评论 (N)」按钮（N 为预统计的留言数），点开站内弹窗汇总该用户在所有嘉宾下的全部留言（管理员视角展示全部，含被封禁用户自己的留言），按时间倒序排列，点任意一条可一键跳转查看对应嘉宾资料。② 网站流畅度再优化：玻璃模式下背景 4 个极光光球（最重的持续重绘开销）在滚动时自动暂停动画（停下 150ms 恢复），并把模糊半径从 26px 降到 18px，肉眼几乎无差但明显省 GPU，滚动更顺', type: 'feat' },
     { v: '6.9.14', d: '2026-08-31', note: '管理视图「嘉宾一览」新增多选删除：① 选择栏在「👀 查看已选 (N)」旁新增「🗑 删除选中 (N)」红色按钮（有勾选才出现、数字实时跟随）；② 汇总弹窗底部也加「🗑 删除选中」按钮。点任意一处都会二次弹窗确认数量与「不可恢复」提示，确认后把勾选的所有嘉宾一次性软删除（标记 _deleted，由服务端合并真正移除，避免刷新复活），单次 saveToGitHub 同步、刷新管理视图与公共信息流、清空选择并 Toast 提示。需管理员权限', type: 'feat' },
@@ -3239,7 +3294,8 @@
     glassTheme: 'default', // 玻璃风格：default / aurora / sunset / forest / cyber / invincible
     updateMode: false,   // 更新模式：开启后全屏维护遮罩覆盖整站，普通用户无法操作任何功能；管理员可在遮罩上「退出更新模式」或「预览网站」
     submitLinks: [],     // 投稿链接 [{key:hash, maxUses, used, note, createdAt}]；访客须凭有效链接(?k=)才能提交
-    codes: []            // 金币兑换码 [{code, coins, usedBy, createdAt, createdBy}]；管理员生成、注册用户一次性兑换
+    codes: [],           // 金币兑换码 [{code, coins, usedBy, createdAt, createdBy}]；管理员生成、注册用户一次性兑换
+    redemptions: []      // 红包兑换记录 [{id, uid, name, count, coins, amount, time}]；1000 金币 = ¥0.01
   };
 
   // 内置示例兜底：当取不到仓库 data.json（本地预览 / 分享链接 / 直接双击打开）时，
@@ -3608,6 +3664,7 @@
     // submitLinks 以 key 为主键合并，本地新增/消费次数/删除都会保留并写回仓库。
     out.submitLinks = mergeByKey(base.submitLinks, local.submitLinks);
     out.codes = mergeByCode(base.codes, local.codes);
+    out.redemptions = mergeByKey(base.redemptions, local.redemptions);
     return out;
   }
   function mergeById(baseArr, localArr) {
@@ -3721,6 +3778,7 @@
     if (!Array.isArray(base.users)) base.users = appState.users || [];
     if (!Array.isArray(base.notifications)) base.notifications = appState.notifications || [];
     if (!Array.isArray(base.codes)) base.codes = appState.codes || [];
+    if (!Array.isArray(base.redemptions)) base.redemptions = appState.redemptions || [];
 
     const ret = patchFn(base);   // 在最新基线上打补丁
 
@@ -4858,6 +4916,7 @@
       if (typeof data.updateMode === 'boolean') appState.updateMode = data.updateMode;
       if (Array.isArray(data.submitLinks)) appState.submitLinks = data.submitLinks;
       if (Array.isArray(data.codes)) appState.codes = data.codes;
+      if (Array.isArray(data.redemptions)) appState.redemptions = data.redemptions;
       // 兼容老数据：v6.9.4 起的审核状态粘性依赖 statusUpdatedAt；旧资料没有该字段时
       // 退化成 createdAt 比较，并发合并可能把已通过的审核打回 pending。这里在加载时补默认时间戳。
       if (Array.isArray(appState.profiles)) {
@@ -4999,6 +5058,7 @@
       if (typeof data.updateMode === 'boolean') appState.updateMode = data.updateMode;
       if (Array.isArray(data.submitLinks)) appState.submitLinks = data.submitLinks;
       if (Array.isArray(data.codes)) appState.codes = data.codes;
+      if (Array.isArray(data.redemptions)) appState.redemptions = data.redemptions;
       __lastSyncSig = sig;
       // 被封号的当前登录用户立即踢下线（多端实时生效）
       const cu = getCurrentUser();
@@ -6014,6 +6074,211 @@
     }
   }
 
+  // ===== 每日签到得金币 =====
+  // 规则：每天随机 1-10 个火花；连续签到越多给越多，第 N 天(上限 100)随天数从 1-10 平滑升到 10-100。
+  const REDPACKET_RATE = 1000;     // 1000 金币 = 0.01 元红包
+  const REDPACKET_AMOUNT = 0.01;
+
+  function dayStr(d) {
+    const p = function (n) { return String(n).padStart(2, '0'); };
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+  }
+  function yesterdayStr() { const d = new Date(); d.setDate(d.getDate() - 1); return dayStr(d); }
+  function checkinCoinsForStreak(streak) {
+    const s = Math.max(1, Math.min(streak, 100));
+    const t = (s - 1) / 99;                 // 0..1
+    const lo = 1 + Math.round(t * 9);       // 第1天 1 -> 第100天 10
+    const hi = 10 + Math.round(t * 90);     // 第1天 10 -> 第100天 100
+    return lo + Math.floor(Math.random() * (hi - lo + 1));
+  }
+  function myCoins() {
+    const me = getCurrentUser();
+    if (!me) return 0;
+    const u = (appState.users || []).find(function (x) { return String(x.id) === String(me.id); });
+    return u ? (Number(u.coins) || 0) : 0;
+  }
+
+  // 签到（仅注册用户）：在远端基线上原子更新 lastCheckin / streak / coins
+  async function doCheckin() {
+    const me = getCurrentUser();
+    if (!me) { toggleModal('userModal', true); return; }
+    if (__interactLock) return;
+    __interactLock = true;
+    try {
+      let gained = 0, newStreak = 0;
+      const today = dayStr(new Date());
+      const yest = yesterdayStr();
+      await patchRemoteState(function (base) {
+        const u = base.users.find(function (x) { return String(x.id) === String(me.id); });
+        if (!u) throw new Error('账号异常，请重新登录');
+        if (u.lastCheckin === today) throw new Error('今天已经签到过啦');
+        let s = Number(u.streak) || 0;
+        if (u.lastCheckin === yest) s += 1; else s = 1;
+        const coins = checkinCoinsForStreak(s);
+        u.coins = (Number(u.coins) || 0) + coins;
+        u.lastCheckin = today;
+        u.streak = s;
+        gained = coins; newStreak = s;
+      }, 'checkin ' + me.id);
+      renderProfilePage();
+      renderCoinBalance();
+      toast('✨ 签到成功 +' + gained + ' 金币（连续 ' + newStreak + ' 天🔥）');
+    } catch (err) {
+      showAlert('❌ 签到失败：' + err.message);
+    } finally {
+      __interactLock = false;
+    }
+  }
+
+  // 渲染签到区块（连续天数 / 今日状态 / 提示）
+  function renderCheckin() {
+    const me = getCurrentUser();
+    const streakEl = document.getElementById('checkinStreak');
+    const hintEl = document.getElementById('checkinHint');
+    const btn = document.getElementById('checkinBtn');
+    if (!streakEl || !me) return;
+    const fresh = (appState.users || []).find(function (x) { return String(x.id) === String(me.id); }) || me;
+    const streak = Number(fresh.streak) || 0;
+    const today = dayStr(new Date());
+    const done = fresh.lastCheckin === today;
+    streakEl.textContent = streak;
+    if (hintEl) {
+      if (done) hintEl.textContent = '今天已签到，明天再来可续上连击 🔥';
+      else if (streak > 0) hintEl.textContent = '已连续 ' + streak + ' 天，今天签到继续累加，最多 100 天金币更多';
+      else hintEl.textContent = '每天签到得 1-10 金币，连续越多给越多（最高 100 天 10-100 金币）';
+    }
+    if (btn) {
+      btn.disabled = done;
+      btn.textContent = done ? '✅ 今日已签到' : '📅 签到领金币';
+      btn.style.opacity = done ? '.6' : '1';
+    }
+  }
+
+  // 兑换红包（注册用户）：1000 金币 = ¥0.01，单笔可兑多个，扣金币并写兑换记录
+  function openRedpacketModal() {
+    const me = getCurrentUser();
+    if (!me) { toggleModal('userModal', true); return; }
+    const coins = myCoins();
+    const info = document.getElementById('rpCoinsInfo');
+    if (info) info.textContent = '当前金币：' + coins + ' 🪙（' + REDPACKET_RATE + ' 金币 = ¥' + REDPACKET_AMOUNT.toFixed(2) + '）';
+    const inp = document.getElementById('rpCountInput');
+    if (inp) inp.value = coins >= REDPACKET_RATE ? 1 : 0;
+    const prev = document.getElementById('rpPreview');
+    if (prev) prev.textContent = '';
+    toggleModal('redpacketModal', true);
+  }
+  function previewRedpacket() {
+    const coins = myCoins();
+    const cnt = Math.max(0, parseInt((document.getElementById('rpCountInput') || {}).value || '0', 10));
+    const prev = document.getElementById('rpPreview');
+    if (!prev) return;
+    if (cnt <= 0) { prev.textContent = '请输入要兑换的红包个数'; return; }
+    const need = cnt * REDPACKET_RATE;
+    if (need > coins) prev.textContent = '金币不足，还需 ' + (need - coins) + ' 🪙';
+    else prev.textContent = '将消耗 ' + need + ' 🪙，得到 ¥' + (cnt * REDPACKET_AMOUNT).toFixed(2) + ' 红包';
+  }
+  async function exchangeRedpacket() {
+    const me = getCurrentUser();
+    if (!me) { toast('请先登录'); return; }
+    const cnt = Math.max(0, parseInt((document.getElementById('rpCountInput') || {}).value || '0', 10));
+    if (cnt <= 0) { showAlert('请输入要兑换的红包个数'); return; }
+    if (__interactLock) return;
+    __interactLock = true;
+    try {
+      let consumed = 0, amount = 0;
+      await patchRemoteState(function (base) {
+        const u = base.users.find(function (x) { return String(x.id) === String(me.id); });
+        if (!u) throw new Error('账号异常，请重新登录');
+        const need = cnt * REDPACKET_RATE;
+        if (Number(u.coins) < need) throw new Error('金币不足');
+        u.coins = Number(u.coins) - need;
+        if (!Array.isArray(base.redemptions)) base.redemptions = [];
+        base.redemptions.push({
+          id: 'r' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+          uid: u.id, name: u.name, count: cnt,
+          coins: need, amount: +(cnt * REDPACKET_AMOUNT).toFixed(2),
+          time: Date.now()
+        });
+        consumed = need; amount = cnt * REDPACKET_AMOUNT;
+      }, 'redpacket ' + me.id);
+      toggleModal('redpacketModal', false);
+      renderProfilePage();
+      renderCoinBalance();
+      toast('🧧 兑换成功：' + consumed + ' 金币 → ¥' + amount.toFixed(2) + ' 红包');
+    } catch (err) {
+      showAlert('❌ 兑换失败：' + err.message);
+    } finally {
+      __interactLock = false;
+    }
+  }
+
+  function fmtDateTime(ts) {
+    const t = new Date(ts);
+    const p = function (n) { return String(n).padStart(2, '0'); };
+    return t.getFullYear() + '-' + p(t.getMonth() + 1) + '-' + p(t.getDate()) + ' ' + p(t.getHours()) + ':' + p(t.getMinutes());
+  }
+
+  // 我的兑换记录（注册用户）：红包兑换 + 兑换码领取
+  function openMyRecordsModal() {
+    const me = getCurrentUser();
+    if (!me) { toggleModal('userModal', true); return; }
+    const list = document.getElementById('myRecordsList');
+    if (!list) return;
+    const rps = (appState.redemptions || []).filter(function (r) { return String(r.uid) === String(me.id); })
+      .sort(function (a, b) { return b.time - a.time; });
+    const codes = (appState.codes || []).filter(function (c) { return String(c.usedBy) === String(me.id); });
+    if (rps.length === 0 && codes.length === 0) {
+      list.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:24px;">还没有任何兑换记录</div>';
+    } else {
+      let html = '';
+      if (rps.length) {
+        html += '<div style="font-size:12px; color:var(--text-muted); margin:6px 0;">🧧 红包兑换</div>';
+        html += rps.map(function (r) {
+          return '<div style="display:flex; justify-content:space-between; gap:8px; padding:8px 0; border-bottom:1px dashed var(--border); font-size:13px;">' +
+            '<span style="color:var(--text-muted);">' + fmtDateTime(r.time) + '</span>' +
+            '<span style="color:var(--text-muted);">-' + r.coins + '🪙</span>' +
+            '<span style="color:#16a34a; font-weight:600;">¥' + (Number(r.amount) || 0).toFixed(2) + '</span></div>';
+        }).join('');
+      }
+      if (codes.length) {
+        html += '<div style="font-size:12px; color:var(--text-muted); margin:10px 0 6px;">🎟️ 兑换码领取</div>';
+        html += codes.map(function (c) {
+          return '<div style="display:flex; justify-content:space-between; gap:8px; padding:8px 0; border-bottom:1px dashed var(--border); font-size:13px;">' +
+            '<span><code>' + escapeHtml(c.code) + '</code></span>' +
+            '<span style="color:#16a34a; font-weight:600;">+' + c.coins + '🪙</span></div>';
+        }).join('');
+      }
+      list.innerHTML = html;
+    }
+    toggleModal('myRecordsModal', true);
+  }
+
+  // 兑换记录（管理员）：全站红包兑换汇总，含笔数/金币/金额统计
+  function openRedemptionsAdminModal() {
+    if (!isSuper() && !isStaff()) { toast('仅管理员可查看'); return; }
+    const list = document.getElementById('redemptionsAdminList');
+    const totalEl = document.getElementById('redemptionsAdminTotal');
+    if (!list) return;
+    const all = (appState.redemptions || []).slice().sort(function (a, b) { return b.time - a.time; });
+    if (totalEl) {
+      const totalCoins = all.reduce(function (s, r) { return s + (Number(r.coins) || 0); }, 0);
+      const totalAmt = all.reduce(function (s, r) { return s + (Number(r.amount) || 0); }, 0);
+      totalEl.textContent = all.length + ' 笔 · 共 ' + totalCoins + '🪙 · ¥' + totalAmt.toFixed(2);
+    }
+    if (all.length === 0) {
+      list.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:24px;">还没有红包兑换记录</div>';
+    } else {
+      list.innerHTML = all.map(function (r) {
+        return '<div style="display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px dashed var(--border); font-size:13px;">' +
+          '<span style="flex:1; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escapeHtml(r.name || '用户') + '</span>' +
+          '<span style="color:var(--text-muted); font-size:11px;">' + fmtDateTime(r.time) + '</span>' +
+          '<span style="color:var(--text-muted);">-' + r.coins + '🪙</span>' +
+          '<span style="color:#16a34a; font-weight:600; white-space:nowrap;">¥' + (Number(r.amount) || 0).toFixed(2) + '</span></div>';
+      }).join('');
+    }
+    toggleModal('redemptionsAdminModal', true);
+  }
+
   function scrollToComments() {
     const el = document.getElementById('commentsArea');
     if (!el) return;
@@ -6165,6 +6430,7 @@
           '<div style="font-size:12px; color:var(--text-muted);">在《' + escapeHtml(x.p['姓名'] || '未填') + '》的留言 · ' + ts + '</div>' +
           '<div style="font-size:13px;">' + escapeHtml(x.c.text) + '</div></div>';
       }).join('');
+    renderCheckin();
   }
 
   // 渲染"我发过的资料"列表（发布 tab 用）
