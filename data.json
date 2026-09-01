@@ -1843,6 +1843,16 @@
       "createdAt": 1788278721886,
       "createdBy": "管理员",
       "usedAt": 1788278732631
+    },
+    {
+      "code": "8HVK-9DX9-5USH",
+      "coins": 1000,
+      "maxUses": 1,
+      "usedBy": null,
+      "usedList": [],
+      "usedAt": null,
+      "createdAt": 1788279686637,
+      "createdBy": "管理员"
     }
   ],
   "redemptions": [
