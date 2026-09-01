@@ -2835,8 +2835,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.9.26';
+  const APP_VERSION = '6.9.27';
   const CHANGELOG = [
+    { v: '6.9.27', d: '2026-09-02', note: '拒绝审核后通知提交用户重填：管理员点「❌ 拒绝」一份待审核资料时，若提交者是注册用户，会自动向其站内信发送「📝 资料未通过审核，请重新填写后再次提交」通知；用户点该通知可直接打开提交表单重新填写（游客提交的资料无账号可通知，仅删除）。删除已公开资料不触发此通知', type: 'feat' },
     { v: '6.9.26', d: '2026-09-02', note: '兑换红包去掉「按红包个数」模式，只保留「按金额 ¥」：弹窗直接输入金额（如 0.01），实时显示「需 X 金币（= ¥0.01）」，确认即兑换对应红包（金币须为 1000 整数倍、自动取整到对应红包个数）；界面更简洁', type: 'fix' },
     { v: '6.9.25', d: '2026-09-02', note: '「设置火花天数」入口从「每日签到」区块移到「我的 → 管理面板」，与兑换码管理、兑换记录等管理员功能集中在一起，普通用户签到区更清爽', type: 'fix' },
     { v: '6.9.24', d: '2026-09-02', note: '① 已兑换记录 15 天自动消失：红包兑换记录（管理员「💰 兑换记录」与用户「🧾 我的兑换记录」）满 15 天后自动隐藏，统计汇总同步只计 15 天内。② 已兑满的兑换码满 15 天自动消失：管理员「🎟️ 兑换码管理」里被兑满（已达使用次数）且最后一次兑换超过 15 天的兑换码自动隐藏（未兑满或仍有次数的码继续保留）；用户「我的兑换记录」里自己核销某码满 15 天也会隐藏', type: 'feat' },
@@ -6785,16 +6786,16 @@
       const t = new Date(n.time);
       const pad = function(x) { return String(x).padStart(2, '0'); };
       const ts = (t.getMonth() + 1) + '月' + t.getDate() + '日 ' + t.getHours() + ':' + pad(t.getMinutes());
-      const icon = n.type === 'like' ? '👍' : n.type === 'favorite' ? '⭐' : n.type === 'comment' ? '💬' : '🔔';
-      const profileExists = (appState.profiles || []).some(function(p) { return p.id === n.profileId; });
+      const icon = n.type === 'like' ? '👍' : n.type === 'favorite' ? '⭐' : n.type === 'comment' ? '💬' : n.type === 'review' ? '📝' : '🔔';
+      const isReview = n.type === 'review';
       // 进入即标记为已读
       if (!n.read) n.read = true;
-      return '<div class="notif-item" onclick="notifOpenProfile(' + n.profileId + ')">' +
+      return '<div class="notif-item" style="' + (isReview ? 'cursor:pointer;' : '') + '" onclick="' + (isReview ? 'openRewriteFromNotif()' : 'notifOpenProfile(' + n.profileId + ')') + '">' +
         '<span class="notif-dot"></span>' +
         '<span style="font-size:20px; line-height:1.2;">' + icon + '</span>' +
         '<div style="flex:1;">' +
         '<div><b>' + escapeHtml(n.actorName) + '</b> <span style="color:var(--text);">' + escapeHtml(n.text) + '</span></div>' +
-        '<div style="font-size:11px; color:var(--text-muted); margin-top:2px;">' + ts + (profileExists ? '' : '（档案已删除）') + '</div>' +
+        '<div style="font-size:11px; color:var(--text-muted); margin-top:2px;">' + ts + (isReview ? ' · 点此去重新填写' : '') + '</div>' +
         '</div></div>';
     }).join('');
     // 标记已读后同步角标
@@ -6808,6 +6809,11 @@
     }
     switchTab('home');
     setTimeout(function() { openDetail(profileId); }, 200);
+  }
+  // 审核未通过通知：点击去重新填写资料（登录用户提交会关联账号，游客则走公开提交）
+  function openRewriteFromNotif() {
+    switchTab('home');
+    openAddForm('public');
   }
 
   // 渲染个人主页
@@ -8352,13 +8358,24 @@
       // 不本地删除副本：saveToGitHub 以服务端为基线合并会保留「仅服务端有」的条目，
       // 直接删本地会被服务端旧副本「复活」（删除后刷新又出现）。改为标记软删除 _deleted，
       // mergeProfiles 合并时丢弃该条目，从而真正从服务端移除。
+      const wasPending = victim && victim.status === 'pending';   // 拒绝的是待审核 = 审核未通过
+      const ownerUid = victim && victim.uploaderUid;              // 提交者账号（注册用户才有）
       if (victim) victim._deleted = true;
       addAdminLog('删除', '删除档案「' + ((victim && victim['姓名']) || '未填') + '」');
+      // 拒绝审核：通知提交用户重新填写（仅注册用户可收到站内信；游客提交无账号可通知）
+      if (wasPending && ownerUid) {
+        const actor = (getCurrentIdentity() || {}).name || '管理员';
+        pushNotification(
+          ownerUid, 'review', victim.id,
+          (getCurrentIdentity() || {}).id || 'admin', actor,
+          '您的资料未通过审核，请重新填写后再次提交 🙏'
+        );
+      }
       try {
         await saveToGitHub();
         renderCards();
         toggleModal('detailModal', false);
-        showAlert("✅ 档案已删除。");
+        showAlert(wasPending && ownerUid ? "✅ 已拒绝该资料，已通知提交用户重新填写。" : "✅ 档案已删除。");
       } catch (err) {
         showAlert("❌ 同步失败：" + err.message);
       }
