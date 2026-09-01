@@ -1806,6 +1806,13 @@
         <button class="btn btn-primary" id="checkinBtn" style="font-size:13px; padding:9px 16px;" onclick="doCheckin()">📅 签到领金币</button>
       </div>
       <div id="checkinHint" style="font-size:12px; color:var(--text-muted); margin-top:8px; line-height:1.6;"></div>
+      <div id="adminStreakBox" style="display:none; margin-top:10px; padding-top:10px; border-top:1px dashed var(--border);">
+        <div style="font-size:12px; color:var(--text-muted); margin-bottom:6px;">管理员：设置自己的火花天数（连续签到，上限 99999 天；天数越高，下次签到金币越多，封顶 10000）</div>
+        <div style="display:flex; gap:8px;">
+          <input type="number" id="adminStreakInput" min="0" max="99999" placeholder="天数" style="flex:1; min-width:0; padding:8px 10px; border:1px solid var(--border); border-radius:10px; font-size:13px; background:var(--bg); color:var(--text);">
+          <button class="btn btn-outline" style="font-size:12px; padding:8px 12px; white-space:nowrap;" onclick="adminSetStreak()">设置天数</button>
+        </div>
+      </div>
     </div>
     <div class="profile-section" id="redpacketSection">
       <h3>🧧 金币红包</h3>
@@ -2596,7 +2603,7 @@
     <h2 style="font-size:18px; margin-bottom:6px;">🎟️ 兑换码管理</h2>
     <p style="font-size:12px; color:var(--text-muted); margin-bottom:2px;">生成专属兑换码并发给注册用户，自定义金币数量与使用次数，仅注册用户可兑换。</p>
     <div style="display:flex; gap:8px; margin:12px 0;">
-      <input type="number" id="redeemCoinsInput" min="1" max="99999999999" placeholder="金币数量" style="flex:1; min-width:0; padding:9px 12px; border:1px solid var(--border); border-radius:10px; font-size:14px; background:var(--bg); color:var(--text);" oninput="previewCoinInput()">
+      <input type="number" id="redeemCoinsInput" min="1" max="999999999999999999999" placeholder="金币数量" style="flex:1; min-width:0; padding:9px 12px; border:1px solid var(--border); border-radius:10px; font-size:14px; background:var(--bg); color:var(--text);" oninput="previewCoinInput()">
       <input type="number" id="redeemCountInput" min="1" value="1" placeholder="生成数量" style="width:84px; padding:9px 12px; border:1px solid var(--border); border-radius:10px; font-size:14px; background:var(--bg); color:var(--text);">
       <input type="number" id="redeemMaxUsesInput" min="1" max="9999" value="1" placeholder="使用次数" title="每个兑换码可被兑换的次数（默认 1 次，留空或 1 表示一次性）" style="width:84px; padding:9px 12px; border:1px solid var(--border); border-radius:10px; font-size:14px; background:var(--bg); color:var(--text);">
       <button class="btn btn-primary" onclick="genRedeemCode()">🎲 生成</button>
@@ -2836,9 +2843,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.9.22';
+  const APP_VERSION = '6.9.23';
   const CHANGELOG = [
-    { v: '6.9.22', d: '2026-09-02', note: '① 红包兑换新增「按金额 ¥」模式：在兑换弹窗顶部切换「按红包个数 / 按金额 ¥」，选金额模式后直接输入 ¥ 数（如 0.01），实时显示「需 X 金币（= ¥0.01）」，确认即兑换对应红包（金币须为 1000 的整数倍，自动取整到对应红包个数）。② 修复「我的金币」余额显示卡在旧金额：之前后台刷新数据或切换「我的」页时不会重算余额，导致兑换/签到后数字不更新；现 renderProfilePage 与 loadData 末尾都会刷新余额，所见即所得', type: 'feat' },
+    { v: '6.9.23', d: '2026-09-02', note: '① 火花（连续签到）天数上限提到 99999 天，签到金币随天数从 1 平滑升到上限 10000（天数越高下次签到金币越多，原上限 100 天/100 金币）。② 管理员可改自己的火花天数：签到区块新增管理员专属「设置天数」入口，输入 0-99999 直接设置连续天数（并自动把 lastCheckin 设为昨天，使该天数可继续累加）。③ 兑换红包去掉「最多可兑 N 个」提示，兑换上限仅受当前金币余额约束。④ 生成金币兑换码的金币数量上限放开到约 1e21（显示安全、不出 e+），可生成超大额兑换码', type: 'feat' },
     { v: '6.9.20', d: '2026-09-02', note: '① 红包兑换生成「领取凭证」：每次兑换红包都会生成一个唯一编码 ID（payCode），兑换成功弹窗内出现「📤 发到微信群」按钮与可复制的领取链接（?rp=编码），用户把链接发到微信群。② 管理员标记已兑换：管理员（仅管理员）点开该链接弹出「🧧 红包领取凭证」，核对领取人/金额/编码后可点绿色「✅ 标记已兑换（已发放）」；非管理员打开只看到凭证信息与提示、看不到按钮。管理员后台「💰 兑换记录」每条也有「标记已兑换」按钮，已发放显示绿色「✅已兑换」。③ 我的记录同步显示「⏳待发放 / ✅已发放」状态。④ 生成金币兑换码取消数量上限（原上限 200），一次可生成任意数量', type: 'feat' },
     { v: '6.9.19', d: '2026-09-02', note: '① 兑换红包实时换算：输入红包个数即时显示「消耗多少金币 → 可兑多少 ¥ 红包（N 个）」，金币不足时提示还差多少、最多可兑几个，所见即所得。② 金币数字格式化：余额/兑换/红包/记录等所有金币数字超过 1 万显示「万」、超过 1 亿显示「亿」（如 1.23万 / 2.5亿），不再出现 e+ 科学计数法。③ 兑换码支持多次使用：管理员生成兑换码时新增「使用次数」输入框（默认 1，留空=一次性），一个码可被不同注册用户兑换 N 次；管理面板列表显示「未兑换 / 已用 N/M / 已兑换」状态与 ×N次 标签，分享给多人可反复领取，管理员视角同步显示「已用 N/M」或「已兑换」', type: 'feat' },
     { v: '6.9.18', d: '2026-09-02', note: '① 红包入口优化：「🧧 金币红包」从独立大按钮改为「我的金币」区里的小按钮（与「🎟️ 兑换」并排），更顺手。② 管理员「🎟️ 兑换码管理」支持一次性批量生成——新增数量输入框，一次生成 N 个兑换码（上限 200），结果区列出全部码并支持「📋 复制全部」一键转发给用户。③ 兑换后分享 + 管理员「已兑换」：用户兑换成功弹窗内出现「📤 分享给微信好友」按钮（优先调系统分享面板/微信，不支持则复制分享链接）；分享链接带 ?redeem= 码，好友打开自动填入并可直接兑换；若打开的是已被使用的码且当前为管理员账号，弹窗显眼展示绿色「✅ 已兑换」按钮', type: 'feat' },
@@ -6005,7 +6012,7 @@
     if (!maxUses || maxUses < 1) maxUses = 1;
     if (maxUses > 9999) maxUses = 9999;
     if (!coins || coins < 1) { showAlert('请填写有效的金币数量（至少 1）'); return; }
-    if (coins > 99999999999) { showAlert('金币数量过大'); return; }
+    if (coins > 1e21) { showAlert('金币数量过大'); return; }
     const newCodes = [];
     for (let i = 0; i < count; i++) newCodes.push(genCodeString());
     try {
@@ -6376,9 +6383,10 @@
   }
 
   // ===== 每日签到得金币 =====
-  // 规则：每天随机 1-10 个火花；连续签到越多给越多，第 N 天(上限 100)随天数从 1-10 平滑升到 10-100。
   const REDPACKET_RATE = 1000;     // 1000 金币 = 0.01 元红包
   const REDPACKET_AMOUNT = 0.01;
+  const MAX_STREAK = 99999;        // 火花（连续签到）天数上限
+  const MAX_CHECKIN_COIN = 10000;  // 单日签到金币上限（天数越高给越多，第 1 天约 1，第 99999 天封顶 10000）
 
   // 数字格式化：超过 1 万显示「万」、超过 1 亿显示「亿」，杜绝 e+ 科学计数法
   function fmtNum(n) {
@@ -6418,12 +6426,14 @@
     return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
   }
   function yesterdayStr() { const d = new Date(); d.setDate(d.getDate() - 1); return dayStr(d); }
+  // 签到金币：随连续天数从 1 平滑升到 MAX_CHECKIN_COIN（默认 10000），第 1 天约 1，第 MAX_STREAK 天封顶
   function checkinCoinsForStreak(streak) {
-    const s = Math.max(1, Math.min(streak, 100));
-    const t = (s - 1) / 99;                 // 0..1
-    const lo = 1 + Math.round(t * 9);       // 第1天 1 -> 第100天 10
-    const hi = 10 + Math.round(t * 90);     // 第1天 10 -> 第100天 100
-    return lo + Math.floor(Math.random() * (hi - lo + 1));
+    const s = Math.max(1, Math.min(streak, MAX_STREAK));
+    const t = (s - 1) / (MAX_STREAK - 1);            // 0..1
+    const base = 1 + Math.round(t * (MAX_CHECKIN_COIN - 1));  // 1..10000
+    const jitter = Math.max(1, Math.round(base * 0.02));      // 小幅随机火花（±2%），保持随天数递增大趋势
+    let c = base + Math.floor(Math.random() * (jitter * 2 + 1)) - jitter;
+    return Math.max(1, Math.min(MAX_CHECKIN_COIN, c));
   }
   function myCoins() {
     const me = getCurrentUser();
@@ -6448,6 +6458,7 @@
         if (u.lastCheckin === today) throw new Error('今天已经签到过啦');
         let s = Number(u.streak) || 0;
         if (u.lastCheckin === yest) s += 1; else s = 1;
+        s = Math.min(s, MAX_STREAK);
         const coins = checkinCoinsForStreak(s);
         u.coins = (Number(u.coins) || 0) + coins;
         u.lastCheckin = today;
@@ -6456,7 +6467,7 @@
       }, 'checkin ' + me.id);
       renderProfilePage();
       renderCoinBalance();
-      toast('✨ 签到成功 +' + gained + ' 金币（连续 ' + newStreak + ' 天🔥）');
+      toast('✨ 签到成功 +' + fmtNum(gained) + ' 金币（连续 ' + fmtNum(newStreak) + ' 天🔥）');
     } catch (err) {
       showAlert('❌ 签到失败：' + err.message);
     } finally {
@@ -6475,16 +6486,51 @@
     const streak = Number(fresh.streak) || 0;
     const today = dayStr(new Date());
     const done = fresh.lastCheckin === today;
-    streakEl.textContent = streak;
+    streakEl.textContent = fmtNum(streak);
     if (hintEl) {
       if (done) hintEl.textContent = '今天已签到，明天再来可续上连击 🔥';
-      else if (streak > 0) hintEl.textContent = '已连续 ' + streak + ' 天，今天签到继续累加，最多 100 天金币更多';
-      else hintEl.textContent = '每天签到得 1-10 金币，连续越多给越多（最高 100 天 10-100 金币）';
+      else if (streak > 0) hintEl.textContent = '已连续 ' + fmtNum(streak) + ' 天，今天签到继续累加，最高 ' + fmtNum(MAX_STREAK) + ' 天、单日金币上限 ' + fmtNum(MAX_CHECKIN_COIN);
+      else hintEl.textContent = '每天签到得金币，连续越多给越多（最高 ' + fmtNum(MAX_STREAK) + ' 天、单日金币上限 ' + fmtNum(MAX_CHECKIN_COIN) + '）';
     }
     if (btn) {
       btn.disabled = done;
       btn.textContent = done ? '✅ 今日已签到' : '📅 签到领金币';
       btn.style.opacity = done ? '.6' : '1';
+    }
+    // 管理员可修改自己的火花天数
+    const adminBox = document.getElementById('adminStreakBox');
+    if (adminBox) {
+      const isAdm = isSuper() || isStaff();
+      adminBox.style.display = isAdm ? 'block' : 'none';
+      if (isAdm) {
+        const ai = document.getElementById('adminStreakInput');
+        if (ai && document.activeElement !== ai) ai.value = streak;
+      }
+    }
+  }
+  // 管理员：设置自己的火花（连续签到）天数，并把 lastCheckin 设为昨天，使该天数可继续累加
+  async function adminSetStreak() {
+    if (!isSuper() && !isStaff()) { toast('仅管理员可设置'); return; }
+    const me = getCurrentUser();
+    if (!me) { toggleModal('userModal', true); return; }
+    const inp = document.getElementById('adminStreakInput');
+    let days = Math.max(0, Math.min(parseInt((inp ? inp.value : '').trim(), 10) || 0, MAX_STREAK));
+    if (__interactLock) return;
+    __interactLock = true;
+    try {
+      await patchRemoteState(function (base) {
+        const u = base.users.find(function (x) { return String(x.id) === String(me.id); });
+        if (!u) throw new Error('账号异常，请重新登录');
+        u.streak = days;
+        u.lastCheckin = yesterdayStr();   // 设为昨天，今天即可继续签到累加
+      }, 'admin set streak ' + me.id);
+      renderProfilePage();
+      renderCoinBalance();
+      toast('✅ 火花天数已设为 ' + fmtNum(days) + ' 天🔥');
+    } catch (err) {
+      showAlert('❌ 设置失败：' + err.message);
+    } finally {
+      __interactLock = false;
     }
   }
 
@@ -6521,7 +6567,7 @@
     if (!me) { toggleModal('userModal', true); return; }
     const coins = myCoins();
     const info = document.getElementById('rpCoinsInfo');
-    if (info) info.innerHTML = '当前金币：<b>' + fmtNum(coins) + '</b> 🪙（' + REDPACKET_RATE + ' 金币 = ¥' + REDPACKET_AMOUNT.toFixed(2) + '，最多可兑 ' + Math.floor(coins / REDPACKET_RATE) + ' 个）';
+    if (info) info.innerHTML = '当前金币：<b>' + fmtNum(coins) + '</b> 🪙（' + REDPACKET_RATE + ' 金币 = ¥' + REDPACKET_AMOUNT.toFixed(2) + '）';
     switchRpMode('count');
     const inp = document.getElementById('rpCountInput');
     if (inp) inp.value = coins >= REDPACKET_RATE ? 1 : 0;
@@ -6546,7 +6592,7 @@
       amtHint.textContent = '需 ' + fmtNum(plan.need) + ' 金币（= ¥' + plan.amount.toFixed(2) + '）';
     }
     if (plan.need > coins) {
-      prev.innerHTML = '⚠️ 金币不足，还差 <b style="color:#ef4444;">' + fmtNum(plan.need - coins) + '</b> 🪙（你最多可兑 ' + Math.floor(coins / REDPACKET_RATE) + ' 个）';
+      prev.innerHTML = '⚠️ 金币不足，还差 <b style="color:#ef4444;">' + fmtNum(plan.need - coins) + '</b> 🪙';
       return;
     }
     prev.innerHTML = '✅ 将消耗 <b>' + fmtNum(plan.need) + '</b> 🪙，兑换 🧧 <b style="color:#16a34a;">¥' + plan.amount.toFixed(2) + '</b> 红包（' + plan.cnt + ' 个）';
