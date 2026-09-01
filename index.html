@@ -801,10 +801,11 @@
     /* 颗粒：真实材质都有细微噪声，纯渐变会显得很"塑料" */
     #glassBg::after {
       content: ''; position: absolute; inset: 0; pointer-events: none;
-      opacity: .18; mix-blend-mode: overlay;
+      /* 性能优化：颗粒不透明度 .18→.08，既保留磨砂质感又不让背景发灰、不影响卡片文字对比 */
+      opacity: .08; mix-blend-mode: overlay;
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
     }
-    .glass-blob { position: absolute; border-radius: 50%; will-change: transform; filter: blur(18px); }
+    .glass-blob { position: absolute; border-radius: 50%; will-change: transform; filter: blur(10px); }
     .glass-blob.b1 {
       width: 58vmax; height: 58vmax; left: -20vmax; top: -18vmax;
       background: radial-gradient(circle at 45% 45%, #6d28d9 0%, #8b5cf6 32%, #a78bfa 52%, rgba(167,139,250,0) 72%);
@@ -858,6 +859,37 @@
     /* 滚动时暂停背景极光动画：玻璃模式最大的持续重绘开销，停下滚动即恢复，避免滚动卡顿 */
     body.scrolling .glass-blob { animation-play-state: paused !important; }
     body.scrolling .glass-blob { will-change: auto; }
+
+    /* 触屏设备：没有 hover，关掉所有"指针跟随高光 + 3D 倾斜"，避免触摸时误触发重合成与文字发虚 */
+    @media (hover: none) {
+      body.glass-mode .card::after,
+      body.glass-mode .guest-chip::after,
+      body.glass-mode header::after,
+      body.glass-mode .bottom-tab::after,
+      body.glass-mode .modal::after,
+      body.glass-mode .profile-section::after,
+      body.glass-mode .btn::after,
+      body.glass-mode .tab-btn::after,
+      body.glass-mode .filter-btn::after { opacity: 0 !important; }
+      body.glass-mode .card:hover { transform: none; }
+    }
+    /* 手机端进一步降级模糊与色散：小屏 GPU 弱，过强 refraction 直接掉帧 */
+    @media (max-width: 768px) {
+      body.glass-mode .card,
+      body.glass-mode .modal,
+      body.glass-mode .profile-section,
+      body.glass-mode .media-gallery,
+      body.glass-mode .guest-chip,
+      body.glass-mode .notif-item,
+      body.glass-mode .publish-option,
+      body.glass-mode .admin-action-row,
+      body.glass-mode .form-grid > div {
+        -webkit-backdrop-filter: blur(11px) saturate(155%) brightness(1.04);
+        backdrop-filter: blur(11px) saturate(155%) brightness(1.04);
+      }
+      body.glass-mode .bottom-tab { -webkit-backdrop-filter: blur(20px) saturate(185%); backdrop-filter: blur(20px) saturate(185%); }
+      body.glass-mode header { -webkit-backdrop-filter: blur(18px) saturate(170%); backdrop-filter: blur(18px) saturate(170%); }
+    }
 
     /* --- ② 材质变量：更透、更艳、更厚 --- */
     body.glass-mode {
@@ -948,14 +980,16 @@
     body.glass-mode .guest-chip,
     body.glass-mode .form-grid > div {
       background-color: transparent;
-      background-image: var(--glass-sheen), var(--glass-fill), var(--glass-edge), var(--glass-grain);
-      background-clip: padding-box, padding-box, border-box, border-box;
-      background-origin: padding-box, padding-box, border-box, border-box;
-      background-repeat: no-repeat, no-repeat, no-repeat, repeat;
-      background-blend-mode: normal, normal, normal, soft-light;
+      /* 性能优化：去掉 feTurbulence 颗粒层 + soft-light 混合（每张卡每帧重混合，是掉帧与发灰的主因），
+         仅用 3 层半透明渐变做磨砂玻璃，观感更干净、文字对比更清晰，GPU 开销大幅下降 */
+      background-image: var(--glass-sheen), var(--glass-fill), var(--glass-edge);
+      background-clip: padding-box, padding-box, border-box;
+      background-origin: padding-box, padding-box, border-box;
+      background-repeat: no-repeat, no-repeat, no-repeat;
+      background-blend-mode: normal, normal, normal;
       border: 1px solid transparent;
-      -webkit-backdrop-filter: blur(34px) saturate(280%) brightness(1.07);
-      backdrop-filter: blur(34px) saturate(280%) brightness(1.07);
+      -webkit-backdrop-filter: blur(15px) saturate(170%) brightness(1.04);
+      backdrop-filter: blur(15px) saturate(170%) brightness(1.04);
       box-shadow: var(--glass-drop), var(--glass-chroma), var(--glass-thick);
     }
     body.glass-mode .card { border-radius: 28px; }
@@ -1023,19 +1057,19 @@
     body.glass-mode .card:nth-of-type(3n)::before { animation-delay: -4.8s; }
 
     body.glass-mode .card {
-      transition: transform .28s cubic-bezier(.22,1,.36,1), box-shadow .28s ease;
-      transform-style: preserve-3d;
-      will-change: transform;
+      transition: transform .26s cubic-bezier(.22,1,.36,1), box-shadow .26s ease;
+      /* 性能优化：去掉 will-change: transform 与 preserve-3d。即便为每张卡常驻一个合成层也会撑爆显存、
+         并在成列滚动时造成掉帧；3D rotate 还会让部分机型文字发虚（"不好好显示"）。 */
     }
     body.glass-mode .card:hover {
-      transform: translateY(-8px) scale(1.015) rotateX(calc((var(--gy, 0.5) - 0.5) * -8deg)) rotateY(calc((var(--gx, 0.5) - 0.5) * 8deg));
+      /* 仅做轻量上浮 + 阴影，不再做 3D 倾斜：观感仍然"湿玻璃"，但不再触发 3D 重合成与文字模糊 */
+      transform: translateY(-6px);
       box-shadow:
-        0 14px 30px rgba(30,27,75,.14),
-        0 52px 100px rgba(30,27,75,.32),
+        0 14px 30px rgba(30,27,75,.16),
+        0 40px 80px rgba(30,27,75,.30),
         var(--glass-chroma),
         inset 0 2px 1px rgba(255,255,255,1),
-        inset 0 -2px 1px rgba(255,255,255,.3),
-        0 0 40px rgba(255,255,255,.15);
+        inset 0 -2px 1px rgba(255,255,255,.3);
     }
     body.glass-mode .card::after {
       content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 2;
@@ -1123,16 +1157,18 @@
     body.glass-mode .media-gallery,
     body.glass-mode .guest-chip,
     body.glass-mode .form-grid > div {
-      -webkit-backdrop-filter: blur(34px) saturate(260%) brightness(1.02) contrast(1.02);
-      backdrop-filter: blur(34px) saturate(260%) brightness(1.02) contrast(1.02);
+      /* 性能优化（v6.9.28）：模糊半径 34px→16px、饱和度 260%→165%，去掉 contrast 微调。
+         模糊半径每降一档，backdrop 重采样开销近似平方下降；卡片成列出现时这是掉帧的头号原因。 */
+      -webkit-backdrop-filter: blur(16px) saturate(165%) brightness(1.04);
+      backdrop-filter: blur(16px) saturate(165%) brightness(1.04);
     }
     body.glass-mode .bottom-tab {
-      -webkit-backdrop-filter: blur(44px) saturate(280%) brightness(1.03) contrast(1.02);
-      backdrop-filter: blur(44px) saturate(280%) brightness(1.03) contrast(1.02);
+      -webkit-backdrop-filter: blur(26px) saturate(200%) brightness(1.04);
+      backdrop-filter: blur(26px) saturate(200%) brightness(1.04);
     }
     body.glass-mode header {
-      -webkit-backdrop-filter: blur(40px) saturate(260%) brightness(1.03) contrast(1.02);
-      backdrop-filter: blur(40px) saturate(260%) brightness(1.03) contrast(1.02);
+      -webkit-backdrop-filter: blur(24px) saturate(185%) brightness(1.04);
+      backdrop-filter: blur(24px) saturate(185%) brightness(1.04);
     }
 
     /* 性能优化（v6.9.13）：关闭卡片的常驻扫光与无限悬浮动画——每张卡片每帧重绘
@@ -1897,6 +1933,7 @@
       <span class="staff-badge" id="staffBadge" style="margin-bottom:10px;">👤 内部管理员 <span style="cursor:pointer; text-decoration:underline;" onclick="logoutStaff()">退出</span></span>
       <div style="display:flex; flex-direction:column; gap:8px;">
         <button class="btn btn-outline admin-only" id="pendingReviewBtn" style="color:var(--pin-gold); border-color:var(--pin-gold);" onclick="togglePendingReview()">⏳ 待审核 (0)</button>
+        <button class="btn btn-outline admin-only" id="reportManageBtn" style="color:#dc2626; border-color:#fca5a5;" onclick="openReportAdminModal()">🚩 举报管理 (0)</button>
         <button class="btn btn-outline admin-only" id="showHiddenBtn" onclick="toggleShowHidden()">🙈 显示已隐藏</button>
         <button class="btn btn-primary admin-only" onclick="openAddForm('admin')">➕ 添加新嘉宾</button>
         <button class="btn btn-outline super-only" onclick="toggleModal('staffAdminModal', true)">👥 内部管理员</button>
@@ -2182,6 +2219,30 @@
     </div>
     <h3 style="font-size:14px; margin:0 0 8px;">已有链接</h3>
     <div id="slList"></div>
+  </div>
+</div>
+
+<!-- 举报嘉宾资料弹窗 -->
+<div class="modal-overlay" id="reportModal" onclick="handleOverlayClick(event, 'reportModal')">
+  <div class="modal" style="max-width:420px; padding:20px;">
+    <button class="close-btn" onclick="toggleModal('reportModal', false)">×</button>
+    <h3 style="margin:0 0 4px;">🚩 举报该嘉宾资料</h3>
+    <p style="font-size:12px; color:var(--text-muted); margin:0 0 14px; line-height:1.6;">请告诉我们具体原因，管理员会尽快核实处理。恶意举报可能影响你的账号信誉。</p>
+    <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:14px;" id="reportReasons"></div>
+    <textarea id="reportDetail" rows="3" placeholder="补充说明（选填，最多 200 字）" maxlength="200" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:12px; font-size:13px; background:var(--bg); color:var(--text); resize:vertical; box-sizing:border-box;"></textarea>
+    <div style="display:flex; gap:8px; margin-top:14px;">
+      <button class="btn btn-outline" style="flex:1;" onclick="toggleModal('reportModal', false)">取消</button>
+      <button class="btn btn-primary" style="flex:1; background:#dc2626;" id="reportSubmitBtn" onclick="submitReport()">提交举报</button>
+    </div>
+  </div>
+</div>
+
+<!-- 举报管理弹窗（仅管理员） -->
+<div class="modal-overlay" id="reportAdminModal" onclick="handleOverlayClick(event, 'reportAdminModal')">
+  <div class="modal" style="max-width:520px; padding:20px;">
+    <button class="close-btn" onclick="toggleModal('reportAdminModal', false)">×</button>
+    <h3 style="margin:0 0 4px;">🚩 举报管理</h3>
+    <div id="reportAdminList" style="margin-top:12px;"></div>
   </div>
 </div>
 
@@ -2835,8 +2896,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.9.27';
+  const APP_VERSION = '6.9.28';
   const CHANGELOG = [
+    { v: '6.9.28', d: '2026-09-02', note: '① 新增「🚩 举报嘉宾资料」：任意用户（含游客）在嘉宾详情页点举报，可选原因 + 选填说明提交，24h 内同资料去重；管理员「我的 → 管理面板」新增「🚩 举报管理」入口，按待处理/已处理列出全部举报，可一键「查看资料 / 隐藏资料 / 标记已处理 / 删除记录」，角标实时显示待处理数量。② Liquid Glass 流畅度与显示修复：模糊半径 34px→16px（手机 11px）、饱和度 280%→165%、去掉每张卡每帧重混合的 feTurbulence 颗粒层与 soft-light 混合、移除卡片常驻 will-change 与 3D 倾斜、降低背景极光模糊与全屏颗粒不透明度、触屏设备关闭指针跟随高光与悬浮倾斜。滚动/移动明显更顺、文字对比更清晰、不再发虚掉帧', type: 'feat' },
     { v: '6.9.27', d: '2026-09-02', note: '拒绝审核后通知提交用户重填：管理员点「❌ 拒绝」一份待审核资料时，若提交者是注册用户，会自动向其站内信发送「📝 资料未通过审核，请重新填写后再次提交」通知；用户点该通知可直接打开提交表单重新填写（游客提交的资料无账号可通知，仅删除）。删除已公开资料不触发此通知', type: 'feat' },
     { v: '6.9.26', d: '2026-09-02', note: '兑换红包去掉「按红包个数」模式，只保留「按金额 ¥」：弹窗直接输入金额（如 0.01），实时显示「需 X 金币（= ¥0.01）」，确认即兑换对应红包（金币须为 1000 整数倍、自动取整到对应红包个数）；界面更简洁', type: 'fix' },
     { v: '6.9.25', d: '2026-09-02', note: '「设置火花天数」入口从「每日签到」区块移到「我的 → 管理面板」，与兑换码管理、兑换记录等管理员功能集中在一起，普通用户签到区更清爽', type: 'fix' },
@@ -3342,7 +3404,8 @@
     updateMode: false,   // 更新模式：开启后全屏维护遮罩覆盖整站，普通用户无法操作任何功能；管理员可在遮罩上「退出更新模式」或「预览网站」
     submitLinks: [],     // 投稿链接 [{key:hash, maxUses, used, note, createdAt}]；访客须凭有效链接(?k=)才能提交
     codes: [],           // 金币兑换码 [{code, coins, maxUses, usedBy, usedList:[{uid,time}], usedAt, createdAt, createdBy}]；管理员生成、注册用户可兑换 maxUses 次
-    redemptions: []      // 红包兑换记录 [{id, payCode, uid, name, count, coins, amount, time, paid, paidAt}]；payCode 为领取凭证编码，paid 标记管理员是否已发放；1000 金币 = ¥0.01
+    redemptions: [],     // 红包兑换记录 [{id, payCode, uid, name, count, coins, amount, time, paid, paidAt}]；payCode 为领取凭证编码，paid 标记管理员是否已发放；1000 金币 = ¥0.01
+    reports: []          // 举报记录 [{id, profileId, reporterUid, reporterName, reason, detail, time, status}]；status: pending / resolved
   };
 
   // 内置示例兜底：当取不到仓库 data.json（本地预览 / 分享链接 / 直接双击打开）时，
@@ -3826,6 +3889,7 @@
     if (!Array.isArray(base.notifications)) base.notifications = appState.notifications || [];
     if (!Array.isArray(base.codes)) base.codes = appState.codes || [];
     if (!Array.isArray(base.redemptions)) base.redemptions = appState.redemptions || [];
+    if (!Array.isArray(base.reports)) base.reports = appState.reports || [];
 
     const ret = patchFn(base);   // 在最新基线上打补丁
 
@@ -5002,6 +5066,7 @@
       if (Array.isArray(data.submitLinks)) appState.submitLinks = data.submitLinks;
       if (Array.isArray(data.codes)) appState.codes = data.codes;
       if (Array.isArray(data.redemptions)) appState.redemptions = data.redemptions;
+      if (Array.isArray(data.reports)) appState.reports = data.reports;
       // 兼容老数据：v6.9.4 起的审核状态粘性依赖 statusUpdatedAt；旧资料没有该字段时
       // 退化成 createdAt 比较，并发合并可能把已通过的审核打回 pending。这里在加载时补默认时间戳。
       if (Array.isArray(appState.profiles)) {
@@ -5148,6 +5213,7 @@
       if (Array.isArray(data.submitLinks)) appState.submitLinks = data.submitLinks;
       if (Array.isArray(data.codes)) appState.codes = data.codes;
       if (Array.isArray(data.redemptions)) appState.redemptions = data.redemptions;
+      if (Array.isArray(data.reports)) appState.reports = data.reports;
       __lastSyncSig = sig;
       // 被封号的当前登录用户立即踢下线（多端实时生效）
       const cu = getCurrentUser();
@@ -5712,8 +5778,150 @@
     bar.innerHTML =
       '<button class="btn ' + (liked ? 'btn-primary' : 'btn-outline') + '" style="flex:1; font-size:13px;" onclick="toggleLike(' + item.id + ')">' + (liked ? '👍 已赞' : '👍 点赞') + ' <span id="likeCount">' + likeCount + '</span></button>' +
       '<button class="btn ' + (faved ? 'btn-primary' : 'btn-outline') + '" style="flex:1; font-size:13px;" onclick="toggleFavorite(' + item.id + ')">' + (faved ? '⭐ 已收藏' : '⭐ 收藏') + '</button>' +
-      '<button class="btn btn-outline" style="flex:1; font-size:13px;" onclick="scrollToComments()">💬 留言 ' + commentCount + '</button>';
+      '<button class="btn btn-outline" style="flex:1; font-size:13px;" onclick="scrollToComments()">💬 留言 ' + commentCount + '</button>' +
+      '<button class="btn btn-outline" style="flex:1; font-size:13px; color:#dc2626; border-color:#fca5a5;" onclick="openReportModal(' + item.id + ')">🚩 举报</button>';
   }
+
+  // ===== 举报嘉宾资料 =====
+  const REPORT_REASONS = ['虚假信息 / 冒充他人', '色情低俗内容', '诈骗或诱导转账', '骚扰或不当言论', '侵犯隐私（泄露联系方式/住址）', '其他违规'];
+  let __reportTargetId = null;
+
+  function openReportModal(id) {
+    const item = appState.profiles.find(p => p.id === id);
+    if (!item) { showAlert('该资料不存在'); return; }
+    __reportTargetId = id;
+    const box = document.getElementById('reportReasons');
+    if (box) {
+      box.innerHTML = REPORT_REASONS.map(function (r, i) {
+        return '<label style="display:flex; align-items:center; gap:10px; padding:10px 12px; border:1px solid var(--border); border-radius:12px; cursor:pointer; font-size:13px; background:var(--bg);">' +
+          '<input type="radio" name="reportReason" value="' + i + '" style="accent-color:#dc2626;"> <span>' + escapeHtml(r) + '</span></label>';
+      }).join('');
+    }
+    const ta = document.getElementById('reportDetail');
+    if (ta) ta.value = '';
+    const btn = document.getElementById('reportSubmitBtn');
+    if (btn) { btn.disabled = false; btn.textContent = '提交举报'; }
+    toggleModal('reportModal', true);
+  }
+
+  async function submitReport() {
+    const id = __reportTargetId;
+    if (!id) return;
+    const sel = document.querySelector('input[name="reportReason"]:checked');
+    if (!sel) { showAlert('请先选择一个举报原因'); return; }
+    const reason = REPORT_REASONS[parseInt(sel.value, 10)];
+    const detail = (document.getElementById('reportDetail') ? document.getElementById('reportDetail').value : '').trim().slice(0, 200);
+    const u = getCurrentUser();
+    const reporterUid = u ? u.id : null;
+    const reporterName = u ? u.name : '访客';
+
+    // 24h 内同一举报人 + 同一资料去重，避免重复刷屏
+    if (!Array.isArray(appState.reports)) appState.reports = [];
+    const dup = appState.reports.find(function (r) {
+      return r.profileId === id && r.status === 'pending' &&
+        String(r.reporterUid) === String(reporterUid) && (Date.now() - r.time) < 86400000;
+    });
+    if (dup) { showAlert('你已在 24 小时内举报过该资料，管理员正在处理～'); toggleModal('reportModal', false); return; }
+
+    const btn = document.getElementById('reportSubmitBtn');
+    if (btn) { btn.disabled = true; btn.textContent = '提交中…'; }
+    try {
+      await patchRemoteState(function (base) {
+        if (!Array.isArray(base.reports)) base.reports = [];
+        base.reports.unshift({
+          id: Date.now() + '_' + Math.floor(Math.random() * 1000),
+          profileId: id, reporterUid: reporterUid, reporterName: reporterName,
+          reason: reason, detail: detail, time: Date.now(), status: 'pending'
+        });
+        if (base.reports.length > 500) base.reports.length = 500;
+      }, 'report ' + id);
+      toast('🚩 举报已提交，管理员会尽快核实');
+      toggleModal('reportModal', false);
+    } catch (err) {
+      showAlert('❌ 举报提交失败：' + err.message + '\n请检查网络后重试');
+      if (btn) { btn.disabled = false; btn.textContent = '提交举报'; }
+    }
+  }
+
+  function openReportAdminModal() {
+    if (!(isSuper() || isStaff())) { showAlert('仅管理员可查看'); return; }
+    renderReportAdminList();
+    toggleModal('reportAdminModal', true);
+  }
+
+  function renderReportAdminList() {
+    const box = document.getElementById('reportAdminList');
+    if (!box) return;
+    if (!Array.isArray(appState.reports)) appState.reports = [];
+    const pending = appState.reports.filter(function (r) { return r.status === 'pending'; });
+    const done = appState.reports.filter(function (r) { return r.status === 'resolved'; });
+    if (appState.reports.length === 0) {
+      box.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:30px;">暂无举报记录</div>';
+      return;
+    }
+    const itemHtml = function (r) {
+      const p = (appState.profiles || []).find(function (x) { return x.id === r.profileId; });
+      const name = p ? (p['姓名'] || '未填') : '（资料已删除）';
+      const t = new Date(r.time);
+      const ts = (t.getMonth() + 1) + '月' + t.getDate() + '日 ' + t.getHours() + ':' + String(t.getMinutes()).padStart(2, '0');
+      return '<div class="notif-item" style="flex-direction:column; align-items:stretch; gap:6px; border:1px solid var(--border); margin-bottom:10px; cursor:default;">' +
+        '<div style="display:flex; justify-content:space-between; gap:8px; align-items:center;">' +
+          '<b style="color:#dc2626;">🚩 ' + escapeHtml(r.reason) + '</b>' +
+          '<span style="font-size:11px; color:var(--text-muted); white-space:nowrap;">' + ts + '</span></div>' +
+        '<div style="font-size:12px; color:var(--text);">被举报嘉宾：<b>' + escapeHtml(name) + '</b> · 举报人：' + escapeHtml(r.reporterName || '访客') +
+          (r.detail ? ' · 说明：' + escapeHtml(r.detail) : '') + '</div>' +
+        '<div style="display:flex; gap:6px; flex-wrap:wrap;">' +
+          (p ? '<button class="btn btn-outline" style="font-size:12px; padding:6px 10px;" onclick="toggleModal(\'reportAdminModal\', false); openDetail(' + p.id + ');">👁️ 查看资料</button>' : '') +
+          (p && !p.isHidden ? '<button class="btn btn-outline" style="font-size:12px; padding:6px 10px; color:#b45309; border-color:#fcd34d;" onclick="hideReportedProfile(' + p.id + ')">🙈 隐藏资料</button>' : '') +
+          (r.status === 'pending' ? '<button class="btn btn-outline" style="font-size:12px; padding:6px 10px; color:#047857; border-color:#a7f3d0;" onclick="resolveReport(\'' + r.id + '\')">✅ 标记已处理</button>' : '') +
+          '<button class="btn btn-outline" style="font-size:12px; padding:6px 10px; color:var(--danger); border-color:#fca5a5;" onclick="deleteReport(\'' + r.id + '\')">🗑️ 删除记录</button>' +
+        '</div>' +
+        (r.status === 'resolved' ? '<div style="font-size:11px; color:#047857;">✓ 已处理</div>' : '') +
+      '</div>';
+    };
+    box.innerHTML =
+      '<div style="font-size:12px; color:var(--text-muted); margin-bottom:8px;">待处理 ' + pending.length + ' 条 · 已处理 ' + done.length + ' 条</div>' +
+      (pending.length ? pending.map(itemHtml).join('') : '<div style="font-size:12px; color:var(--text-muted); padding:8px 0;">✅ 没有待处理的举报</div>') +
+      (done.length ? '<div style="font-size:12px; color:var(--text-muted); margin:10px 0 6px;">— 已处理 —</div>' + done.slice(0, 20).map(itemHtml).join('') : '');
+  }
+
+  async function resolveReport(rid) {
+    try {
+      await patchRemoteState(function (base) {
+        if (!Array.isArray(base.reports)) return;
+        const r = base.reports.find(function (x) { return x.id === rid; });
+        if (r) r.status = 'resolved';
+      }, 'resolve report ' + rid);
+      renderReportAdminList(); updateReportBadge();
+      toast('✅ 已标记为处理');
+    } catch (err) { showAlert('操作失败：' + err.message); }
+  }
+
+  async function deleteReport(rid) {
+    try {
+      await patchRemoteState(function (base) {
+        if (!Array.isArray(base.reports)) return;
+        base.reports = base.reports.filter(function (x) { return x.id !== rid; });
+      }, 'delete report ' + rid);
+      renderReportAdminList(); updateReportBadge();
+      toast('🗑️ 已删除举报记录');
+    } catch (err) { showAlert('操作失败：' + err.message); }
+  }
+
+  function hideReportedProfile(pid) {
+    toggleModal('reportAdminModal', false);
+    toggleHideProfile(pid);
+  }
+
+  function updateReportBadge() {
+    const btn = document.getElementById('reportManageBtn');
+    if (!btn) return;
+    const count = (appState.reports || []).filter(function (r) { return r.status === 'pending'; }).length;
+    btn.textContent = '🚩 举报管理 (' + count + ')';
+    btn.style.borderColor = count > 0 ? '#fca5a5' : '';
+    btn.style.color = count > 0 ? '#dc2626' : '';
+  }
+
 
   async function toggleLike(id) {
     const user = getCurrentUser();
@@ -7292,6 +7500,7 @@
       btn.style.background = 'var(--pin-gold)';
       btn.style.color = '#fff';
     }
+    updateReportBadge();   // 管理员面板刷新时同步更新举报角标
   }
 
   // ===== 分页 =====
