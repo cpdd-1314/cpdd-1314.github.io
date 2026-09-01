@@ -2597,7 +2597,7 @@
     <p style="font-size:12px; color:var(--text-muted); margin-bottom:2px;">生成专属兑换码并发给注册用户，自定义金币数量与使用次数，仅注册用户可兑换。</p>
     <div style="display:flex; gap:8px; margin:12px 0;">
       <input type="number" id="redeemCoinsInput" min="1" max="999999" placeholder="金币数量" style="flex:1; min-width:0; padding:9px 12px; border:1px solid var(--border); border-radius:10px; font-size:14px; background:var(--bg); color:var(--text);">
-      <input type="number" id="redeemCountInput" min="1" max="200" value="1" placeholder="生成数量" style="width:84px; padding:9px 12px; border:1px solid var(--border); border-radius:10px; font-size:14px; background:var(--bg); color:var(--text);">
+      <input type="number" id="redeemCountInput" min="1" value="1" placeholder="生成数量" style="width:84px; padding:9px 12px; border:1px solid var(--border); border-radius:10px; font-size:14px; background:var(--bg); color:var(--text);">
       <input type="number" id="redeemMaxUsesInput" min="1" max="9999" value="1" placeholder="使用次数" title="每个兑换码可被兑换的次数（默认 1 次，留空或 1 表示一次性）" style="width:84px; padding:9px 12px; border:1px solid var(--border); border-radius:10px; font-size:14px; background:var(--bg); color:var(--text);">
       <button class="btn btn-primary" onclick="genRedeemCode()">🎲 生成</button>
     </div>
@@ -2650,6 +2650,31 @@
     </div>
     <div id="rpPreview" style="font-size:12px; color:var(--text-muted); min-height:18px; margin-bottom:10px;"></div>
     <button class="btn btn-primary" style="width:100%;" onclick="exchangeRedpacket()">✅ 确认兑换</button>
+  </div>
+</div>
+
+<!-- 红包兑换成功：生成领取凭证链接，发到微信群让管理员核对发放 -->
+<div class="modal-overlay" id="redpacketShareModal" onclick="handleOverlayClick(event, 'redpacketShareModal')">
+  <div class="modal" style="max-width:440px;">
+    <button class="close-btn" onclick="toggleModal('redpacketShareModal', false)">×</button>
+    <h2 style="font-size:18px; margin-bottom:6px;">🧧 红包兑换成功</h2>
+    <div id="rpShareInfo" style="font-size:14px; font-weight:700; color:var(--text);"></div>
+    <p style="font-size:12px; color:var(--text-muted); margin:8px 0 4px;">把下面这个「领取凭证」链接发到微信群，管理员点开即可核对并发放红包 💰</p>
+    <div style="display:flex; gap:8px; margin:6px 0;">
+      <input type="text" id="rpShareLink" readonly style="flex:1; min-width:0; padding:9px 12px; border:1px solid var(--border); border-radius:10px; font-size:12px; background:var(--bg); color:var(--text);">
+      <button class="btn btn-outline" style="font-size:12px; padding:9px 12px; white-space:nowrap;" onclick="copyTextById('rpShareLink')">📋 复制</button>
+    </div>
+    <button class="btn btn-primary" style="width:100%; margin-top:6px; font-size:14px; padding:11px 14px;" onclick="shareRedpacket()">📤 发到微信群</button>
+  </div>
+</div>
+
+<!-- 红包领取凭证（管理员打开 ?rp= 链接）：核对发放，只有管理员能标记已兑换 -->
+<div class="modal-overlay" id="redpacketPayoutModal" onclick="handleOverlayClick(event, 'redpacketPayoutModal')">
+  <div class="modal" style="max-width:440px;">
+    <button class="close-btn" onclick="toggleModal('redpacketPayoutModal', false)">×</button>
+    <h2 style="font-size:18px; margin-bottom:6px;">🧧 红包领取凭证</h2>
+    <div id="rpPayoutInfo"></div>
+    <div id="rpPayoutAction"></div>
   </div>
 </div>
 
@@ -2799,8 +2824,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.9.19';
+  const APP_VERSION = '6.9.20';
   const CHANGELOG = [
+    { v: '6.9.20', d: '2026-09-02', note: '① 红包兑换生成「领取凭证」：每次兑换红包都会生成一个唯一编码 ID（payCode），兑换成功弹窗内出现「📤 发到微信群」按钮与可复制的领取链接（?rp=编码），用户把链接发到微信群。② 管理员标记已兑换：管理员（仅管理员）点开该链接弹出「🧧 红包领取凭证」，核对领取人/金额/编码后可点绿色「✅ 标记已兑换（已发放）」；非管理员打开只看到凭证信息与提示、看不到按钮。管理员后台「💰 兑换记录」每条也有「标记已兑换」按钮，已发放显示绿色「✅已兑换」。③ 我的记录同步显示「⏳待发放 / ✅已发放」状态。④ 生成金币兑换码取消数量上限（原上限 200），一次可生成任意数量', type: 'feat' },
     { v: '6.9.19', d: '2026-09-02', note: '① 兑换红包实时换算：输入红包个数即时显示「消耗多少金币 → 可兑多少 ¥ 红包（N 个）」，金币不足时提示还差多少、最多可兑几个，所见即所得。② 金币数字格式化：余额/兑换/红包/记录等所有金币数字超过 1 万显示「万」、超过 1 亿显示「亿」（如 1.23万 / 2.5亿），不再出现 e+ 科学计数法。③ 兑换码支持多次使用：管理员生成兑换码时新增「使用次数」输入框（默认 1，留空=一次性），一个码可被不同注册用户兑换 N 次；管理面板列表显示「未兑换 / 已用 N/M / 已兑换」状态与 ×N次 标签，分享给多人可反复领取，管理员视角同步显示「已用 N/M」或「已兑换」', type: 'feat' },
     { v: '6.9.18', d: '2026-09-02', note: '① 红包入口优化：「🧧 金币红包」从独立大按钮改为「我的金币」区里的小按钮（与「🎟️ 兑换」并排），更顺手。② 管理员「🎟️ 兑换码管理」支持一次性批量生成——新增数量输入框，一次生成 N 个兑换码（上限 200），结果区列出全部码并支持「📋 复制全部」一键转发给用户。③ 兑换后分享 + 管理员「已兑换」：用户兑换成功弹窗内出现「📤 分享给微信好友」按钮（优先调系统分享面板/微信，不支持则复制分享链接）；分享链接带 ?redeem= 码，好友打开自动填入并可直接兑换；若打开的是已被使用的码且当前为管理员账号，弹窗显眼展示绿色「✅ 已兑换」按钮', type: 'feat' },
     { v: '6.9.17', d: '2026-09-02', note: '① 新增「每日签到得金币」：注册用户在「我的」页点「📅 签到领金币」即可领火花，每天随机 1-10 个；连续签到越多给越多，按天数从第 1 天的 1-10 平滑升到第 100 天的 10-100 金币（断签自动从第 1 天重算），区块实时显示连续天数🔥与今日是否已签。② 新增「金币红包兑换」：1000 金币 = ¥0.01 红包，可一次兑多个，扣金币并写入兑换记录。③ 兑换记录双端可见——用户侧「🧾 我的兑换记录」汇总自己的红包兑换 + 兑换码领取；管理员侧管理面板新增「💰 兑换记录」，汇总全站所有人的红包兑换（含笔数、累计金币、累计金额统计）。签到/红包/记录全部走增量保存，多端约 1 分钟同步', type: 'feat' },
@@ -3300,7 +3326,7 @@
     updateMode: false,   // 更新模式：开启后全屏维护遮罩覆盖整站，普通用户无法操作任何功能；管理员可在遮罩上「退出更新模式」或「预览网站」
     submitLinks: [],     // 投稿链接 [{key:hash, maxUses, used, note, createdAt}]；访客须凭有效链接(?k=)才能提交
     codes: [],           // 金币兑换码 [{code, coins, maxUses, usedBy, usedList:[{uid,time}], usedAt, createdAt, createdBy}]；管理员生成、注册用户可兑换 maxUses 次
-    redemptions: []      // 红包兑换记录 [{id, uid, name, count, coins, amount, time}]；1000 金币 = ¥0.01
+    redemptions: []      // 红包兑换记录 [{id, payCode, uid, name, count, coins, amount, time, paid, paidAt}]；payCode 为领取凭证编码，paid 标记管理员是否已发放；1000 金币 = ¥0.01
   };
 
   // 内置示例兜底：当取不到仓库 data.json（本地预览 / 分享链接 / 直接双击打开）时，
@@ -4240,15 +4266,29 @@
       } catch (e) {}
     } catch (e) {}
   }
-  // 解析分享链接里的 ?redeem= 兑换码：记下待兑换码并清掉 URL 参数，登录后自动打开兑换
+  // 解析分享链接里的 ?redeem= 兑换码 / ?rp= 红包领取凭证：记下并清掉 URL 参数
   function applyRedeemKeyFromUrl() {
     try {
-      const code = new URLSearchParams(location.search).get('redeem');
+      const params = new URLSearchParams(location.search);
+      const code = params.get('redeem');
       if (code) {
         window.__pendingRedeem = code.toUpperCase().replace(/\s/g, '');
         try { history.replaceState({}, '', location.pathname); } catch (e) {}
       }
+      const rp = params.get('rp');
+      if (rp) {
+        window.__pendingRedpacket = rp.toUpperCase().replace(/\s/g, '');
+        try { history.replaceState({}, '', location.pathname); } catch (e) {}
+      }
     } catch (e) {}
+  }
+  // 分享链接带 ?rp= 进来：自动打开红包领取凭证弹窗（管理员可标记已兑换）
+  function flushPendingRedpacket() {
+    if (!window.__pendingRedpacket) return false;
+    const code = window.__pendingRedpacket;
+    window.__pendingRedpacket = null;
+    setTimeout(function () { openRedpacketPayout(code); }, 300);
+    return true;
   }
   // 访客投稿是否解锁：有效链接 或 本设备已被授权（打开过邀请链接）都算解锁
   function isGuestSubmitUnlocked() {
@@ -4965,8 +5005,9 @@
     applyGlassMode();     // 玻璃拟态开关（管理员控制，随数据一起下发）
     applyUpdateMode();    // 更新模式横幅（管理员控制，随数据一起下发）
     applySubmitKeyFromUrl();   // 解析 ?k= 投稿链接，决定是否解锁访客提交
-    applyRedeemKeyFromUrl();   // 解析 ?redeem= 分享链接，登录后自动打开兑换
-    flushPendingRedeem();      // 若已登录且带分享码，直接打开兑换弹窗
+    applyRedeemKeyFromUrl();   // 解析 ?redeem= / ?rp= 分享链接
+    flushPendingRedeem();      // 若已登录且带兑换码，直接打开兑换弹窗
+    flushPendingRedpacket();   // 若带红包凭证链接，直接打开领取凭证弹窗
     // 刷新后恢复：页码/搜索/筛选/排序（在渲染前设置，renderCards 用恢复的状态出页）
     restorePageState();
     renderCards();
@@ -5409,6 +5450,8 @@
     if (flushPendingPublish()) return;
     // 通过分享链接带 ?redeem= 进来：登录成功直接打开兑换弹窗
     if (flushPendingRedeem()) return;
+    // 通过分享链接带 ?rp= 进来：直接打开红包领取凭证弹窗（管理员可标记已兑换）
+    flushPendingRedpacket();
     showAlert('✅ 欢迎回来：' + name + '！');
   }
 
@@ -5924,7 +5967,7 @@
     const cntInp = document.getElementById('redeemCountInput');
     const useInp = document.getElementById('redeemMaxUsesInput');
     const coins = parseInt((inp ? inp.value : '').trim(), 10);
-    const count = Math.max(1, Math.min(parseInt((cntInp ? cntInp.value : '1').trim(), 10) || 1, 200));
+    const count = Math.max(1, parseInt((cntInp ? cntInp.value : '1').trim(), 10) || 1);
     let maxUses = parseInt((useInp ? (useInp.value || '').trim() : '1'), 10);
     if (!maxUses || maxUses < 1) maxUses = 1;
     if (maxUses > 9999) maxUses = 9999;
@@ -6108,6 +6151,86 @@
     } else {
       copyText(url);
       toast('📋 分享链接已复制，去微信发给好友吧');
+    }
+  }
+
+  // 红包兑换成功：展示领取凭证链接，可发到微信群
+  function showRedpacketSuccess(rec) {
+    const info = document.getElementById('rpShareInfo');
+    const link = document.getElementById('rpShareLink');
+    if (info) info.innerHTML = '🎉 你兑换了 🧧 <b style="color:#16a34a;">¥' + (Number(rec.amount) || 0).toFixed(2) + '</b> 红包（消耗 ' + fmtNum(rec.coins) + ' 金币）';
+    window.__rpShare = { code: rec.payCode, amount: rec.amount, name: rec.name };
+    if (link) link.value = location.origin + location.pathname + '?rp=' + encodeURIComponent(rec.payCode);
+    toggleModal('redpacketShareModal', true);
+  }
+  function shareRedpacket() {
+    const s = window.__rpShare || {};
+    if (!s.code) return;
+    const url = location.origin + location.pathname + '?rp=' + encodeURIComponent(s.code);
+    const title = '🧧 红包领取凭证';
+    const text = '我在 CP德D 兑换了 ¥' + (Number(s.amount) || 0).toFixed(2) + ' 红包，请管理员核对发放～ ' + url;
+    if (navigator.share) {
+      navigator.share({ title: title, text: text, url: url }).catch(function () {});
+    } else {
+      copyText(url);
+      toast('📋 领取链接已复制，去微信发到群里吧');
+    }
+  }
+
+  // 管理员打开红包领取凭证链接（?rp=编码）：核对发放，仅管理员可标记已兑换
+  function openRedpacketPayout(payCode) {
+    const rec = (appState.redemptions || []).find(function (r) { return r.payCode === payCode; });
+    const info = document.getElementById('rpPayoutInfo');
+    const act = document.getElementById('rpPayoutAction');
+    if (!info || !act) return;
+    if (!rec) {
+      info.innerHTML = '<div style="font-size:14px; color:var(--text-muted); padding:8px 0;">未找到该红包兑换记录，链接可能已失效。</div>';
+      act.innerHTML = '';
+      toggleModal('redpacketPayoutModal', true);
+      return;
+    }
+    const isAdm = isSuper() || isStaff();
+    const paid = !!rec.paid;
+    info.innerHTML =
+      '<div style="font-size:13px; color:var(--text); margin:6px 0;">' +
+      '<div>领取人：<b>' + escapeHtml(rec.name || '用户') + '</b></div>' +
+      '<div style="margin-top:4px;">金额：<b style="color:#16a34a;">¥' + (Number(rec.amount) || 0).toFixed(2) + '</b>　金币：' + fmtNum(rec.coins) + ' 🪙</div>' +
+      '<div style="margin-top:4px; color:var(--text-muted); font-size:12px;">兑换时间：' + fmtDateTime(rec.time) + '</div>' +
+      '<div style="margin-top:4px; color:var(--text-muted); font-size:12px;">凭证编码：<code>' + escapeHtml(rec.payCode) + '</code></div>' +
+      '</div>';
+    if (paid) {
+      act.innerHTML = '<div style="margin-top:10px; padding:10px; border-radius:10px; background:rgba(16,185,129,.12); border:1px solid rgba(16,185,129,.4); font-size:13px; color:#16a34a; font-weight:600; text-align:center;">✅ 已兑换（已发放）' + (rec.paidAt ? (' · ' + fmtDateTime(rec.paidAt)) : '') + '</div>';
+    } else if (isAdm) {
+      act.innerHTML = '<button class="btn btn-primary" style="width:100%; margin-top:10px; font-size:14px; padding:11px 14px;" onclick="markRedpacketPaid(\'' + rec.payCode + '\')">✅ 标记已兑换（已发放）</button>';
+    } else {
+      act.innerHTML = '<div style="margin-top:10px; padding:10px; border-radius:10px; background:rgba(148,163,184,.1); border:1px solid var(--border); font-size:12px; color:var(--text-muted); text-align:center;">把此链接发到微信群，由管理员点开标记「已兑换」并发放红包</div>';
+    }
+    toggleModal('redpacketPayoutModal', true);
+  }
+  async function markRedpacketPaid(payCode, fromList) {
+    if (!isSuper() && !isStaff()) { toast('仅管理员可标记'); return; }
+    if (__interactLock) return;
+    __interactLock = true;
+    try {
+      await patchRemoteState(function (base) {
+        if (!Array.isArray(base.redemptions)) base.redemptions = [];
+        const r = base.redemptions.find(function (x) { return x.payCode === payCode; });
+        if (!r) throw new Error('记录不存在');
+        if (r.paid) return;
+        r.paid = true; r.paidAt = Date.now();
+      }, 'mark redpacket paid ' + payCode);
+      if (fromList) {
+        openRedemptionsAdminModal();
+      } else {
+        openRedpacketPayout(payCode);
+        const adm = document.getElementById('redemptionsAdminModal');
+        if (adm && adm.style.display === 'flex') openRedemptionsAdminModal();
+      }
+      toast('✅ 已标记为「已兑换（已发放）」');
+    } catch (err) {
+      showAlert('❌ 操作失败：' + err.message);
+    } finally {
+      __interactLock = false;
     }
   }
 
@@ -6373,18 +6496,22 @@
         if (Number(u.coins) < need) throw new Error('金币不足');
         u.coins = Number(u.coins) - need;
         if (!Array.isArray(base.redemptions)) base.redemptions = [];
+        let payCode;
+        do { payCode = genCodeString(); } while (base.redemptions.some(function (x) { return x.payCode === payCode; }));
         base.redemptions.push({
           id: 'r' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+          payCode: payCode,
           uid: u.id, name: u.name, count: cnt,
           coins: need, amount: +(cnt * REDPACKET_AMOUNT).toFixed(2),
-          time: Date.now()
+          time: Date.now(), paid: false, paidAt: null
         });
         consumed = need; amount = cnt * REDPACKET_AMOUNT;
+        window.__lastRp = { payCode: payCode, coins: need, amount: cnt * REDPACKET_AMOUNT, name: u.name };
       }, 'redpacket ' + me.id);
       toggleModal('redpacketModal', false);
       renderProfilePage();
       renderCoinBalance();
-      toast('🧧 兑换成功：' + fmtNum(consumed) + ' 金币 → ¥' + amount.toFixed(2) + ' 红包');
+      showRedpacketSuccess(window.__lastRp);
     } catch (err) {
       showAlert('❌ 兑换失败：' + err.message);
     } finally {
@@ -6414,10 +6541,15 @@
       if (rps.length) {
         html += '<div style="font-size:12px; color:var(--text-muted); margin:6px 0;">🧧 红包兑换</div>';
         html += rps.map(function (r) {
-          return '<div style="display:flex; justify-content:space-between; gap:8px; padding:8px 0; border-bottom:1px dashed var(--border); font-size:13px;">' +
+          const paid = !!r.paid;
+          const tag = paid
+            ? '<span style="color:#16a34a; font-weight:600; white-space:nowrap;">✅已发放</span>'
+            : '<span style="color:#d97706; font-weight:600; white-space:nowrap;">⏳待发放</span>';
+          return '<div style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 0; border-bottom:1px dashed var(--border); font-size:13px;">' +
             '<span style="color:var(--text-muted);">' + fmtDateTime(r.time) + '</span>' +
             '<span style="color:var(--text-muted);">-' + fmtNum(r.coins) + '🪙</span>' +
-            '<span style="color:#16a34a; font-weight:600;">¥' + (Number(r.amount) || 0).toFixed(2) + '</span></div>';
+            '<span style="color:#16a34a; font-weight:600; white-space:nowrap;">¥' + (Number(r.amount) || 0).toFixed(2) + '</span>' +
+            tag + '</div>';
         }).join('');
       }
       if (codes.length) {
@@ -6449,11 +6581,16 @@
       list.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:24px;">还没有红包兑换记录</div>';
     } else {
       list.innerHTML = all.map(function (r) {
+        const paid = !!r.paid;
+        const statusTag = paid
+          ? '<span style="color:#16a34a; font-weight:600; white-space:nowrap;">✅已兑换</span>'
+          : '<button class="btn btn-outline" style="font-size:10px; padding:3px 8px; white-space:nowrap; color:#d97706; border-color:#d97706;" onclick="markRedpacketPaid(\'' + r.payCode + '\', true)">标记已兑换</button>';
         return '<div style="display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px dashed var(--border); font-size:13px;">' +
           '<span style="flex:1; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escapeHtml(r.name || '用户') + '</span>' +
           '<span style="color:var(--text-muted); font-size:11px;">' + fmtDateTime(r.time) + '</span>' +
           '<span style="color:var(--text-muted);">-' + fmtNum(r.coins) + '🪙</span>' +
-          '<span style="color:#16a34a; font-weight:600; white-space:nowrap;">¥' + (Number(r.amount) || 0).toFixed(2) + '</span></div>';
+          '<span style="color:#16a34a; font-weight:600; white-space:nowrap;">¥' + (Number(r.amount) || 0).toFixed(2) + '</span>' +
+          statusTag + '</div>';
       }).join('');
     }
     toggleModal('redemptionsAdminModal', true);
