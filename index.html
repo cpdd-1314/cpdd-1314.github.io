@@ -2898,8 +2898,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.9.29';
+  const APP_VERSION = '6.9.30';
   const CHANGELOG = [
+    { v: '6.9.30', d: '2026-09-02', note: '修复「隐藏 / 置顶 / 排版位置保存不住」+ 一处存储型 XSS 等一批隐患：① 根因——这三个操作只在本地改 isHidden/isPinned/sortOrder 且不推进任何时间戳，随后 saveToGitHub 以远端为基线合并，mergeProfiles 在时间戳相等时保留服务端副本，本地改动被静默吞掉，表现为「点了隐藏界面变了，刷新后又出现」。现改为走增量保存（直接在远端最新基线上改）并同时推进 statusUpdatedAt，隐藏/取消隐藏、置顶/取消置顶、放置与交换位置、取消自定义位置全部真正落库，且与批量隐藏的 status 口径统一。② 位置弹窗：悬停变色/放大此前被拼进了 style="" 值内部导致完全失效（已移出为标签属性）、翻页加了最后一页上限（不再出现点空位"假成功"）、格子序号改用与首页一致的过滤口径（排除已软删除/已合并资料，不再错位）。③ 修复「编辑资料保存成功但刷新后还是旧内容」：管理员编辑只更新 updatedAt，若期间他人审核过该资料，合并时服务端整份胜出，编辑连同新上传的照片一起丢失；现同步推进 statusUpdatedAt。④ 安全：资料字段（姓名/城市/年龄/身高/职业/介绍等）、媒体与头像地址、上传者标签、管理员操作记录在渲染时统一转义，并对媒体地址做 http(s)/data 白名单校验，堵掉 javascript: 与闭合属性注入；此前一份姓名写成 `"><img src=x onerror=...>` 的资料过审后会对全站访客执行脚本。⑤ 举报 24h 去重改为在远端最新数据上判定（换设备/未刷新时不再失效）；⑥ 全量保存补上 reports 合并，避免老数据里举报记录被整段丢弃', type: 'fix' },
     { v: '6.9.29', d: '2026-09-01', note: '举报弹窗层叠修复：点开嘉宾资料后点「🚩 举报」，举报弹窗现在正确显示在资料前面（把 #reportModal / #reportAdminModal 的 z-index 提到 300，遵循与「加微信 / 进群」弹窗相同的置顶约定，不再被详情弹窗挡住）', type: 'fix' },
     { v: '6.9.28', d: '2026-09-02', note: '① 新增「🚩 举报嘉宾资料」：任意用户（含游客）在嘉宾详情页点举报，可选原因 + 选填说明提交，24h 内同资料去重；管理员「我的 → 管理面板」新增「🚩 举报管理」入口，按待处理/已处理列出全部举报，可一键「查看资料 / 隐藏资料 / 标记已处理 / 删除记录」，角标实时显示待处理数量。② Liquid Glass 流畅度与显示修复：模糊半径 34px→16px（手机 11px）、饱和度 280%→165%、去掉每张卡每帧重混合的 feTurbulence 颗粒层与 soft-light 混合、移除卡片常驻 will-change 与 3D 倾斜、降低背景极光模糊与全屏颗粒不透明度、触屏设备关闭指针跟随高光与悬浮倾斜。滚动/移动明显更顺、文字对比更清晰、不再发虚掉帧', type: 'feat' },
     { v: '6.9.27', d: '2026-09-02', note: '拒绝审核后通知提交用户重填：管理员点「❌ 拒绝」一份待审核资料时，若提交者是注册用户，会自动向其站内信发送「📝 资料未通过审核，请重新填写后再次提交」通知；用户点该通知可直接打开提交表单重新填写（游客提交的资料无账号可通知，仅删除）。删除已公开资料不触发此通知', type: 'feat' },
@@ -3343,9 +3344,9 @@
         const ts = t.getFullYear() + '-' + pad(t.getMonth() + 1) + '-' + pad(t.getDate()) +
           ' ' + pad(t.getHours()) + ':' + pad(t.getMinutes()) + ':' + pad(t.getSeconds());
         return '<div style="display:flex; gap:8px; padding:8px 0; border-bottom:1px dashed var(--border); align-items:flex-start;">' +
-          '<span style="flex-shrink:0; background:var(--primary); color:#fff; font-size:10px; padding:2px 8px; border-radius:10px; height:fit-content; white-space:nowrap;">' + l.op + '</span>' +
-          '<div style="flex:1; font-size:12px; line-height:1.5;">' + l.desc +
-          '<div style="font-size:10px; color:var(--text-muted); margin-top:2px;">' + ts + ' · ' + l.actor + '</div></div>' +
+          '<span style="flex-shrink:0; background:var(--primary); color:#fff; font-size:10px; padding:2px 8px; border-radius:10px; height:fit-content; white-space:nowrap;">' + escapeHtml(l.op) + '</span>' +
+          '<div style="flex:1; font-size:12px; line-height:1.5;">' + escapeHtml(l.desc) +
+          '<div style="font-size:10px; color:var(--text-muted); margin-top:2px;">' + ts + ' · ' + escapeHtml(l.actor) + '</div></div>' +
           '</div>';
       }).join('');
     }
@@ -3778,6 +3779,8 @@
     out.submitLinks = mergeByKey(base.submitLinks, local.submitLinks);
     out.codes = mergeByCode(base.codes, local.codes);
     out.redemptions = mergeByKey(base.redemptions, local.redemptions);
+    // 举报记录：老数据里远端可能还没有 reports 字段，全量保存时会整段丢掉本地已提交的举报
+    out.reports = mergeById(base.reports, local.reports);
     return out;
   }
   function mergeById(baseArr, localArr) {
@@ -4626,8 +4629,8 @@
     listEl.innerHTML = currentDetailMediaList.map((m, idx) => {
       const isVid = m.type && m.type.startsWith('video');
       const thumb = isVid
-        ? `<video src="${m.url}" muted preload="metadata"></video><span style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#fff; font-size:14px; background:rgba(0,0,0,.3);">▶</span>`
-        : `<img src="${m.url}" loading="lazy" decoding="async" style="width:100%; height:100%; object-fit:cover;">`;
+        ? `<video src="${safeMediaUrl(m.url)}" muted preload="metadata"></video><span style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#fff; font-size:14px; background:rgba(0,0,0,.3);">▶</span>`
+        : `<img src="${safeMediaUrl(m.url)}" loading="lazy" decoding="async" style="width:100%; height:100%; object-fit:cover;">`;
       return `<div class="edit-thumb ${m.isMain ? 'is-main' : ''}">
         <div class="edit-thumb-media">
           ${thumb}
@@ -4792,6 +4795,11 @@
           target.mediaList[0].isMain = true;
         }
         target.updatedAt = now.getTime();
+        // 必须同时推进 statusUpdatedAt：mergeProfiles 第一优先级比的就是它。
+        // 若期间有别的设备审核过这份资料（服务端 statusUpdatedAt 更大），只更新 updatedAt 会让
+        // mergeProfiles 判定服务端副本整体胜出，本次编辑连同刚上传的媒体一起被静默丢弃
+        // —— 表现就是「提示保存成功了，刷新后内容还是旧的」。
+        target.statusUpdatedAt = now.getTime();
         target.uploadDate = target.uploadDate || `${year}-${month}-${day}`;
         addAdminLog('编辑', '编辑「' + (target['姓名'] || '未填') + '」的资料');
 
@@ -5330,6 +5338,22 @@
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
   }
+
+  // 资料字段安全取值：姓名/城市/介绍等都是用户提交内容，进 innerHTML 前必须转义，
+  // 否则一份姓名写成 `"><img src=x onerror=...>` 的资料通过审核后，会对全站访客执行脚本。
+  function pf(item, key, fallback) {
+    const v = item ? item[key] : undefined;
+    if (v === undefined || v === null || v === '') return fallback === undefined ? '' : fallback;
+    return escapeHtml(String(v));
+  }
+  // 媒体地址白名单：只放行 http(s) 与 data: 内联媒体，堵掉 javascript: 以及
+  // 靠提前闭合 src 属性（x" onerror="...）注入的写法。
+  function safeMediaUrl(u) {
+    const s = String(u == null ? '' : u);
+    if (/^https?:\/\//i.test(s)) return escapeHtml(s);
+    if (/^data:[a-z0-9.+-]+\/[a-z0-9.+-]+[;,]/i.test(s)) return escapeHtml(s);
+    return '';
+  }
   // 当前登录用户存 localStorage：{id, name, groupName}
   function getCurrentUser() {
     try { return JSON.parse(localStorage.getItem('current_user') || 'null'); }
@@ -5818,26 +5842,32 @@
     const reporterUid = u ? u.id : null;
     const reporterName = u ? u.name : '访客';
 
-    // 24h 内同一举报人 + 同一资料去重，避免重复刷屏
-    if (!Array.isArray(appState.reports)) appState.reports = [];
-    const dup = appState.reports.find(function (r) {
-      return r.profileId === id && r.status === 'pending' &&
-        String(r.reporterUid) === String(reporterUid) && (Date.now() - r.time) < 86400000;
-    });
-    if (dup) { showAlert('你已在 24 小时内举报过该资料，管理员正在处理～'); toggleModal('reportModal', false); return; }
-
     const btn = document.getElementById('reportSubmitBtn');
     if (btn) { btn.disabled = true; btn.textContent = '提交中…'; }
     try {
-      await patchRemoteState(function (base) {
+      // 24h 内同一举报人 + 同一资料去重，避免重复刷屏。
+      // 判重必须在远端最新基线上做：本地 appState.reports 是打开页面那一刻的快照，
+      // 用它判重会在「换设备 / 长时间未刷新 / 别人刚举报过」时失效。
+      const ret = await patchRemoteState(function (base) {
         if (!Array.isArray(base.reports)) base.reports = [];
+        const dup = base.reports.find(function (r) {
+          return String(r.profileId) === String(id) && r.status === 'pending' &&
+            String(r.reporterUid) === String(reporterUid) && (Date.now() - Number(r.time || 0)) < 86400000;
+        });
+        if (dup) return -1;
         base.reports.unshift({
           id: Date.now() + '_' + Math.floor(Math.random() * 1000),
           profileId: id, reporterUid: reporterUid, reporterName: reporterName,
           reason: reason, detail: detail, time: Date.now(), status: 'pending'
         });
         if (base.reports.length > 500) base.reports.length = 500;
+        return 1;
       }, 'report ' + id);
+      if (ret === -1) {
+        showAlert('你已在 24 小时内举报过该资料，管理员正在处理～');
+        toggleModal('reportModal', false);
+        return;
+      }
       toast('🚩 举报已提交，管理员会尽快核实');
       toggleModal('reportModal', false);
     } catch (err) {
@@ -7298,7 +7328,7 @@
     else if (type === 'public') label = '网友';
     // 嘉宾优先显示自定义编号，其次凭证码
     const shownCode = type === 'guest' ? (guestNo || code) : code;
-    return `<span class="uploader-tag"><span class="dot" style="background:${color}"></span>${label}·${name}${shownCode ? '（' + shownCode + '）' : ''}</span>`;
+    return `<span class="uploader-tag"><span class="dot" style="background:${color}"></span>${escapeHtml(label)}·${escapeHtml(name)}${shownCode ? '（' + escapeHtml(shownCode) + '）' : ''}</span>`;
   }
 
   async function handleLogin(e) {
@@ -7633,13 +7663,13 @@
       if (mainMedia.type && mainMedia.type.startsWith('video')) {
         // 视频封面：快速加载首帧，悬停播放，带播放角标
         coverHtml = `<div style="position:relative; width:100%; height:100%;">
-          <video src="${mainMedia.url}" preload="metadata" muted playsinline loop onmouseover="this.play()" onmouseout="this.pause()"></video>
+          <video src="${safeMediaUrl(mainMedia.url)}" preload="metadata" muted playsinline loop onmouseover="this.play()" onmouseout="this.pause()"></video>
           <span style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none;">
             <span style="width:40px; height:40px; border-radius:50%; background:rgba(0,0,0,0.55); color:#fff; display:flex; align-items:center; justify-content:center; font-size:16px; border:2px solid rgba(255,255,255,0.8);">▶</span>
           </span>
         </div>`;
       } else {
-        coverHtml = `<img src="${mainMedia.url}" alt="${item['姓名']}" loading="lazy" decoding="async">`;
+        coverHtml = `<img src="${safeMediaUrl(mainMedia.url)}" alt="${pf(item, '姓名')}" loading="lazy" decoding="async">`;
       }
     }
 
@@ -7667,16 +7697,16 @@
         </div>
         <div class="card-body">
           <div class="card-title">
-            <span>${item['姓名'] || '未填'} <small style="font-weight:normal; font-size:13px; color:var(--text-muted);">(${item['性别'] || '-'})</small></span>
-            <span class="card-loc">${item['国家/城市'] || ''}</span>
+            <span>${pf(item, '姓名', '未填')} <small style="font-weight:normal; font-size:13px; color:var(--text-muted);">(${pf(item, '性别', '-')})</small></span>
+            <span class="card-loc">${pf(item, '国家/城市')}</span>
           </div>
-          <div class="card-meta">${item['年龄'] ? item['年龄'] + '岁 · ' : ''}${item['身高'] || ''} · ${item['职业/学生'] || ''}</div>
+          <div class="card-meta">${pf(item, '年龄') ? pf(item, '年龄') + '岁 · ' : ''}${pf(item, '身高')} · ${pf(item, '职业/学生')}</div>
           <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
-            ${canSeeInternalTags() && (item.guestNo || item.profileNo) ? `<span class="uploader-tag">🔖 编号 ${item.guestNo || item.profileNo}</span>` : '<span></span>'}
+            ${canSeeInternalTags() && (item.guestNo || item.profileNo) ? `<span class="uploader-tag">🔖 编号 ${escapeHtml(item.guestNo || item.profileNo)}</span>` : '<span></span>'}
             ${canSeeInternalTags() && typeof item.sortOrder === 'number' ? `<span class="uploader-tag">📍 ${posText(item.sortOrder)}</span>` : ''}
             ${uploaderTag(item)}
           </div>
-          <div class="card-quote">“${item['一句话介绍'] || '暂无一句话介绍'}”</div>
+          <div class="card-quote">“${pf(item, '一句话介绍', '暂无一句话介绍')}”</div>
         </div>
       </div>
     `;
@@ -7806,7 +7836,7 @@
     const name = u.name || '未命名用户';
     const favCount = Array.isArray(u.favorites) ? u.favorites.length : 0;
     const avatarHtml = u.avatar
-      ? `<img src="${u.avatar}" alt="${escapeHtml(name)}" loading="lazy" decoding="async">`
+      ? `<img src="${safeMediaUrl(u.avatar)}" alt="${escapeHtml(name)}" loading="lazy" decoding="async">`
       : `<div class="user-avatar-fallback">${escapeHtml((name || '?').slice(0, 1))}</div>`;
     const hasPwd = u.password && String(u.password).length > 0;
     const banned = !!u.banned;
@@ -7867,14 +7897,14 @@
     const mainMedia = getMainMedia(mediaList);
     let thumb;
     if (mainMedia && mainMedia.type && mainMedia.type.startsWith('video')) {
-      thumb = `<video src="${mainMedia.url}" muted playsinline preload="metadata"></video>`;
+      thumb = `<video src="${safeMediaUrl(mainMedia.url)}" muted playsinline preload="metadata"></video>`;
     } else if (mainMedia) {
-      thumb = `<img src="${mainMedia.url}" alt="${escapeHtml(item['姓名'] || '')}" loading="lazy" decoding="async">`;
+      thumb = `<img src="${safeMediaUrl(mainMedia.url)}" alt="${escapeHtml(item['姓名'] || '')}" loading="lazy" decoding="async">`;
     } else {
       thumb = `<img src="${placeholderDataURI('无图')}" alt="无图">`;
     }
     const sel = adminGuestSelected.has(String(item.id));
-    const ageTxt = item['年龄'] ? (String(item['年龄']).replace(/岁/g, '') + '岁') : '-';
+    const ageTxt = item['年龄'] ? (escapeHtml(String(item['年龄']).replace(/岁/g, '')) + '岁') : '-';
     return `
       <div class="guest-chip ${sel ? 'is-selected' : ''}" data-id="${item.id}" onclick="toggleGuestSelect(${item.id}, this)">
         <div class="guest-thumb">${thumb}</div>
@@ -7989,13 +8019,13 @@
     const mainMedia = getMainMedia(mediaList);
     let thumb;
     if (mainMedia && mainMedia.type && mainMedia.type.startsWith('video')) {
-      thumb = `<video src="${mainMedia.url}" muted playsinline preload="metadata"></video>`;
+      thumb = `<video src="${safeMediaUrl(mainMedia.url)}" muted playsinline preload="metadata"></video>`;
     } else if (mainMedia) {
-      thumb = `<img src="${mainMedia.url}" alt="${escapeHtml(item['姓名'] || '')}" loading="lazy" decoding="async">`;
+      thumb = `<img src="${safeMediaUrl(mainMedia.url)}" alt="${escapeHtml(item['姓名'] || '')}" loading="lazy" decoding="async">`;
     } else {
       thumb = `<img src="${placeholderDataURI('无图')}" alt="无图">`;
     }
-    const ageTxt = item['年龄'] ? (String(item['年龄']).replace(/岁/g, '') + '岁') : '-';
+    const ageTxt = item['年龄'] ? (escapeHtml(String(item['年龄']).replace(/岁/g, '')) + '岁') : '-';
     return `
       <div class="guest-sel-card" onclick="removeGuestFromSel(${item.id})" title="点此取消选择">
         <div class="guest-thumb">${thumb}</div>
@@ -8092,36 +8122,36 @@
       <div class="modal-title" style="margin-bottom:14px;">
         <h2>
           ${item.isPinned ? '<span style="color:var(--pin-gold); font-size:16px;">[已置顶] </span>' : ''}
-          ${item['姓名']}
-          <span style="font-size:14px; color:var(--text-muted); font-weight:normal;">(${item['性别']} · ${item['性取向'] || '未填'})</span>
+          ${pf(item, '姓名', '未填')}
+          <span style="font-size:14px; color:var(--text-muted); font-weight:normal;">(${pf(item, '性别', '-')} · ${pf(item, '性取向', '未填')})</span>
         </h2>
         <div style="display:flex; justify-content:space-between; align-items:center; color:var(--text-muted); font-size:12px; margin-top:4px;">
-          <span>📍 ${item['国家/城市'] || '未填'}</span>
-          <span>⏰ 提交时间：${fmtDateTime(item.createdAt) || (item.uploadDate || '近期')}</span>
+          <span>📍 ${pf(item, '国家/城市', '未填')}</span>
+          <span>⏰ 提交时间：${escapeHtml(fmtDateTime(item.createdAt) || (item.uploadDate || '近期'))}</span>
         </div>
         <div style="display:flex; gap:6px; margin-top:6px; flex-wrap:wrap;">
-          ${canSeeInternalTags() && (item.guestNo || item.profileNo) ? `<span class="uploader-tag">🔖 编号 ${item.guestNo || item.profileNo}</span>` : ''}
+          ${canSeeInternalTags() && (item.guestNo || item.profileNo) ? `<span class="uploader-tag">🔖 编号 ${escapeHtml(item.guestNo || item.profileNo)}</span>` : ''}
           ${canSeeInternalTags() && typeof item.sortOrder === 'number' ? `<span class="uploader-tag">📍 ${posText(item.sortOrder)}</span>` : ''}
           ${uploaderTag(item)}
         </div>
       </div>
 
       <div class="modal-grid">
-        <div><strong>生日：</strong>${item['生日'] || '-'}</div>
-        <div><strong>年龄：</strong>${item['年龄'] || '-'} 岁</div>
-        <div><strong>身高：</strong>${item['身高'] || '-'}</div>
-        <div><strong>体重：</strong>${item['体重'] || '-'}</div>
-        <div><strong>星座：</strong>${item['星座'] || '-'}</div>
-        <div><strong>职业/学生：</strong>${item['职业/学生'] || '-'}</div>
+        <div><strong>生日：</strong>${pf(item, '生日', '-')}</div>
+        <div><strong>年龄：</strong>${pf(item, '年龄', '-')} 岁</div>
+        <div><strong>身高：</strong>${pf(item, '身高', '-')}</div>
+        <div><strong>体重：</strong>${pf(item, '体重', '-')}</div>
+        <div><strong>星座：</strong>${pf(item, '星座', '-')}</div>
+        <div><strong>职业/学生：</strong>${pf(item, '职业/学生', '-')}</div>
       </div>
 
       <div class="action-bar" id="actionBar" style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;"></div>
 
-      <div class="modal-row"><div class="modal-label">【性格】</div><div class="modal-box">${item['性格'] || '-'}</div></div>
-      <div class="modal-row"><div class="modal-label">【兴趣爱好】</div><div class="modal-box">${item['兴趣爱好'] || '-'}</div></div>
-      <div class="modal-row"><div class="modal-label">【生活习惯】</div><div class="modal-box">${item['生活习惯'] || '-'}</div></div>
-      <div class="modal-row"><div class="modal-label">【要求】</div><div class="modal-box">${item['要求'] || '-'}</div></div>
-      <div class="modal-row"><div class="modal-label">【一句话介绍】</div><div class="modal-box" style="font-style:italic;">“${item['一句话介绍'] || '-'}”</div></div>
+      <div class="modal-row"><div class="modal-label">【性格】</div><div class="modal-box">${pf(item, '性格', '-')}</div></div>
+      <div class="modal-row"><div class="modal-label">【兴趣爱好】</div><div class="modal-box">${pf(item, '兴趣爱好', '-')}</div></div>
+      <div class="modal-row"><div class="modal-label">【生活习惯】</div><div class="modal-box">${pf(item, '生活习惯', '-')}</div></div>
+      <div class="modal-row"><div class="modal-label">【要求】</div><div class="modal-box">${pf(item, '要求', '-')}</div></div>
+      <div class="modal-row"><div class="modal-label">【一句话介绍】</div><div class="modal-box" style="font-style:italic;">“${pf(item, '一句话介绍', '-')}”</div></div>
 
       ${item.status === 'pending' && (isSuper() || isStaff()) ? `
       <div class="notice" style="margin-bottom:10px;">${item.isApplyModify ? '📝 这是<b>修改申请</b>：通过后将用申请内容覆盖原档案。' : '📮 这是新提交的档案，审核通过后展示给所有人。'}${(() => { const a = parseInt((item['年龄']||'').toString().replace(/岁/g,'')); return (!isNaN(a) && a < 18) ? '<br><span style="color:#dc2626;font-weight:800;">⚠️ 申请人填写年龄未满 18 周岁，请谨慎审核，勿对未成年人公开。</span>' : ''; })()}</div>
@@ -8187,7 +8217,7 @@
     thumbBar.innerHTML = currentDetailMediaList.map((m, idx) => `
       <div class="thumb-item ${idx === mainIdx ? 'active' : ''}" onclick="switchMedia(${idx})" title="点击切换，再点大图放大全屏">
         ${m.isMain ? '<span class="thumb-main-badge">⭐ 主</span>' : ''}
-        ${m.type && m.type.startsWith('video') ? `<video src="${m.url}" preload="metadata"></video><div class="thumb-video-icon">▶</div>` : `<img src="${m.url}" loading="lazy" decoding="async">`}
+        ${m.type && m.type.startsWith('video') ? `<video src="${safeMediaUrl(m.url)}" preload="metadata"></video><div class="thumb-video-icon">▶</div>` : `<img src="${safeMediaUrl(m.url)}" loading="lazy" decoding="async">`}
       </div>
     `).join('');
 
@@ -8202,13 +8232,13 @@
     if (media.type && media.type.startsWith('video')) {
       // 视频显示：先展示首帧+播放按钮，点击播放（避免自动播放干扰）
       viewer.innerHTML = `<div style="position:relative; width:100%; height:100%; display:flex; align-items:center; justify-content:center;">
-        <video id="detailVideo" src="${media.url}" preload="metadata" muted playsinline style="max-width:100%; max-height:100%; object-fit:contain;"></video>
+        <video id="detailVideo" src="${safeMediaUrl(media.url)}" preload="metadata" muted playsinline style="max-width:100%; max-height:100%; object-fit:contain;"></video>
         <button class="video-play-btn" onclick="playDetailVideo()">▶</button>
         <span style="position:absolute; bottom:8px; right:8px; background:rgba(0,0,0,0.55); color:#fff; font-size:11px; padding:3px 10px; border-radius:8px; pointer-events:none;">🎬 点击播放视频</span>
       </div>`;
     } else {
       viewer.innerHTML = `<div style="position:relative; width:100%; height:100%; display:flex; align-items:center; justify-content:center;">
-        <img src="${media.url}" alt="大图" loading="lazy" decoding="async" style="max-width:100%; max-height:100%; object-fit:contain; cursor:zoom-in;" onclick="openLightbox(${idx})" title="点击放大全屏">
+        <img src="${safeMediaUrl(media.url)}" alt="大图" loading="lazy" decoding="async" style="max-width:100%; max-height:100%; object-fit:contain; cursor:zoom-in;" onclick="openLightbox(${idx})" title="点击放大全屏">
         <span style="position:absolute; bottom:8px; right:8px; background:rgba(0,0,0,0.55); color:#fff; font-size:11px; padding:3px 10px; border-radius:8px; pointer-events:none;">🔍 点击照片放大全屏</span>
       </div>`;
     }
@@ -8265,8 +8295,8 @@
 
     const isVid = media.type && media.type.startsWith('video');
     stage.innerHTML = isVid
-      ? `<video src="${media.url}" controls autoplay playsinline preload="metadata" style="transform:scale(${lbZoom});"></video>`
-      : `<img src="${media.url}" alt="全屏照片" decoding="async" style="transform:scale(${lbZoom}) translate(${lbTx}px, ${lbTy}px);">`;
+      ? `<video src="${safeMediaUrl(media.url)}" controls autoplay playsinline preload="metadata" style="transform:scale(${lbZoom});"></video>`
+      : `<img src="${safeMediaUrl(media.url)}" alt="全屏照片" decoding="async" style="transform:scale(${lbZoom}) translate(${lbTx}px, ${lbTy}px);">`;
 
     // 计数 + 描述
     document.getElementById('lightboxCounter').textContent = `${lightboxIndex + 1} / ${lightboxList.length}`;
@@ -8421,9 +8451,10 @@
   }
 
   // 当前实际展示顺序（位置弹窗用）
+  // 过滤口径与公共信息流 renderCards 保持一致：额外排除已合并的修改申请(applied)与软删除(_deleted)，
+  // 否则位置格子序号会与访客真实看到的顺序错位。
   function getOrderedProfiles() {
-    const list = (appState.profiles || []).filter(p => p.status !== 'pending' && !p.isHidden);
-    return sortByPosition(list);
+    return positionCandidateList(appState.profiles);
   }
 
   // 打开位置设置弹窗
@@ -8432,7 +8463,7 @@
     if (!item) return;
     posTargetId = id;
     const guestNameEl = document.getElementById('posModalGuestName');
-    if (guestNameEl) guestNameEl.innerHTML = '为 <b>' + (item['姓名'] || '未填') + '</b> 选择展示位置：<br>点击<b>有人的格子换位置</b>，点击<b>空位</b>直接放置。';
+    if (guestNameEl) guestNameEl.innerHTML = '为 <b>' + escapeHtml(item['姓名'] || '未填') + '</b> 选择展示位置：<br>点击<b>有人的格子换位置</b>，点击<b>空位</b>直接放置。';
     // 自动跳到该嘉宾当前所在页
     const ordered = getOrderedProfiles();
     const idx = ordered.findIndex(p => p.id === id);
@@ -8459,16 +8490,25 @@
       let cellHtml;
       if (holder) {
         const selfLabel = isSelf ? '👈 当前在此' : '点击换位置';
-        cellHtml = `<div style="font-size:12px; font-weight:700; ${isSelf ? 'color:#7c3aed;' : 'color:var(--text);'} overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${holder['姓名'] || '未填'}</div>
+        cellHtml = `<div style="font-size:12px; font-weight:700; ${isSelf ? 'color:#7c3aed;' : 'color:var(--text);'} overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(holder['姓名'] || '未填')}</div>
           <div style="font-size:10px; color:${isSelf ? '#7c3aed' : 'var(--primary)'};">${selfLabel}</div>`;
       } else {
         cellHtml = `<div style="font-size:22px; color:#cbd5e1; line-height:1;">＋</div>
           <div style="font-size:11px; color:var(--text-muted);">空位</div>`;
       }
       const clickable = !holder || !isSelf;
+      // 悬停效果必须写成标签属性：此前它被拼进了 style="" 值内部，style 值会在第一个引号处提前闭合，
+      // 导致 hover 变色/放大完全失效，页面上还残留裸引号。
+      const hoverAttrs = clickable
+        ? ' onmouseover="this.style.borderColor=\'#7c3aed\';this.style.transform=\'scale(1.03)\'"' +
+          ' onmouseout="this.style.borderColor=\'\';this.style.transform=\'scale(1)\'"'
+        : '';
+      const tip = isSelf ? '当前所在位置'
+        : holder ? '点击与 ' + (holder['姓名'] || '未填') + ' 交换位置'
+        : '空位，点击放置';
       html += `
-      <div style="border:2px ${holder ? (isSelf ? 'solid #7c3aed' : 'dashed #a5b4fc') : 'dashed #cbd5e1'}; border-radius:10px; padding:10px 4px; text-align:center; background:${isSelf ? '#f5f3ff' : 'var(--card-bg)'}; cursor:${clickable ? 'pointer' : 'default'}; ${clickable ? 'transition:all .15s;' : 'opacity:1;'} ${clickable ? 'onmouseover="this.style.borderColor=\'#7c3aed\';this.style.transform=\'scale(1.03)\'" onmouseout="this.style.borderColor=\'#cbd5e1\';this.style.transform=\'scale(1)\'"' : ''}"
-        onclick="${clickable ? 'posPlace(' + order + ')' : 'void(0)'}" title="${isSelf ? '当前所在位置' : holder ? '点击与 ' + holder['姓名'] + ' 交换位置' : '空位，点击放置'}">
+      <div style="border:2px ${holder ? (isSelf ? 'solid #7c3aed' : 'dashed #a5b4fc') : 'dashed #cbd5e1'}; border-radius:10px; padding:10px 4px; text-align:center; background:${isSelf ? '#f5f3ff' : 'var(--card-bg)'}; cursor:${clickable ? 'pointer' : 'default'};${clickable ? ' transition:all .15s;' : ''}"
+        onclick="${clickable ? 'posPlace(' + order + ')' : 'void(0)'}" title="${escapeHtml(tip)}"${hoverAttrs}>
         <div style="font-size:10px; color:var(--text-muted); margin-bottom:2px;">第${i}位</div>
         ${cellHtml}
       </div>`;
@@ -8482,86 +8522,173 @@
     renderPositionPage();
   }
   function posNextPage() {
+    // 上限保护：翻过最后一页就停住，否则会出现「点了空位却什么也没发生」的假成功
+    const maxPage = Math.max(1, Math.ceil(getOrderedProfiles().length / PAGE_SIZE));
+    if (posCurrentPage >= maxPage) { toast('已经是最后一页了'); return; }
     posCurrentPage++;
     renderPositionPage();
   }
 
+  // 位置弹窗里的可见档案集合（与公共信息流口径一致：排除待审核/已合并/软删除/已隐藏）
+  function positionCandidateList(src) {
+    return sortByPosition((src || []).filter(function (p) {
+      return p.status !== 'pending' && p.status !== 'applied' && p._deleted !== true && !p.isHidden;
+    }));
+  }
+
   // 点击位置：有人则交换位置（双方互换），空位则直接放置
+  // 同样走 patchRemoteState：旧实现改本地 sortOrder 后 saveToGitHub，本地改动会在
+  // mergeProfiles 里被服务端基线覆盖（时间戳相等保留服务端），位置设了却保存不住。
   async function posPlace(order) {
-    const C = appState.profiles.find(p => p.id === posTargetId);
-    if (!C) return;
-    const ordered = getOrderedProfiles();
-    const M = ordered[order - 1];              // 当前占着这个位置的嘉宾
-    const cPos = ordered.findIndex(p => p.id === C.id) + 1;   // C 当前实际位置
-
-    if (M && M.id !== C.id) {
-      // 换位：C 占据 order，M 移到 C 原来的实际位置
-      C.sortOrder = order;
-      M.sortOrder = cPos;
-    } else if (!M) {
-      // 空位直接放置
-      C.sortOrder = order;
-    } else {
-      return; // 点击自己当前所在格，无操作
-    }
-
+    if (!order || order < 1) return;
+    let result;
     try {
-      const swapped = M && M.id !== C.id;
-      addAdminLog('位置', (C['姓名'] || '未填') + (swapped ? ' 与 ' + (M['姓名'] || '对方') + ' 交换位置（→第' + order + '位）' : ' 放置到第' + order + '位'));
-      await saveToGitHub();
-      renderCards();
-      toggleModal('positionModal', false);
-      showAlert('✅ ' + (C['姓名'] || '该嘉宾') + (swapped ? ' 已与 ' + (M['姓名'] || '对方') + ' 交换位置，现在位于' : ' 已放置到') + posText(order) + '！');
+      result = await patchRemoteState(function (base) {
+        if (!Array.isArray(base.profiles)) base.profiles = [];
+        const C = base.profiles.find(function (x) { return String(x.id) === String(posTargetId); });
+        if (!C) return { err: 'notfound' };
+        const ordered = positionCandidateList(base.profiles);
+        if (order > ordered.length) return { err: 'outofrange' };
+        const M = ordered[order - 1];                 // 当前占着这个位置的嘉宾
+        if (M && String(M.id) === String(C.id)) return { err: 'self' };
+        const now = Date.now();
+        const cPos = ordered.findIndex(function (p) { return String(p.id) === String(C.id); }) + 1;
+        let swapped = false;
+        if (M) {
+          // 换位：C 占据 order，M 移到 C 原来的实际位置
+          C.sortOrder = order;
+          M.sortOrder = cPos > 0 ? cPos : order;
+          M.statusUpdatedAt = now; M.updatedAt = now;
+          swapped = true;
+        } else {
+          C.sortOrder = order;
+        }
+        C.statusUpdatedAt = now; C.updatedAt = now;
+        const ident = getCurrentIdentity();
+        const actor = ident ? (ident.type === 'super' ? '超级管理员' : (ident.name || '内部管理员')) : '管理员';
+        if (!Array.isArray(base.adminLogs)) base.adminLogs = [];
+        base.adminLogs.unshift({
+          time: now, actor: actor, op: '位置',
+          desc: (C['姓名'] || '未填') + (swapped ? ' 与 ' + (M['姓名'] || '对方') + ' 交换位置（→第' + order + '位）' : ' 放置到第' + order + '位')
+        });
+        if (base.adminLogs.length > 200) base.adminLogs.length = 200;
+        return { swapped: swapped, cName: C['姓名'] || '该嘉宾', mName: swapped ? (M['姓名'] || '对方') : '' };
+      }, 'place position ' + order);
     } catch (err) {
       showAlert('❌ 同步失败：' + err.message);
+      return;
     }
+    if (!result || result.err) {
+      if (result && result.err === 'outofrange') showAlert('该位置超出当前嘉宾数量，请先翻到有嘉宾的页面再放置。');
+      else if (result && result.err === 'notfound') showAlert('该档案在远端不存在，请刷新页面后重试。');
+      return;   // 'self'：点自己当前所在格，无操作
+    }
+    renderCards();
+    toggleModal('positionModal', false);
+    showAlert('✅ ' + result.cName + (result.swapped ? ' 已与 ' + result.mName + ' 交换位置，现在位于' : ' 已放置到') + posText(order) + '！');
   }
 
   // 取消自定义位置
   function posCancelOrder() {
-    const item = appState.profiles.find(p => p.id === posTargetId);
-    if (!item) return;
     confirmAction('确定取消该嘉宾的自定义位置，恢复默认排序吗？', async () => {
-      delete item.sortOrder;
-      addAdminLog('位置', '取消「' + (item['姓名'] || '未填') + '」的自定义位置，恢复默认排序');
+      let hit = 0;
       try {
-        await saveToGitHub();
-        renderCards();
-        toggleModal('positionModal', false);
-        showAlert('✅ 已取消自定义位置，恢复默认排序。');
+        hit = await patchRemoteState(function (base) {
+          if (!Array.isArray(base.profiles)) base.profiles = [];
+          const p = base.profiles.find(function (x) { return String(x.id) === String(posTargetId); });
+          if (!p) return 0;
+          const now = Date.now();
+          delete p.sortOrder;
+          p.statusUpdatedAt = now; p.updatedAt = now;
+          const ident = getCurrentIdentity();
+          const actor = ident ? (ident.type === 'super' ? '超级管理员' : (ident.name || '内部管理员')) : '管理员';
+          if (!Array.isArray(base.adminLogs)) base.adminLogs = [];
+          base.adminLogs.unshift({ time: now, actor: actor, op: '位置', desc: '取消「' + (p['姓名'] || '未填') + '」的自定义位置，恢复默认排序' });
+          if (base.adminLogs.length > 200) base.adminLogs.length = 200;
+          return 1;
+        }, 'cancel position ' + posTargetId);
       } catch (err) {
         showAlert('❌ 同步失败：' + err.message);
+        return;
       }
+      if (!hit) { showAlert('该档案在远端不存在，请刷新页面后重试。'); return; }
+      renderCards();
+      toggleModal('positionModal', false);
+      showAlert('✅ 已取消自定义位置，恢复默认排序。');
     });
   }
 
-  async function togglePinProfile(id) {
-    const item = appState.profiles.find(p => p.id === id);
-    if (!item) return;
-    item.isPinned = !item.isPinned;
-    addAdminLog('置顶', (item.isPinned ? '置顶' : '取消置顶') + '「' + (item['姓名'] || '未填') + '」');
+  // ===== 轻量档案状态改动（置顶 / 隐藏）通用写入 =====
+  // 为什么必须走 patchRemoteState 而不能 saveToGitHub()：
+  // saveToGitHub 是「全量保存」，会先拉远端 data.json 当基线，再用 mergeProfiles 与本地合并；
+  // mergeProfiles 以 statusUpdatedAt / __profileTs 较新者胜、两者都相等时保留服务端副本。
+  // 只改 isPinned / isHidden 这类字段而不推进时间戳，本地改动会被服务端基线静默吞掉
+  // —— 表现就是「点了隐藏/置顶，界面看似变了，刷新后又恢复原样」。
+  // 这里改为在远端最新基线上直接改，并同时推进 statusUpdatedAt，双保险。
+  async function patchProfileFlag(id, mutator, logOp, logDesc, okMsg) {
+    let hit = 0;
+    const now = Date.now();
     try {
-      await saveToGitHub();
-      refreshViews();
-      openDetail(id);
+      hit = await patchRemoteState(function (base) {
+        if (!Array.isArray(base.profiles)) base.profiles = [];
+        const p = base.profiles.find(function (x) { return String(x.id) === String(id); });
+        if (!p) return 0;
+        mutator(p, now);
+        p.statusUpdatedAt = now;   // 状态时间戳：让本次改动在合并中具粘性
+        p.updatedAt = now;
+        const ident = getCurrentIdentity();
+        const actor = ident ? (ident.type === 'super' ? '超级管理员' : (ident.name || '内部管理员')) : '管理员';
+        if (!Array.isArray(base.adminLogs)) base.adminLogs = [];
+        base.adminLogs.unshift({ time: now, actor: actor, op: logOp, desc: logDesc(p) });
+        if (base.adminLogs.length > 200) base.adminLogs.length = 200;
+        return 1;
+      }, logOp + ' profile ' + id);
     } catch (err) {
-      showAlert("❌ 同步失败：" + err.message);
+      showAlert('❌ 同步失败：' + err.message);
+      return false;
     }
+    if (!hit) { showAlert('该档案在远端不存在，请刷新页面后重试'); return false; }
+    // patchRemoteState 写成功后已用远端结果覆盖 appState，这里只需重绘
+    refreshViews();
+    try { openDetail(id); } catch (e) {}
+    if (okMsg) toast(okMsg);
+    return true;
   }
 
-  // 隐藏/恢复档案（隐藏后普通访客不可见，仅管理员可通过"显示已隐藏"查看）
-  async function toggleHideProfile(id) {
-    const item = appState.profiles.find(p => p.id === id);
+  async function togglePinProfile(id) {
+    const item = appState.profiles.find(p => String(p.id) === String(id));
     if (!item) return;
-    item.isHidden = !item.isHidden;
-    addAdminLog('隐藏', (item.isHidden ? '隐藏档案' : '恢复显示') + '「' + (item['姓名'] || '未填') + '」');
-    try {
-      await saveToGitHub();
-      refreshViews();
-      openDetail(id);
-    } catch (err) {
-      showAlert("❌ 同步失败：" + err.message);
-    }
+    const nextPinned = !item.isPinned;
+    return patchProfileFlag(
+      id,
+      function (p) { p.isPinned = nextPinned; },
+      '置顶',
+      function (p) { return (nextPinned ? '置顶' : '取消置顶') + '「' + (p['姓名'] || '未填') + '」'; },
+      nextPinned ? '📌 已置顶' : '📌 已取消置顶'
+    );
+  }
+
+  // 隐藏/恢复档案（隐藏后普通访客不可见，仅管理员可在管理视图「已隐藏」中查看与恢复）
+  async function toggleHideProfile(id) {
+    const item = appState.profiles.find(p => String(p.id) === String(id));
+    if (!item) return;
+    const nextHidden = !item.isHidden;
+    return patchProfileFlag(
+      id,
+      function (p, now) {
+        p.isHidden = nextHidden;
+        if (nextHidden) {
+          p.hiddenAt = now;
+        } else {
+          delete p.hiddenAt;
+          delete p.hiddenReason;
+          if (p.status === 'removed') p.status = 'approved';   // 与批量操作保持一致
+        }
+      },
+      '隐藏',
+      function (p) { return (nextHidden ? '隐藏档案' : '恢复显示') + '「' + (p['姓名'] || '未填') + '」'; },
+      nextHidden ? '🙈 已隐藏该档案' : '👁️ 已恢复显示'
+    );
   }
 
   function deleteProfile(id) {
