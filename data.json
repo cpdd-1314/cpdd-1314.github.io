@@ -1076,6 +1076,42 @@
       ],
       "guestNo": "A044",
       "isHidden": false
+    },
+    {
+      "id": 1788283633222,
+      "姓名": "7.",
+      "性别": "男",
+      "性取向": "女",
+      "国家/城市": "青田",
+      "生日": "2007.9.7",
+      "年龄": "18",
+      "身高": "155",
+      "体重": "100kg",
+      "星座": "处女座",
+      "职业/学生": "打工",
+      "性格": "温柔、性格好、有耐心、会哄人",
+      "兴趣爱好": "做饭",
+      "生活习惯": "不抽烟不喝酒偶尔熬夜",
+      "要求": "身高160-165体重40-50一点颜普通",
+      "一句话介绍": "所有游戏多少都会一点例如王者和平瓦",
+      "updatedAt": 1788283633222,
+      "statusUpdatedAt": 1788283633222,
+      "uploadDate": "2026-09-01",
+      "createdAt": 1788283633222,
+      "isPinned": false,
+      "uploaderType": "user",
+      "uploaderName": "7.（7.）",
+      "uploaderCode": "",
+      "uploaderUid": 1788282744258,
+      "status": "pending",
+      "profileNo": "A046",
+      "mediaList": [
+        {
+          "url": "./media/1788283633780_mmexport1788131358749.jpg",
+          "type": "image/jpeg",
+          "isMain": true
+        }
+      ]
     }
   ],
   "staffs": [
@@ -1090,7 +1126,7 @@
       "password": "714956"
     }
   ],
-  "nextProfileNo": 46,
+  "nextProfileNo": 47,
   "version": "",
   "hideVersionInfo": false,
   "hiddenVersions": [
