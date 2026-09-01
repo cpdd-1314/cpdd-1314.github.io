@@ -3187,5 +3187,17 @@
       "paid": true,
       "paidAt": 1788282220783
     }
+  ],
+  "reports": [
+    {
+      "id": "1788296436537_636",
+      "profileId": 1787487909135,
+      "reporterUid": "super",
+      "reporterName": "群主18未婚",
+      "reason": "色情低俗内容",
+      "detail": "",
+      "time": 1788296436537,
+      "status": "pending"
+    }
   ]
 }
