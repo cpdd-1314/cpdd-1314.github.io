@@ -1915,8 +1915,8 @@
       "coins": 100000000,
       "amount": 1000,
       "time": 1788281702221,
-      "paid": false,
-      "paidAt": null
+      "paid": true,
+      "paidAt": 1788281724193
     }
   ]
 }
