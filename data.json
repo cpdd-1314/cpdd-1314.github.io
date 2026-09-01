@@ -988,10 +988,9 @@
       "createdAt": 1700000000001,
       "isPinned": false,
       "mediaList": [],
-      "isHidden": true,
+      "isHidden": false,
       "statusUpdatedAt": 1700000000001,
-      "status": "removed",
-      "hiddenAt": 1788121325400
+      "status": "approved"
     },
     {
       "id": 1700000000002,
@@ -1014,10 +1013,9 @@
       "createdAt": 1700000000002,
       "isPinned": false,
       "mediaList": [],
-      "isHidden": true,
+      "isHidden": false,
       "statusUpdatedAt": 1700000000002,
-      "status": "removed",
-      "hiddenAt": 1788121325400
+      "status": "approved"
     },
     {
       "id": 1700000000003,
@@ -1040,10 +1038,9 @@
       "createdAt": 1700000000003,
       "isPinned": false,
       "mediaList": [],
-      "isHidden": true,
+      "isHidden": false,
       "statusUpdatedAt": 1700000000003,
-      "status": "removed",
-      "hiddenAt": 1788121325400
+      "status": "approved"
     },
     {
       "id": 1788054302723,
@@ -1104,6 +1101,12 @@
     "6.1.0"
   ],
   "adminLogs": [
+    {
+      "time": 1788283517577,
+      "actor": "超级管理员",
+      "op": "批量取消隐藏",
+      "desc": "恢复显示 6 条档案"
+    },
     {
       "time": 1788283417201,
       "actor": "超级管理员",
