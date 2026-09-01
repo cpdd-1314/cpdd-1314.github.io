@@ -2843,8 +2843,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.9.23';
+  const APP_VERSION = '6.9.24';
   const CHANGELOG = [
+    { v: '6.9.24', d: '2026-09-02', note: '① 已兑换记录 15 天自动消失：红包兑换记录（管理员「💰 兑换记录」与用户「🧾 我的兑换记录」）满 15 天后自动隐藏，统计汇总同步只计 15 天内。② 已兑满的兑换码满 15 天自动消失：管理员「🎟️ 兑换码管理」里被兑满（已达使用次数）且最后一次兑换超过 15 天的兑换码自动隐藏（未兑满或仍有次数的码继续保留）；用户「我的兑换记录」里自己核销某码满 15 天也会隐藏', type: 'feat' },
     { v: '6.9.23', d: '2026-09-02', note: '① 火花（连续签到）天数上限提到 99999 天，签到金币随天数从 1 平滑升到上限 10000（天数越高下次签到金币越多，原上限 100 天/100 金币）。② 管理员可改自己的火花天数：签到区块新增管理员专属「设置天数」入口，输入 0-99999 直接设置连续天数（并自动把 lastCheckin 设为昨天，使该天数可继续累加）。③ 兑换红包去掉「最多可兑 N 个」提示，兑换上限仅受当前金币余额约束。④ 生成金币兑换码的金币数量上限放开到约 1e21（显示安全、不出 e+），可生成超大额兑换码', type: 'feat' },
     { v: '6.9.20', d: '2026-09-02', note: '① 红包兑换生成「领取凭证」：每次兑换红包都会生成一个唯一编码 ID（payCode），兑换成功弹窗内出现「📤 发到微信群」按钮与可复制的领取链接（?rp=编码），用户把链接发到微信群。② 管理员标记已兑换：管理员（仅管理员）点开该链接弹出「🧧 红包领取凭证」，核对领取人/金额/编码后可点绿色「✅ 标记已兑换（已发放）」；非管理员打开只看到凭证信息与提示、看不到按钮。管理员后台「💰 兑换记录」每条也有「标记已兑换」按钮，已发放显示绿色「✅已兑换」。③ 我的记录同步显示「⏳待发放 / ✅已发放」状态。④ 生成金币兑换码取消数量上限（原上限 200），一次可生成任意数量', type: 'feat' },
     { v: '6.9.19', d: '2026-09-02', note: '① 兑换红包实时换算：输入红包个数即时显示「消耗多少金币 → 可兑多少 ¥ 红包（N 个）」，金币不足时提示还差多少、最多可兑几个，所见即所得。② 金币数字格式化：余额/兑换/红包/记录等所有金币数字超过 1 万显示「万」、超过 1 亿显示「亿」（如 1.23万 / 2.5亿），不再出现 e+ 科学计数法。③ 兑换码支持多次使用：管理员生成兑换码时新增「使用次数」输入框（默认 1，留空=一次性），一个码可被不同注册用户兑换 N 次；管理面板列表显示「未兑换 / 已用 N/M / 已兑换」状态与 ×N次 标签，分享给多人可反复领取，管理员视角同步显示「已用 N/M」或「已兑换」', type: 'feat' },
@@ -6074,10 +6075,11 @@
   function renderRedeemCodesAdmin() {
     const box = document.getElementById('redeemCodeList');
     if (!box) return;
-    const list = (appState.codes || []).slice().sort(function (a, b) { return (b.createdAt || 0) - (a.createdAt || 0); });
+    const raw = (appState.codes || []).slice().sort(function (a, b) { return (b.createdAt || 0) - (a.createdAt || 0); });
+    const list = raw.filter(function (c) { return !isRedeemCodeExpired(c); });  // 兑满且满 15 天自动隐藏
     const total = document.getElementById('redeemCodeTotal');
     if (total) total.textContent = list.length;
-    if (list.length === 0) { box.innerHTML = '<p style="padding:16px; text-align:center; color:var(--text-muted); font-size:12px;">还没有生成任何兑换码</p>'; return; }
+    if (list.length === 0) { box.innerHTML = '<p style="padding:16px; text-align:center; color:var(--text-muted); font-size:12px;">' + (raw.length ? '已兑换的兑换码满 15 天后会自动消失～' : '还没有生成任何兑换码') + '</p>'; return; }
     box.innerHTML = list.map(function (c) {
       const uc = codeUsedCount(c);
       const mu = codeMaxUses(c);
@@ -6420,6 +6422,32 @@
     const u = (appState.users || []).find(function (x) { return String(x.id) === String(list[0].uid); });
     return u ? u.name : ('#' + list[0].uid);
   }
+  // 兑换码最后一次被兑换的时间（用于过期判定）
+  function codeLastUsedTime(c) {
+    const list = codeUsedList(c);
+    let t = c && c.usedAt ? c.usedAt : 0;
+    list.forEach(function (e) { if (e.time && e.time > t) t = e.time; });
+    return t;
+  }
+  // 兑换码最近一次被「我」兑换的时间（用于我的记录里按个人兑现时间隐藏）
+  function codeUsedTimeBy(c, uid) {
+    const list = codeUsedList(c);
+    const e = list.find(function (x) { return String(x.uid) === String(uid); });
+    return e ? e.time : (c && String(c.usedBy) === String(uid) ? (c.usedAt || 0) : 0);
+  }
+
+  // 已兑换记录 15 天后自动隐藏（核销类记录清理）
+  const REDEEM_EXPIRE_DAYS = 15;
+  function isRedeemExpired(ts) {
+    if (!ts) return false;
+    return (Date.now() - ts) > REDEEM_EXPIRE_DAYS * 86400000;
+  }
+  // 兑换码是否已「兑满且满 15 天」——满足则不再展示
+  function isRedeemCodeExpired(c) {
+    if (!c) return false;
+    if (!codeIsFull(c)) return false;          // 未兑满（还有次数）的码继续保留
+    return isRedeemExpired(codeLastUsedTime(c));
+  }
 
   function dayStr(d) {
     const p = function (n) { return String(n).padStart(2, '0'); };
@@ -6649,8 +6677,12 @@
     const list = document.getElementById('myRecordsList');
     if (!list) return;
     const rps = (appState.redemptions || []).filter(function (r) { return String(r.uid) === String(me.id); })
-      .sort(function (a, b) { return b.time - a.time; });
-    const codes = (appState.codes || []).filter(function (c) { return String(c.usedBy) === String(me.id); });
+      .sort(function (a, b) { return b.time - a.time; })
+      .filter(function (r) { return !isRedeemExpired(r.time); });   // 红包兑换满 15 天隐藏
+    const codes = (appState.codes || []).filter(function (c) {
+      const t = codeUsedTimeBy(c, me.id);
+      return t && !isRedeemExpired(t);                              // 我核销该码满 15 天隐藏
+    });
     if (rps.length === 0 && codes.length === 0) {
       list.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:24px;">还没有任何兑换记录</div>';
     } else {
@@ -6688,7 +6720,8 @@
     const list = document.getElementById('redemptionsAdminList');
     const totalEl = document.getElementById('redemptionsAdminTotal');
     if (!list) return;
-    const all = (appState.redemptions || []).slice().sort(function (a, b) { return b.time - a.time; });
+    const all = (appState.redemptions || []).slice().sort(function (a, b) { return b.time - a.time; })
+      .filter(function (r) { return !isRedeemExpired(r.time); });   // 已兑换红包满 15 天自动隐藏
     if (totalEl) {
       const totalCoins = all.reduce(function (s, r) { return s + (Number(r.coins) || 0); }, 0);
       const totalAmt = all.reduce(function (s, r) { return s + (Number(r.amount) || 0); }, 0);
