@@ -284,6 +284,23 @@
     .guest-sel-remove:hover { background: #ef4444; }
     .guest-sel-remove:active { transform: scale(.9); }
     .guest-sel-hint { font-size: 12px; color: var(--text-muted); margin-top: 8px; text-align: center; }
+    /* 用户全部留言弹窗：列出某注册用户在所有嘉宾下的留言 */
+    #userCommentsList { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 12px; }
+    .user-comment-card {
+      padding: 11px 13px; border-radius: 14px; cursor: pointer; text-align: left;
+      background: var(--card-bg); border: 1px solid var(--border); position: relative; overflow: hidden;
+      transition: transform .14s ease, box-shadow .2s ease, border-color .2s ease;
+    }
+    .user-comment-card:hover { box-shadow: 0 8px 20px rgba(15,23,42,.12); border-color: var(--primary); transform: translateY(-2px); }
+    .uc-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 5px; }
+    .uc-target { font-size: 12.5px; font-weight: 700; color: var(--primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .uc-time { font-size: 10px; color: var(--text-muted); flex-shrink: 0; }
+    .uc-text { font-size: 13px; color: var(--text); word-break: break-word; line-height: 1.55; }
+    body.glass-mode .user-comment-card {
+      background-color: transparent; background-image: var(--glass-fill);
+      border-color: rgba(255,255,255,.55);
+      -webkit-backdrop-filter: blur(20px) saturate(220%); backdrop-filter: blur(20px) saturate(220%);
+    }
     body.glass-mode .guest-sel-card {
       background-color: transparent; background-image: var(--glass-fill);
       border-color: rgba(255,255,255,.55);
@@ -787,7 +804,7 @@
       opacity: .18; mix-blend-mode: overlay;
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
     }
-    .glass-blob { position: absolute; border-radius: 50%; will-change: transform; filter: blur(26px); }
+    .glass-blob { position: absolute; border-radius: 50%; will-change: transform; filter: blur(18px); }
     .glass-blob.b1 {
       width: 58vmax; height: 58vmax; left: -20vmax; top: -18vmax;
       background: radial-gradient(circle at 45% 45%, #6d28d9 0%, #8b5cf6 32%, #a78bfa 52%, rgba(167,139,250,0) 72%);
@@ -838,6 +855,9 @@
       body.glass-mode .modal::before,
       body.glass-mode .profile-section::before { animation: none !important; opacity: 0 !important; }
     }
+    /* 滚动时暂停背景极光动画：玻璃模式最大的持续重绘开销，停下滚动即恢复，避免滚动卡顿 */
+    body.scrolling .glass-blob { animation-play-state: paused !important; }
+    body.scrolling .glass-blob { will-change: auto; }
 
     /* --- ② 材质变量：更透、更艳、更厚 --- */
     body.glass-mode {
@@ -2531,6 +2551,16 @@
   </div>
 </div>
 
+<!-- 用户全部留言弹窗：管理员在「注册用户」标签点「查看TA的评论」打开 -->
+<div class="modal-overlay" id="userCommentsModal" onclick="handleOverlayClick(event, 'userCommentsModal')">
+  <div class="modal" style="max-width:640px;">
+    <button class="close-btn" onclick="toggleModal('userCommentsModal', false)">×</button>
+    <h2 style="font-size:18px; margin-bottom:4px;">💬 <span id="userCommentsName"></span> 的全部留言</h2>
+    <div style="font-size:12px; color:var(--text-muted); margin-bottom:4px;">共 <b id="userCommentsCount">0</b> 条 · 点任意一条可跳转查看对应嘉宾资料</div>
+    <div id="userCommentsList"></div>
+  </div>
+</div>
+
 <!-- 左下角动态浮动入口（可收起为小圆球，点击重新弹出） -->
 <div id="floatBall" onclick="expandFloats()" title="展开入口">
   <svg viewBox="0 0 24 24" style="width:22px; height:22px; fill:#fff;">
@@ -2658,8 +2688,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.9.14';
+  const APP_VERSION = '6.9.15';
   const CHANGELOG = [
+    { v: '6.9.15', d: '2026-09-01', note: '① 新增「查看用户的所有评论」：管理视图「注册用户」标签每张用户卡片加「💬 查看TA的评论 (N)」按钮（N 为预统计的留言数），点开站内弹窗汇总该用户在所有嘉宾下的全部留言（管理员视角展示全部，含被封禁用户自己的留言），按时间倒序排列，点任意一条可一键跳转查看对应嘉宾资料。② 网站流畅度再优化：玻璃模式下背景 4 个极光光球（最重的持续重绘开销）在滚动时自动暂停动画（停下 150ms 恢复），并把模糊半径从 26px 降到 18px，肉眼几乎无差但明显省 GPU，滚动更顺', type: 'feat' },
     { v: '6.9.14', d: '2026-08-31', note: '管理视图「嘉宾一览」新增多选删除：① 选择栏在「👀 查看已选 (N)」旁新增「🗑 删除选中 (N)」红色按钮（有勾选才出现、数字实时跟随）；② 汇总弹窗底部也加「🗑 删除选中」按钮。点任意一处都会二次弹窗确认数量与「不可恢复」提示，确认后把勾选的所有嘉宾一次性软删除（标记 _deleted，由服务端合并真正移除，避免刷新复活），单次 saveToGitHub 同步、刷新管理视图与公共信息流、清空选择并 Toast 提示。需管理员权限', type: 'feat' },
     { v: '6.9.13', d: '2026-08-31', note: '① Liquid Glass 流畅度优化（解决「有点卡」）：把指针跟随高光从「每次 mousemove 重绘全站玻璃」改为 rAF 合并 + 只更新当前悬停的单个元素（离开即清变量），并把每张卡片的常驻扫光(lgSweep)与无限悬浮(glassFloatCard)动画关掉——这两者是每帧重绘 backdrop-filter 的主要卡顿源，关掉后滚动/移动明显顺滑；同时把过大的模糊半径从 56/52/48/42px 降到 44/44/40/34px，观感依旧是「湿玻璃」，但更省 GPU；并尊重系统「减少动态效果」偏好自动降级动画。② 管理视图「嘉宾一览」多选新增汇总弹窗：选择栏多出「👀 查看已选 (N)」按钮，点开把所有已选嘉宾（小图+年龄+城市/职业+简介）集中展示在一个站内弹窗里，点卡片或 ✕ 即取消选择并同步回底层卡片，底部可一键清空', type: 'feat' },
     { v: '6.9.12', d: '2026-08-31', note: '「网站正在更新」升级为全屏维护模式 + 普通用户功能拦截 + 动画拉满：① 开启后整站被全屏玻璃维护遮罩覆盖（极光流动背景 + 星点闪烁 + 中央玻璃卡「轨道环 + 漂浮火箭」+ 流光标题「网站正在焕新升级」+ 来回扫光的进度条 + 跳动省略号），普通用户被遮罩拦截无法点任何按钮/卡片/导航（看得到模糊的网站但碰不了），真正「更新中不可用」；② 管理员专属——遮罩右上角出现「✕ 退出更新模式」与「👁 预览网站（绕过维护页）」：前者一键关掉维护，后者本地隐藏遮罩让你照常进后台改东西，右下角悬浮「维护预览中·退出预览」可随时回来；③ 流程优化：维护遮罩淡入缩放登场、关闭淡出，不再像旧版只推下 46px 顶栏；④ 动画更牛，并尊重系统「减少动态效果」偏好自动降级', type: 'feat' },
@@ -4704,9 +4735,14 @@
       sessionStorage.setItem('pageState', JSON.stringify(st));
     } catch (e) {}
   }
+  let __scrollClsTimer = null;
   window.addEventListener('scroll', function() {
     if (__saveTimer) clearTimeout(__saveTimer);
     __saveTimer = setTimeout(savePageState, 250);
+    // 滚动时暂停背景极光动画，停下 150ms 后恢复，缓解玻璃模式滚动卡顿（CSS: body.scrolling .glass-blob）
+    document.body.classList.add('scrolling');
+    if (__scrollClsTimer) clearTimeout(__scrollClsTimer);
+    __scrollClsTimer = setTimeout(function () { document.body.classList.remove('scrolling'); }, 150);
   }, { passive: true });
 
   function restorePageState() {
@@ -5668,6 +5704,42 @@
     });
   }
 
+  // 查看某注册用户在所有嘉宾下的全部留言（管理员视角：展示全部，含被封禁用户自己的留言）
+  function openUserComments(uid) {
+    const u = (appState.users || []).find(function (x) { return String(x.id) === String(uid); });
+    const nm = document.getElementById('userCommentsName');
+    if (nm) nm.textContent = u ? (u.name || '未命名用户') : '该用户';
+    renderUserComments(uid);
+    toggleModal('userCommentsModal', true);
+  }
+
+  function renderUserComments(uid) {
+    const box = document.getElementById('userCommentsList');
+    if (!box) return;
+    const list = [];
+    (appState.profiles || []).forEach(function (p) {
+      (p.comments || []).forEach(function (c) {
+        if (String(c.uid) === String(uid)) list.push({ profile: p, c: c });
+      });
+    });
+    list.sort(function (a, b) { return (b.c.time || 0) - (a.c.time || 0); });
+    const cnt = document.getElementById('userCommentsCount');
+    if (cnt) cnt.textContent = list.length;
+    if (list.length === 0) {
+      box.innerHTML = '<p style="padding:24px; text-align:center; color:var(--text-muted);">该用户还没有任何留言</p>';
+      return;
+    }
+    const pad = function (n) { return String(n).padStart(2, '0'); };
+    box.innerHTML = list.map(function (it) {
+      const c = it.c, p = it.profile, t = new Date(c.time || Date.now());
+      const ts = t.getFullYear() + '-' + pad(t.getMonth() + 1) + '-' + pad(t.getDate()) + ' ' + pad(t.getHours()) + ':' + pad(t.getMinutes());
+      return '<div class="user-comment-card" onclick="toggleModal(\'userCommentsModal\', false); openDetail(' + p.id + ')">'
+        + '<div class="uc-head"><span class="uc-target">💬 在《' + escapeHtml(p['姓名'] || '未填') + '》下留言</span>'
+        + '<span class="uc-time">' + ts + '</span></div>'
+        + '<div class="uc-text">' + escapeHtml(c.text || '') + '</div></div>';
+    }).join('');
+  }
+
   function scrollToComments() {
     const el = document.getElementById('commentsArea');
     if (!el) return;
@@ -6518,12 +6590,20 @@
     if (adminCurrentPage > maxPage) adminCurrentPage = maxPage;
     const pageItems = users.slice((adminCurrentPage - 1) * PAGE_SIZE, adminCurrentPage * PAGE_SIZE);
     adminCurrentPageIds = pageItems.map(function (u) { return u.id; });
-    container.innerHTML = pageItems.map(function (u) { return buildUserCardHTML(u); }).join('');
+    // 预统计每个用户的留言数（避免每张卡片重复遍历全部嘉宾）
+    const cmtMap = {};
+    (appState.profiles || []).forEach(function (p) {
+      (p.comments || []).forEach(function (c) {
+        if (c && c.uid != null) { const k = String(c.uid); cmtMap[k] = (cmtMap[k] || 0) + 1; }
+      });
+    });
+    container.innerHTML = pageItems.map(function (u) { return buildUserCardHTML(u, cmtMap[String(u.id)] || 0); }).join('');
     renderAdminPagination(adminFilteredTotal);
   }
 
   // 单个注册用户卡片
-  function buildUserCardHTML(u) {
+  function buildUserCardHTML(u, cmtCount) {
+    if (cmtCount == null) cmtCount = 0;
     const name = u.name || '未命名用户';
     const favCount = Array.isArray(u.favorites) ? u.favorites.length : 0;
     const avatarHtml = u.avatar
@@ -6550,6 +6630,7 @@
           <div style="display:flex; gap:6px; margin-top:6px; flex-wrap:wrap; align-items:center;">
             <span class="uploader-tag">👥 群昵称：${escapeHtml(u.groupName || '-')}</span>
             ${banBtn}
+            <button class="btn btn-outline" style="font-size:11px; padding:5px 10px;" onclick="openUserComments(${u.id})">💬 查看TA的评论 (${cmtCount})</button>
           </div>
         </div>
       </div>
