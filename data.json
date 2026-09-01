@@ -1858,6 +1858,16 @@
       "usedAt": 1788279700957,
       "createdAt": 1788279686637,
       "createdBy": "管理员"
+    },
+    {
+      "code": "929M-H6HC-FSKL",
+      "coins": 99999999,
+      "maxUses": 1,
+      "usedBy": null,
+      "usedList": [],
+      "usedAt": null,
+      "createdAt": 1788280207072,
+      "createdBy": "管理员"
     }
   ],
   "redemptions": [
