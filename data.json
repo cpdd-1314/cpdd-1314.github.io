@@ -44,8 +44,7 @@
         }
       ],
       "statusUpdatedAt": 1788020818392,
-      "isHidden": true,
-      "hiddenAt": 1788121325400
+      "isHidden": false
     },
     {
       "id": 1788019789328,
@@ -71,7 +70,7 @@
       "uploaderName": "杰杰",
       "uploaderCode": "",
       "uploaderUid": 1788017541235,
-      "status": "removed",
+      "status": "approved",
       "profileNo": "A042",
       "mediaList": [
         {
@@ -99,8 +98,7 @@
       "updatedAt": 1788054525448,
       "statusUpdatedAt": 1788054525448,
       "uploaderGroupName": "杰杰",
-      "isHidden": true,
-      "hiddenAt": 1788121325400
+      "isHidden": false
     },
     {
       "id": 1787920638746,
@@ -126,7 +124,7 @@
       "uploaderName": "网友",
       "uploaderCode": "",
       "fromPublic": true,
-      "status": "removed",
+      "status": "approved",
       "profileNo": "A040",
       "mediaList": [
         {
@@ -135,9 +133,7 @@
           "isMain": true
         }
       ],
-      "isHidden": true,
-      "hiddenAt": 1788121325400,
-      "hiddenReason": "年龄未满18岁，不符合平台要求",
+      "isHidden": false,
       "statusUpdatedAt": 1787920638740
     },
     {
@@ -164,7 +160,7 @@
       "uploaderName": "网友",
       "uploaderCode": "",
       "fromPublic": true,
-      "status": "removed",
+      "status": "approved",
       "profileNo": "A039",
       "mediaList": [
         {
@@ -173,9 +169,8 @@
           "isMain": true
         }
       ],
-      "isHidden": true,
-      "statusUpdatedAt": 1787911216010,
-      "hiddenAt": 1788121325400
+      "isHidden": false,
+      "statusUpdatedAt": 1787911216010
     },
     {
       "id": 1787876777457,
@@ -201,7 +196,7 @@
       "uploaderName": "网友",
       "uploaderCode": "",
       "fromPublic": true,
-      "status": "removed",
+      "status": "approved",
       "profileNo": "A037",
       "mediaList": [
         {
@@ -239,8 +234,7 @@
         "super"
       ],
       "statusUpdatedAt": 1787912745770,
-      "isHidden": true,
-      "hiddenAt": 1788121325400
+      "isHidden": false
     },
     {
       "id": 1787848900338,
@@ -266,7 +260,7 @@
       "uploaderName": "网友",
       "uploaderCode": "",
       "fromPublic": true,
-      "status": "removed",
+      "status": "approved",
       "profileNo": "A036",
       "mediaList": [
         {
@@ -275,9 +269,8 @@
           "isMain": true
         }
       ],
-      "isHidden": true,
-      "statusUpdatedAt": 1787848900338,
-      "hiddenAt": 1788121325400
+      "isHidden": false,
+      "statusUpdatedAt": 1787848900338
     },
     {
       "id": 1787632261236,
@@ -303,7 +296,7 @@
       "uploaderName": "网友",
       "uploaderCode": "",
       "fromPublic": true,
-      "status": "removed",
+      "status": "approved",
       "profileNo": "A035",
       "mediaList": [
         {
@@ -313,9 +306,8 @@
         }
       ],
       "updatedAt": 1787912749882,
-      "isHidden": true,
-      "statusUpdatedAt": 1787912749882,
-      "hiddenAt": 1788121325400
+      "isHidden": false,
+      "statusUpdatedAt": 1787912749882
     },
     {
       "id": 1787562565474,
@@ -341,7 +333,7 @@
       "uploaderName": "网友",
       "uploaderCode": "",
       "fromPublic": true,
-      "status": "removed",
+      "status": "approved",
       "profileNo": "A034",
       "mediaList": [
         {
@@ -357,8 +349,7 @@
       "guestNo": "A034",
       "updatedAt": 1787577824456,
       "statusUpdatedAt": 1787577824456,
-      "isHidden": true,
-      "hiddenAt": 1788121325400
+      "isHidden": false
     },
     {
       "id": 1787499885177,
@@ -384,7 +375,7 @@
       "uploaderName": "网友",
       "uploaderCode": "",
       "fromPublic": true,
-      "status": "removed",
+      "status": "approved",
       "profileNo": "A032",
       "mediaList": [
         {
@@ -393,9 +384,8 @@
           "isMain": true
         }
       ],
-      "isHidden": true,
-      "statusUpdatedAt": 1787499885177,
-      "hiddenAt": 1788121325400
+      "isHidden": false,
+      "statusUpdatedAt": 1787499885177
     },
     {
       "id": 1787487909135,
@@ -475,7 +465,7 @@
       "uploaderName": "网友",
       "uploaderCode": "",
       "fromPublic": true,
-      "status": "removed",
+      "status": "approved",
       "profileNo": "A028",
       "mediaList": [
         {
@@ -485,8 +475,7 @@
         }
       ],
       "statusUpdatedAt": 1787481710877,
-      "isHidden": true,
-      "hiddenAt": 1788121325400
+      "isHidden": false
     },
     {
       "id": 1787462799374,
@@ -512,7 +501,7 @@
       "uploaderName": "网友",
       "uploaderCode": "",
       "fromPublic": true,
-      "status": "removed",
+      "status": "approved",
       "profileNo": "A026",
       "mediaList": [
         {
@@ -524,9 +513,8 @@
       "likes": [
         "super"
       ],
-      "isHidden": true,
-      "statusUpdatedAt": 1787462799374,
-      "hiddenAt": 1788121325400
+      "isHidden": false,
+      "statusUpdatedAt": 1787462799374
     },
     {
       "id": 1787435857985,
@@ -601,7 +589,7 @@
       "uploaderName": "网友",
       "uploaderCode": "",
       "fromPublic": true,
-      "status": "removed",
+      "status": "approved",
       "profileNo": "A024",
       "mediaList": [
         {
@@ -613,8 +601,7 @@
       "updatedAt": 1787425591765,
       "likes": [],
       "statusUpdatedAt": 1787425591765,
-      "isHidden": true,
-      "hiddenAt": 1788121325400
+      "isHidden": false
     },
     {
       "id": 1787415201147,
@@ -640,7 +627,7 @@
       "uploaderName": "网友",
       "uploaderCode": "",
       "fromPublic": true,
-      "status": "removed",
+      "status": "approved",
       "profileNo": "A022",
       "mediaList": [],
       "comments": [
@@ -652,9 +639,8 @@
           "time": 1788021100115
         }
       ],
-      "isHidden": true,
-      "statusUpdatedAt": 1787415201147,
-      "hiddenAt": 1788121325400
+      "isHidden": false,
+      "statusUpdatedAt": 1787415201147
     },
     {
       "id": 1787412932269,
@@ -681,7 +667,7 @@
       "uploaderName": "网友",
       "uploaderCode": "",
       "fromPublic": true,
-      "status": "removed",
+      "status": "approved",
       "profileNo": "A020",
       "mediaList": [
         {
@@ -695,9 +681,8 @@
       ],
       "updatedAt": 1787414395419,
       "comments": [],
-      "isHidden": true,
-      "statusUpdatedAt": 1787414395419,
-      "hiddenAt": 1788121325400
+      "isHidden": false,
+      "statusUpdatedAt": 1787414395419
     },
     {
       "id": 1787412550807,
@@ -724,12 +709,11 @@
       "uploaderName": "网友",
       "uploaderCode": "",
       "fromPublic": true,
-      "status": "removed",
+      "status": "approved",
       "profileNo": "A019",
       "mediaList": [],
-      "isHidden": true,
-      "statusUpdatedAt": 1787412550799,
-      "hiddenAt": 1788121325400
+      "isHidden": false,
+      "statusUpdatedAt": 1787412550799
     },
     {
       "id": 1787399358830,
@@ -756,13 +740,12 @@
       "uploaderName": "网友",
       "uploaderCode": "",
       "fromPublic": true,
-      "status": "removed",
+      "status": "approved",
       "profileNo": "A015",
       "mediaList": [],
       "updatedAt": 1787399524572,
       "statusUpdatedAt": 1787399524572,
-      "isHidden": true,
-      "hiddenAt": 1788121325400
+      "isHidden": false
     },
     {
       "id": 1787356784015,
@@ -789,13 +772,12 @@
       "uploaderName": "网友",
       "uploaderCode": "",
       "fromPublic": true,
-      "status": "removed",
+      "status": "approved",
       "profileNo": "A011",
       "mediaList": [],
       "updatedAt": 1787358988184,
       "statusUpdatedAt": 1787358988184,
-      "isHidden": true,
-      "hiddenAt": 1788121325400
+      "isHidden": false
     },
     {
       "id": 1787348572474,
@@ -830,10 +812,9 @@
           "type": "video/mp4"
         }
       ],
-      "isHidden": true,
-      "status": "removed",
-      "statusUpdatedAt": 1787348572473,
-      "hiddenAt": 1788121325400
+      "isHidden": false,
+      "status": "approved",
+      "statusUpdatedAt": 1787348572473
     },
     {
       "id": 1787345937110,
@@ -864,10 +845,9 @@
       "profileNo": "A008",
       "mediaList": [],
       "updatedAt": 1787346010354,
-      "isHidden": true,
-      "status": "removed",
-      "statusUpdatedAt": 1787346010354,
-      "hiddenAt": 1788121325400
+      "isHidden": false,
+      "status": "approved",
+      "statusUpdatedAt": 1787346010354
     },
     {
       "id": 1787342474983,
@@ -938,10 +918,9 @@
         }
       ],
       "updatedAt": 1787342006042,
-      "isHidden": true,
-      "status": "removed",
-      "statusUpdatedAt": 1787342006042,
-      "hiddenAt": 1788121325400
+      "isHidden": false,
+      "status": "approved",
+      "statusUpdatedAt": 1787342006042
     },
     {
       "id": 1787341261811,
@@ -975,10 +954,9 @@
       ],
       "guestNo": "A005",
       "updatedAt": 1787413723143,
-      "isHidden": true,
-      "status": "removed",
-      "statusUpdatedAt": 1787413723143,
-      "hiddenAt": 1788121325400
+      "isHidden": false,
+      "status": "approved",
+      "statusUpdatedAt": 1787413723143
     },
     {
       "id": 1700000000001,
@@ -1084,15 +1062,14 @@
       "uploaderName": "周子恩（此用户没心没肺08🇮🇹）",
       "uploaderCode": "",
       "uploaderUid": 1788054038243,
-      "status": "removed",
+      "status": "approved",
       "profileNo": "A044",
       "mediaList": [],
       "likes": [
         "super"
       ],
       "guestNo": "A044",
-      "isHidden": true,
-      "hiddenAt": 1788121325400
+      "isHidden": false
     }
   ],
   "staffs": [
@@ -1118,6 +1095,12 @@
     "6.1.0"
   ],
   "adminLogs": [
+    {
+      "time": 1788282484980,
+      "actor": "超级管理员",
+      "op": "批量取消隐藏",
+      "desc": "恢复显示 22 条档案"
+    },
     {
       "time": 1788281549602,
       "actor": "超级管理员",
