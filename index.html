@@ -2645,9 +2645,20 @@
     <button class="close-btn" onclick="toggleModal('redpacketModal', false)">×</button>
     <h2 style="font-size:18px; margin-bottom:6px;">🧧 兑换红包</h2>
     <p id="rpCoinsInfo" style="font-size:12px; color:var(--text-muted); margin-bottom:2px;"></p>
-    <div style="display:flex; gap:8px; margin:12px 0;">
+    <div style="display:flex; gap:6px; margin:10px 0 8px;">
+      <button id="rpModeCountBtn" class="btn btn-primary" style="flex:1; font-size:12px; padding:7px 8px;" onclick="switchRpMode('count')">按红包个数</button>
+      <button id="rpModeAmountBtn" class="btn btn-outline" style="flex:1; font-size:12px; padding:7px 8px;" onclick="switchRpMode('amount')">按金额 ¥</button>
+    </div>
+    <div id="rpCountRow" style="display:flex; gap:8px; margin:12px 0;">
       <input type="number" id="rpCountInput" min="1" placeholder="红包个数" style="flex:1; padding:9px 12px; border:1px solid var(--border); border-radius:10px; font-size:14px; background:var(--bg); color:var(--text);" oninput="previewRedpacket()">
       <span style="align-self:center; font-size:13px; color:var(--text-muted); white-space:nowrap;">个（×1000🪙）</span>
+    </div>
+    <div id="rpAmountRow" style="display:none; margin:12px 0;">
+      <div style="display:flex; gap:8px;">
+        <span style="align-self:center; font-size:18px; font-weight:700; color:var(--text);">¥</span>
+        <input type="number" id="rpAmountInput" min="0.01" step="0.01" placeholder="输入金额，如 0.01" style="flex:1; padding:9px 12px; border:1px solid var(--border); border-radius:10px; font-size:14px; background:var(--bg); color:var(--text);" oninput="previewRedpacket()">
+      </div>
+      <div id="rpAmountHint" style="font-size:12px; color:var(--accent, #6366f1); font-weight:600; margin-top:8px; min-height:16px;"></div>
     </div>
     <div id="rpPreview" style="font-size:12px; color:var(--text-muted); min-height:18px; margin-bottom:10px;"></div>
     <button class="btn btn-primary" style="width:100%;" onclick="exchangeRedpacket()">✅ 确认兑换</button>
@@ -2825,9 +2836,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.9.21';
+  const APP_VERSION = '6.9.22';
   const CHANGELOG = [
-    { v: '6.9.21', d: '2026-09-02', note: '① 金币数量中文单位阶梯：生成兑换码时，金币数量超过 1 万即按中文单位显示——新增实时预览「= X万 / X十万 / X百万 / X千万 / X亿」（如输入 123456 显示「= 12.35万 金币（12.35万）」、输入 100000000 显示「= 1亿 金币（1亿）」），且输入上限从 99.9999万 提高到 999.99亿，千万/亿 量级也能直接生成。② 生成结果区标出每个码的金币数（如「每个 +1.2万 金币」）。③ 兑换红包弹窗原本已用同套格式化（当前金币、消耗金币、差额均显示 万/亿），本次一并确认一致，不再出现 e+', type: 'feat' },
+    { v: '6.9.22', d: '2026-09-02', note: '① 红包兑换新增「按金额 ¥」模式：在兑换弹窗顶部切换「按红包个数 / 按金额 ¥」，选金额模式后直接输入 ¥ 数（如 0.01），实时显示「需 X 金币（= ¥0.01）」，确认即兑换对应红包（金币须为 1000 的整数倍，自动取整到对应红包个数）。② 修复「我的金币」余额显示卡在旧金额：之前后台刷新数据或切换「我的」页时不会重算余额，导致兑换/签到后数字不更新；现 renderProfilePage 与 loadData 末尾都会刷新余额，所见即所得', type: 'feat' },
     { v: '6.9.20', d: '2026-09-02', note: '① 红包兑换生成「领取凭证」：每次兑换红包都会生成一个唯一编码 ID（payCode），兑换成功弹窗内出现「📤 发到微信群」按钮与可复制的领取链接（?rp=编码），用户把链接发到微信群。② 管理员标记已兑换：管理员（仅管理员）点开该链接弹出「🧧 红包领取凭证」，核对领取人/金额/编码后可点绿色「✅ 标记已兑换（已发放）」；非管理员打开只看到凭证信息与提示、看不到按钮。管理员后台「💰 兑换记录」每条也有「标记已兑换」按钮，已发放显示绿色「✅已兑换」。③ 我的记录同步显示「⏳待发放 / ✅已发放」状态。④ 生成金币兑换码取消数量上限（原上限 200），一次可生成任意数量', type: 'feat' },
     { v: '6.9.19', d: '2026-09-02', note: '① 兑换红包实时换算：输入红包个数即时显示「消耗多少金币 → 可兑多少 ¥ 红包（N 个）」，金币不足时提示还差多少、最多可兑几个，所见即所得。② 金币数字格式化：余额/兑换/红包/记录等所有金币数字超过 1 万显示「万」、超过 1 亿显示「亿」（如 1.23万 / 2.5亿），不再出现 e+ 科学计数法。③ 兑换码支持多次使用：管理员生成兑换码时新增「使用次数」输入框（默认 1，留空=一次性），一个码可被不同注册用户兑换 N 次；管理面板列表显示「未兑换 / 已用 N/M / 已兑换」状态与 ×N次 标签，分享给多人可反复领取，管理员视角同步显示「已用 N/M」或「已兑换」', type: 'feat' },
     { v: '6.9.18', d: '2026-09-02', note: '① 红包入口优化：「🧧 金币红包」从独立大按钮改为「我的金币」区里的小按钮（与「🎟️ 兑换」并排），更顺手。② 管理员「🎟️ 兑换码管理」支持一次性批量生成——新增数量输入框，一次生成 N 个兑换码（上限 200），结果区列出全部码并支持「📋 复制全部」一键转发给用户。③ 兑换后分享 + 管理员「已兑换」：用户兑换成功弹窗内出现「📤 分享给微信好友」按钮（优先调系统分享面板/微信，不支持则复制分享链接）；分享链接带 ?redeem= 码，好友打开自动填入并可直接兑换；若打开的是已被使用的码且当前为管理员账号，弹窗显眼展示绿色「✅ 已兑换」按钮', type: 'feat' },
@@ -5016,6 +5027,7 @@
     updateVersionWidget();
     refreshIdentityUI();
     refreshUserUI();
+    renderCoinBalance();   // 后台刷新数据后同步「我的金币」余额显示
     updateInboxBadge();
     // 底部 Tab 栏显示（首次访问即可见）
     const bottomTab = document.getElementById('bottomTab');
@@ -6476,46 +6488,82 @@
     }
   }
 
-  // 兑换红包（注册用户）：1000 金币 = ¥0.01，单笔可兑多个，扣金币并写兑换记录
+  // 兑换红包（注册用户）：1000 金币 = ¥0.01，支持「按个数」与「按金额 ¥」两种模式
+  let __rpMode = 'count';   // 'count' = 按红包个数；'amount' = 按金额 ¥
+  function switchRpMode(mode) {
+    __rpMode = mode;
+    const countRow = document.getElementById('rpCountRow');
+    const amountRow = document.getElementById('rpAmountRow');
+    const bCount = document.getElementById('rpModeCountBtn');
+    const bAmount = document.getElementById('rpModeAmountBtn');
+    if (countRow) countRow.style.display = (mode === 'count') ? 'flex' : 'none';
+    if (amountRow) amountRow.style.display = (mode === 'amount') ? 'block' : 'none';
+    if (bCount) { bCount.className = (mode === 'count') ? 'btn btn-primary' : 'btn btn-outline'; }
+    if (bAmount) { bAmount.className = (mode === 'amount') ? 'btn btn-primary' : 'btn btn-outline'; }
+    previewRedpacket();
+  }
+  // 根据当前模式算出 {cnt, need, amount}；非法返回 {err}
+  function computeRedpacketPlan() {
+    if (__rpMode === 'amount') {
+      const amt = parseFloat((document.getElementById('rpAmountInput') || {}).value || '');
+      if (!(amt > 0)) return { err: '请输入要兑换的金额（如 0.01）' };
+      if (amt < REDPACKET_AMOUNT) return { err: '单笔至少 ¥' + REDPACKET_AMOUNT.toFixed(2) };
+      const need = Math.round(amt / REDPACKET_AMOUNT) * REDPACKET_RATE;   // 金币须为 1000 的整数倍
+      const cnt = Math.round(need / REDPACKET_RATE);
+      return { cnt: cnt, need: cnt * REDPACKET_RATE, amount: +(cnt * REDPACKET_AMOUNT).toFixed(2) };
+    }
+    const cnt = Math.max(0, parseInt((document.getElementById('rpCountInput') || {}).value || '0', 10));
+    if (cnt <= 0) return { err: '请输入要兑换的红包个数' };
+    return { cnt: cnt, need: cnt * REDPACKET_RATE, amount: +(cnt * REDPACKET_AMOUNT).toFixed(2) };
+  }
   function openRedpacketModal() {
     const me = getCurrentUser();
     if (!me) { toggleModal('userModal', true); return; }
     const coins = myCoins();
     const info = document.getElementById('rpCoinsInfo');
     if (info) info.innerHTML = '当前金币：<b>' + fmtNum(coins) + '</b> 🪙（' + REDPACKET_RATE + ' 金币 = ¥' + REDPACKET_AMOUNT.toFixed(2) + '，最多可兑 ' + Math.floor(coins / REDPACKET_RATE) + ' 个）';
+    switchRpMode('count');
     const inp = document.getElementById('rpCountInput');
     if (inp) inp.value = coins >= REDPACKET_RATE ? 1 : 0;
+    const amtInp = document.getElementById('rpAmountInput');
+    if (amtInp) amtInp.value = '';
     const prev = document.getElementById('rpPreview');
     if (prev) prev.textContent = '';
     toggleModal('redpacketModal', true);
   }
   function previewRedpacket() {
     const coins = myCoins();
-    const cnt = Math.max(0, parseInt((document.getElementById('rpCountInput') || {}).value || '0', 10));
     const prev = document.getElementById('rpPreview');
+    const amtHint = document.getElementById('rpAmountHint');
     if (!prev) return;
-    if (cnt <= 0) { prev.textContent = '请输入要兑换的红包个数'; return; }
-    const need = cnt * REDPACKET_RATE;
-    const amount = cnt * REDPACKET_AMOUNT;
-    if (need > coins) {
-      prev.innerHTML = '⚠️ 金币不足，还差 <b style="color:#ef4444;">' + fmtNum(need - coins) + '</b> 🪙（你最多可兑 ' + Math.floor(coins / REDPACKET_RATE) + ' 个）';
+    const plan = computeRedpacketPlan();
+    if (plan.err) {
+      prev.textContent = plan.err;
+      if (amtHint && __rpMode === 'amount') amtHint.textContent = '';
       return;
     }
-    prev.innerHTML = '✅ 将消耗 <b>' + fmtNum(need) + '</b> 🪙，兑换 🧧 <b style="color:#16a34a;">¥' + amount.toFixed(2) + '</b> 红包（' + cnt + ' 个）';
+    if (amtHint && __rpMode === 'amount') {
+      amtHint.textContent = '需 ' + fmtNum(plan.need) + ' 金币（= ¥' + plan.amount.toFixed(2) + '）';
+    }
+    if (plan.need > coins) {
+      prev.innerHTML = '⚠️ 金币不足，还差 <b style="color:#ef4444;">' + fmtNum(plan.need - coins) + '</b> 🪙（你最多可兑 ' + Math.floor(coins / REDPACKET_RATE) + ' 个）';
+      return;
+    }
+    prev.innerHTML = '✅ 将消耗 <b>' + fmtNum(plan.need) + '</b> 🪙，兑换 🧧 <b style="color:#16a34a;">¥' + plan.amount.toFixed(2) + '</b> 红包（' + plan.cnt + ' 个）';
   }
   async function exchangeRedpacket() {
     const me = getCurrentUser();
     if (!me) { toast('请先登录'); return; }
-    const cnt = Math.max(0, parseInt((document.getElementById('rpCountInput') || {}).value || '0', 10));
-    if (cnt <= 0) { showAlert('请输入要兑换的红包个数'); return; }
+    const plan = computeRedpacketPlan();
+    if (plan.err) { showAlert(plan.err); return; }
+    const cnt = plan.cnt, need = plan.need;
     if (__interactLock) return;
     __interactLock = true;
     try {
-      let consumed = 0, amount = 0;
+      let amount = 0;
       await patchRemoteState(function (base) {
         const u = base.users.find(function (x) { return String(x.id) === String(me.id); });
         if (!u) throw new Error('账号异常，请重新登录');
-        const need = cnt * REDPACKET_RATE;
         if (Number(u.coins) < need) throw new Error('金币不足');
         u.coins = Number(u.coins) - need;
         if (!Array.isArray(base.redemptions)) base.redemptions = [];
@@ -6528,7 +6576,7 @@
           coins: need, amount: +(cnt * REDPACKET_AMOUNT).toFixed(2),
           time: Date.now(), paid: false, paidAt: null
         });
-        consumed = need; amount = cnt * REDPACKET_AMOUNT;
+        amount = cnt * REDPACKET_AMOUNT;
         window.__lastRp = { payCode: payCode, coins: need, amount: cnt * REDPACKET_AMOUNT, name: u.name };
       }, 'redpacket ' + me.id);
       toggleModal('redpacketModal', false);
@@ -6771,6 +6819,7 @@
           '<div style="font-size:13px;">' + escapeHtml(x.c.text) + '</div></div>';
       }).join('');
     renderCheckin();
+    renderCoinBalance();   // 刷新「我的金币」余额，避免兑换/签到后卡在旧金额
   }
 
   // 渲染"我发过的资料"列表（发布 tab 用）
