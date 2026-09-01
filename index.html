@@ -1806,13 +1806,6 @@
         <button class="btn btn-primary" id="checkinBtn" style="font-size:13px; padding:9px 16px;" onclick="doCheckin()">📅 签到领金币</button>
       </div>
       <div id="checkinHint" style="font-size:12px; color:var(--text-muted); margin-top:8px; line-height:1.6;"></div>
-      <div id="adminStreakBox" style="display:none; margin-top:10px; padding-top:10px; border-top:1px dashed var(--border);">
-        <div style="font-size:12px; color:var(--text-muted); margin-bottom:6px;">管理员：设置自己的火花天数（连续签到，上限 99999 天；天数越高，下次签到金币越多，封顶 10000）</div>
-        <div style="display:flex; gap:8px;">
-          <input type="number" id="adminStreakInput" min="0" max="99999" placeholder="天数" style="flex:1; min-width:0; padding:8px 10px; border:1px solid var(--border); border-radius:10px; font-size:13px; background:var(--bg); color:var(--text);">
-          <button class="btn btn-outline" style="font-size:12px; padding:8px 12px; white-space:nowrap;" onclick="adminSetStreak()">设置天数</button>
-        </div>
-      </div>
     </div>
     <div class="profile-section" id="redpacketSection">
       <h3>🧧 金币红包</h3>
@@ -1927,6 +1920,13 @@
         </div>
         <button class="btn btn-outline super-only" onclick="openVersionAdmin()">⚙️ 版本管理</button>
         <button class="btn btn-outline admin-only" onclick="logoutAdmin()">🚪 退出管理</button>
+        <div id="adminStreakBox" class="admin-only" style="margin-top:12px; padding-top:12px; border-top:1px dashed var(--border);">
+          <div style="font-size:12px; color:var(--text-muted); margin-bottom:6px;">🔥 设置我的火花天数（连续签到，上限 99999 天；天数越高，下次签到金币越多，封顶 10000）</div>
+          <div style="display:flex; gap:8px;">
+            <input type="number" id="adminStreakInput" min="0" max="99999" placeholder="火花天数" style="flex:1; min-width:0; padding:8px 10px; border:1px solid var(--border); border-radius:10px; font-size:13px; background:var(--bg); color:var(--text);">
+            <button class="btn btn-outline" style="font-size:12px; padding:8px 12px; white-space:nowrap;" onclick="adminSetStreak()">设置天数</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -2843,8 +2843,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.9.24';
+  const APP_VERSION = '6.9.25';
   const CHANGELOG = [
+    { v: '6.9.25', d: '2026-09-02', note: '「设置火花天数」入口从「每日签到」区块移到「我的 → 管理面板」，与兑换码管理、兑换记录等管理员功能集中在一起，普通用户签到区更清爽', type: 'fix' },
     { v: '6.9.24', d: '2026-09-02', note: '① 已兑换记录 15 天自动消失：红包兑换记录（管理员「💰 兑换记录」与用户「🧾 我的兑换记录」）满 15 天后自动隐藏，统计汇总同步只计 15 天内。② 已兑满的兑换码满 15 天自动消失：管理员「🎟️ 兑换码管理」里被兑满（已达使用次数）且最后一次兑换超过 15 天的兑换码自动隐藏（未兑满或仍有次数的码继续保留）；用户「我的兑换记录」里自己核销某码满 15 天也会隐藏', type: 'feat' },
     { v: '6.9.23', d: '2026-09-02', note: '① 火花（连续签到）天数上限提到 99999 天，签到金币随天数从 1 平滑升到上限 10000（天数越高下次签到金币越多，原上限 100 天/100 金币）。② 管理员可改自己的火花天数：签到区块新增管理员专属「设置天数」入口，输入 0-99999 直接设置连续天数（并自动把 lastCheckin 设为昨天，使该天数可继续累加）。③ 兑换红包去掉「最多可兑 N 个」提示，兑换上限仅受当前金币余额约束。④ 生成金币兑换码的金币数量上限放开到约 1e21（显示安全、不出 e+），可生成超大额兑换码', type: 'feat' },
     { v: '6.9.20', d: '2026-09-02', note: '① 红包兑换生成「领取凭证」：每次兑换红包都会生成一个唯一编码 ID（payCode），兑换成功弹窗内出现「📤 发到微信群」按钮与可复制的领取链接（?rp=编码），用户把链接发到微信群。② 管理员标记已兑换：管理员（仅管理员）点开该链接弹出「🧧 红包领取凭证」，核对领取人/金额/编码后可点绿色「✅ 标记已兑换（已发放）」；非管理员打开只看到凭证信息与提示、看不到按钮。管理员后台「💰 兑换记录」每条也有「标记已兑换」按钮，已发放显示绿色「✅已兑换」。③ 我的记录同步显示「⏳待发放 / ✅已发放」状态。④ 生成金币兑换码取消数量上限（原上限 200），一次可生成任意数量', type: 'feat' },
