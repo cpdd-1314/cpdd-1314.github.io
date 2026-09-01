@@ -1786,6 +1786,13 @@
   </div>
   <div id="profileLoggedIn" style="display:none;">
     <div id="profileHeader"></div>
+    <div class="profile-section" id="coinSection" style="display:flex; align-items:center; justify-content:space-between; gap:12px; background:linear-gradient(135deg, rgba(245,158,11,.12), rgba(236,72,153,.10)); border-color:rgba(245,158,11,.35);">
+      <div>
+        <div style="font-size:12px; color:var(--text-muted);">我的金币</div>
+        <div style="font-size:26px; font-weight:800; color:var(--text);">🪙 <span id="coinBalance">0</span></div>
+      </div>
+      <button class="btn btn-primary" style="font-size:13px; padding:9px 16px;" onclick="openRedeemModal()">🎟️ 兑换金币</button>
+    </div>
     <div class="profile-section">
       <h3>📤 我发布的资料</h3>
       <div id="myPublishedSection"></div>
@@ -1877,6 +1884,7 @@
         <button class="btn btn-outline super-only" onclick="openAdminLogs()">📋 操作记录</button>
         <button class="btn btn-outline admin-only" onclick="toggleModal('wechatConfigModal', true)">⚙️ 修改微信名片</button>
         <button class="btn btn-outline admin-only" onclick="openSubmitLinkModal()">📨 投稿链接</button>
+        <button class="btn btn-outline admin-only" onclick="openRedeemAdminModal()">🎟️ 兑换码管理</button>
         <button class="btn btn-outline admin-only" id="glassModeBtn" onclick="toggleGlassMode()">🪟 玻璃拟态：关</button>
         <button class="btn btn-outline admin-only" id="updateModeBtn" onclick="toggleUpdateMode()">🚀 更新模式：关</button>
         <div class="admin-only" style="margin-top:2px;">
@@ -2561,6 +2569,52 @@
   </div>
 </div>
 
+<!-- 兑换码管理（管理员）：生成自定义金币数量的兑换码，并查看已生成码状态 -->
+<div class="modal-overlay" id="redeemAdminModal" onclick="handleOverlayClick(event, 'redeemAdminModal')">
+  <div class="modal" style="max-width:560px;">
+    <button class="close-btn" onclick="toggleModal('redeemAdminModal', false)">×</button>
+    <h2 style="font-size:18px; margin-bottom:6px;">🎟️ 兑换码管理</h2>
+    <p style="font-size:12px; color:var(--text-muted); margin-bottom:2px;">生成专属兑换码并发给注册用户，自定义金币数量，每个码仅可兑换一次。</p>
+    <div style="display:flex; gap:8px; margin:12px 0;">
+      <input type="number" id="redeemCoinsInput" min="1" max="999999" placeholder="金币数量" style="flex:1; padding:9px 12px; border:1px solid var(--border); border-radius:10px; font-size:14px; background:var(--bg); color:var(--text);">
+      <button class="btn btn-primary" onclick="genRedeemCode()">🎲 生成兑换码</button>
+    </div>
+    <div id="redeemGenResult" style="display:none; margin-bottom:10px; padding:10px 12px; border-radius:10px; background:rgba(16,185,129,.12); border:1px solid rgba(16,185,129,.4);">
+      <div style="font-size:12px; color:var(--text-muted);">新兑换码（点击复制发给用户）：</div>
+      <div style="display:flex; align-items:center; gap:8px; margin-top:4px;">
+        <code id="redeemGenCode" style="font-size:18px; font-weight:700; letter-spacing:1px; color:var(--text); flex:1; word-break:break-all;"></code>
+        <button class="btn btn-outline" style="font-size:11px; padding:5px 10px;" onclick="copyText(document.getElementById('redeemGenCode').textContent)">复制</button>
+      </div>
+    </div>
+    <h3 style="font-size:14px; margin:6px 0;">已生成的兑换码（<span id="redeemCodeTotal">0</span>）</h3>
+    <div id="redeemCodeList" style="max-height:38vh; overflow:auto;"></div>
+  </div>
+</div>
+
+<!-- 兑换金币（注册用户）：输入管理员发的兑换码领取金币 -->
+<div class="modal-overlay" id="redeemModal" onclick="handleOverlayClick(event, 'redeemModal')">
+  <div class="modal" style="max-width:420px;">
+    <button class="close-btn" onclick="toggleModal('redeemModal', false)">×</button>
+    <h2 style="font-size:18px; margin-bottom:6px;">🎟️ 兑换金币</h2>
+    <p style="font-size:12px; color:var(--text-muted); margin-bottom:2px;">输入管理员发给你的兑换码，即可领取金币（仅注册用户可兑换）。</p>
+    <input type="text" id="redeemInput" placeholder="例如：AB12-CD34-EF56" style="width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:10px; font-size:14px; margin:12px 0; background:var(--bg); color:var(--text); text-transform:uppercase; letter-spacing:1px;">
+    <button class="btn btn-primary" style="width:100%;" onclick="redeemCode()">✅ 确认兑换</button>
+  </div>
+</div>
+
+<!-- 修改密码（用户主动 / 临时密码登录后强制改密）：force 模式不可关闭 -->
+<div class="modal-overlay" id="changePwdModal" onclick="if(!window.__forceChangePwd) handleOverlayClick(event, 'changePwdModal')">
+  <div class="modal" style="max-width:420px;">
+    <button class="close-btn" id="changePwdClose" style="display:none;" onclick="toggleModal('changePwdModal', false)">×</button>
+    <h2 style="font-size:18px; margin-bottom:6px;">🔑 修改密码</h2>
+    <p id="changePwdHint" style="font-size:12px; color:var(--text-muted);"></p>
+    <input type="password" id="chgPwdOld" placeholder="当前密码（或临时密码）" style="width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:10px; font-size:14px; margin:10px 0; background:var(--bg); color:var(--text);">
+    <input type="password" id="chgPwdNew" placeholder="新密码（至少 4 位）" style="width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:10px; font-size:14px; margin:6px 0; background:var(--bg); color:var(--text);">
+    <input type="password" id="chgPwdNew2" placeholder="再次输入新密码" style="width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:10px; font-size:14px; margin:6px 0 12px; background:var(--bg); color:var(--text);">
+    <button class="btn btn-primary" style="width:100%;" onclick="changeUserPassword()">💾 保存新密码</button>
+  </div>
+</div>
+
 <!-- 左下角动态浮动入口（可收起为小圆球，点击重新弹出） -->
 <div id="floatBall" onclick="expandFloats()" title="展开入口">
   <svg viewBox="0 0 24 24" style="width:22px; height:22px; fill:#fff;">
@@ -2688,8 +2742,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.9.15';
+  const APP_VERSION = '6.9.16';
   const CHANGELOG = [
+    { v: '6.9.16', d: '2026-09-01', note: '新增「金币 + 兑换码 + 临时密码」体系：① 金币——注册用户在「我的」页可见余额 🪙 与「🎟️ 兑换金币」入口。② 兑换码——管理员在管理面板「🎟️ 兑换码管理」里自定义金币数量一键生成兑换码（格式 XXXX-XXXX-XXXX，可复制、可查看已生成/已兑换状态），每个码仅能兑换一次；注册用户输入码即领取金币（未登录=未注册无法兑换）。③ 临时密码——管理员在「注册用户」卡片点「🔑 重置密码」生成 8 位临时密码（弹窗显示），用户用临时密码登录后系统强制弹出改密框（不可关闭）必须设置新密码才能继续使用。数据均走增量保存，多端约 1 分钟同步', type: 'feat' },
     { v: '6.9.15', d: '2026-09-01', note: '① 新增「查看用户的所有评论」：管理视图「注册用户」标签每张用户卡片加「💬 查看TA的评论 (N)」按钮（N 为预统计的留言数），点开站内弹窗汇总该用户在所有嘉宾下的全部留言（管理员视角展示全部，含被封禁用户自己的留言），按时间倒序排列，点任意一条可一键跳转查看对应嘉宾资料。② 网站流畅度再优化：玻璃模式下背景 4 个极光光球（最重的持续重绘开销）在滚动时自动暂停动画（停下 150ms 恢复），并把模糊半径从 26px 降到 18px，肉眼几乎无差但明显省 GPU，滚动更顺', type: 'feat' },
     { v: '6.9.14', d: '2026-08-31', note: '管理视图「嘉宾一览」新增多选删除：① 选择栏在「👀 查看已选 (N)」旁新增「🗑 删除选中 (N)」红色按钮（有勾选才出现、数字实时跟随）；② 汇总弹窗底部也加「🗑 删除选中」按钮。点任意一处都会二次弹窗确认数量与「不可恢复」提示，确认后把勾选的所有嘉宾一次性软删除（标记 _deleted，由服务端合并真正移除，避免刷新复活），单次 saveToGitHub 同步、刷新管理视图与公共信息流、清空选择并 Toast 提示。需管理员权限', type: 'feat' },
     { v: '6.9.13', d: '2026-08-31', note: '① Liquid Glass 流畅度优化（解决「有点卡」）：把指针跟随高光从「每次 mousemove 重绘全站玻璃」改为 rAF 合并 + 只更新当前悬停的单个元素（离开即清变量），并把每张卡片的常驻扫光(lgSweep)与无限悬浮(glassFloatCard)动画关掉——这两者是每帧重绘 backdrop-filter 的主要卡顿源，关掉后滚动/移动明显顺滑；同时把过大的模糊半径从 56/52/48/42px 降到 44/44/40/34px，观感依旧是「湿玻璃」，但更省 GPU；并尊重系统「减少动态效果」偏好自动降级动画。② 管理视图「嘉宾一览」多选新增汇总弹窗：选择栏多出「👀 查看已选 (N)」按钮，点开把所有已选嘉宾（小图+年龄+城市/职业+简介）集中展示在一个站内弹窗里，点卡片或 ✕ 即取消选择并同步回底层卡片，底部可一键清空', type: 'feat' },
@@ -3183,7 +3238,8 @@
     glassMode: false,    // 全站玻璃拟态主题开关（管理员控制，对所有访客生效）
     glassTheme: 'default', // 玻璃风格：default / aurora / sunset / forest / cyber / invincible
     updateMode: false,   // 更新模式：开启后全屏维护遮罩覆盖整站，普通用户无法操作任何功能；管理员可在遮罩上「退出更新模式」或「预览网站」
-    submitLinks: []      // 投稿链接 [{key:hash, maxUses, used, note, createdAt}]；访客须凭有效链接(?k=)才能提交
+    submitLinks: [],     // 投稿链接 [{key:hash, maxUses, used, note, createdAt}]；访客须凭有效链接(?k=)才能提交
+    codes: []            // 金币兑换码 [{code, coins, usedBy, createdAt, createdBy}]；管理员生成、注册用户一次性兑换
   };
 
   // 内置示例兜底：当取不到仓库 data.json（本地预览 / 分享链接 / 直接双击打开）时，
@@ -3551,6 +3607,7 @@
     // 在每次保存时都被整体丢弃（连本地 appState 也被覆盖成不含新链接）→ 生成的链接根本不同步。
     // submitLinks 以 key 为主键合并，本地新增/消费次数/删除都会保留并写回仓库。
     out.submitLinks = mergeByKey(base.submitLinks, local.submitLinks);
+    out.codes = mergeByCode(base.codes, local.codes);
     return out;
   }
   function mergeById(baseArr, localArr) {
@@ -3620,6 +3677,14 @@
     localArr.forEach(function (x) { const k = keyOf(x); if (k != null) map.set(k, x); });
     return Array.from(map.values());
   }
+  function mergeByCode(baseArr, localArr) {
+    baseArr = Array.isArray(baseArr) ? baseArr : [];
+    localArr = Array.isArray(localArr) ? localArr : [];
+    const map = new Map();
+    baseArr.forEach(function (x) { if (x && x.code != null) map.set(String(x.code), x); });
+    localArr.forEach(function (x) { if (x && x.code != null) map.set(String(x.code), x); });
+    return Array.from(map.values());
+  }
 
   // base64 → 字符串（GitHub 返回的 content 带换行，且是 UTF-8 JSON）
   function b64ToStr(b64) {
@@ -3655,6 +3720,7 @@
     if (!Array.isArray(base.profiles)) base.profiles = appState.profiles || [];
     if (!Array.isArray(base.users)) base.users = appState.users || [];
     if (!Array.isArray(base.notifications)) base.notifications = appState.notifications || [];
+    if (!Array.isArray(base.codes)) base.codes = appState.codes || [];
 
     const ret = patchFn(base);   // 在最新基线上打补丁
 
@@ -4791,6 +4857,7 @@
       if (typeof data.glassTheme === 'string') appState.glassTheme = data.glassTheme;
       if (typeof data.updateMode === 'boolean') appState.updateMode = data.updateMode;
       if (Array.isArray(data.submitLinks)) appState.submitLinks = data.submitLinks;
+      if (Array.isArray(data.codes)) appState.codes = data.codes;
       // 兼容老数据：v6.9.4 起的审核状态粘性依赖 statusUpdatedAt；旧资料没有该字段时
       // 退化成 createdAt 比较，并发合并可能把已通过的审核打回 pending。这里在加载时补默认时间戳。
       if (Array.isArray(appState.profiles)) {
@@ -4931,6 +4998,7 @@
       if (typeof data.glassTheme === 'string') appState.glassTheme = data.glassTheme;
       if (typeof data.updateMode === 'boolean') appState.updateMode = data.updateMode;
       if (Array.isArray(data.submitLinks)) appState.submitLinks = data.submitLinks;
+      if (Array.isArray(data.codes)) appState.codes = data.codes;
       __lastSyncSig = sig;
       // 被封号的当前登录用户立即踢下线（多端实时生效）
       const cu = getCurrentUser();
@@ -5161,7 +5229,7 @@
     const tab = window.__currentTab || 'home';
     if (tab === 'publish') renderMyPublished();
     else if (tab === 'inbox') renderInbox();
-    else if (tab === 'profile') renderProfilePage();
+    else if (tab === 'profile') { renderProfilePage(); renderCoinBalance(); }
     else if (tab === 'adminlist') renderAdminCards();
     else renderCards();
   }
@@ -5242,6 +5310,7 @@
     if (user.banned) { showAlert('❌ 该账号已被封禁，无法登录' + (user.banReason ? '（原因：' + user.banReason + '）' : '')); return; }
     setCurrentUser(user);
     toggleModal('userModal', false);
+    if (user.mustChangePwd) { openChangePwdModal(true); return; }   // 临时密码登录：强制改密
     refreshUserPages();     // 立即刷新发布页/我的/收件箱，避免停留在旧登录态
     document.getElementById('userNameInput').value = '';
     document.getElementById('userPwdInput').value = '';
@@ -5738,6 +5807,211 @@
         + '<span class="uc-time">' + ts + '</span></div>'
         + '<div class="uc-text">' + escapeHtml(c.text || '') + '</div></div>';
     }).join('');
+  }
+
+  // ===== 金币 + 兑换码 + 临时密码 =====
+  function copyText(text) {
+    text = String(text || '');
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { toast('📋 已复制'); }).catch(function () { fallbackCopy(text); });
+    } else { fallbackCopy(text); }
+  }
+  function fallbackCopy(text) {
+    try {
+      const ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+      toast('📋 已复制');
+    } catch (e) { toast('复制失败，请手动复制'); }
+  }
+
+  // 管理员：生成兑换码（自定义金币数量）
+  async function genRedeemCode() {
+    if (!isSuper() && !isStaff()) { toast('仅管理员可生成兑换码'); return; }
+    const inp = document.getElementById('redeemCoinsInput');
+    const coins = parseInt((inp ? inp.value : '').trim(), 10);
+    if (!coins || coins < 1) { showAlert('请填写有效的金币数量（至少 1）'); return; }
+    if (coins > 999999) { showAlert('金币数量过大'); return; }
+    const code = genCodeString();
+    try {
+      await patchRemoteState(function (base) {
+        if (!Array.isArray(base.codes)) base.codes = [];
+        base.codes.push({ code: code, coins: coins, usedBy: null, createdAt: Date.now(), createdBy: (getCurrentIdentity() || {}).name || 'admin' });
+      }, 'gen redeem code ' + code);
+      const res = document.getElementById('redeemGenResult');
+      const el = document.getElementById('redeemGenCode');
+      if (el) el.textContent = code;
+      if (res) res.style.display = 'block';
+      if (inp) inp.value = '';
+      renderRedeemCodesAdmin();
+      toast('🎟️ 已生成兑换码（+' + coins + ' 金币）');
+    } catch (err) {
+      showAlert('❌ 生成失败：' + err.message);
+    }
+  }
+
+  function genCodeString() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    const seg = function () {
+      let s = '';
+      for (let i = 0; i < 4; i++) s += chars[Math.floor(Math.random() * chars.length)];
+      return s;
+    };
+    return seg() + '-' + seg() + '-' + seg();
+  }
+
+  function openRedeemAdminModal() {
+    renderRedeemCodesAdmin();
+    const res = document.getElementById('redeemGenResult');
+    if (res) res.style.display = 'none';
+    const inp = document.getElementById('redeemCoinsInput');
+    if (inp) inp.value = '';
+    toggleModal('redeemAdminModal', true);
+  }
+
+  function renderRedeemCodesAdmin() {
+    const box = document.getElementById('redeemCodeList');
+    if (!box) return;
+    const list = (appState.codes || []).slice().sort(function (a, b) { return (b.createdAt || 0) - (a.createdAt || 0); });
+    const total = document.getElementById('redeemCodeTotal');
+    if (total) total.textContent = list.length;
+    if (list.length === 0) { box.innerHTML = '<p style="padding:16px; text-align:center; color:var(--text-muted); font-size:12px;">还没有生成任何兑换码</p>'; return; }
+    box.innerHTML = list.map(function (c) {
+      const used = c.usedBy != null;
+      const u = used ? (appState.users || []).find(function (x) { return String(x.id) === String(c.usedBy); }) : null;
+      const status = used
+        ? '<span style="color:#16a34a; font-weight:600;">已兑换 · ' + (u ? escapeHtml(u.name) : ('#' + c.usedBy)) + '</span>'
+        : '<span style="color:#d97706; font-weight:600;">未兑换</span>';
+      return '<div style="display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px dashed var(--border);">' +
+        '<code style="font-size:13px; font-weight:700; flex:1; word-break:break-all;">' + escapeHtml(c.code) + '</code>' +
+        '<span style="font-size:12px; color:var(--text-muted);">+' + c.coins + '🪙</span>' +
+        '<span style="font-size:11px;">' + status + '</span>' +
+        (used ? '' : '<button class="btn btn-outline" style="font-size:10px; padding:3px 8px;" onclick="copyText(\'' + c.code + '\')">复制</button>') +
+        '</div>';
+    }).join('');
+  }
+
+  // 用户：兑换金币（仅注册用户）
+  async function redeemCode() {
+    const me = getCurrentUser();
+    if (!me) { toggleModal('redeemModal', false); toggleModal('userModal', true); return; }  // 未登录=未注册用户
+    const inp = document.getElementById('redeemInput');
+    const raw = (inp ? inp.value : '').trim().toUpperCase().replace(/\s/g, '');
+    if (!raw) { showAlert('请输入兑换码'); return; }
+    if (__interactLock) return;
+    __interactLock = true;
+    try {
+      let gained = 0;
+      await patchRemoteState(function (base) {
+        if (!Array.isArray(base.codes)) base.codes = [];
+        const c = base.codes.find(function (x) { return x.code === raw; });
+        if (!c) throw new Error('兑换码不存在');
+        if (c.usedBy != null) throw new Error('该兑换码已被使用');
+        const u = base.users.find(function (x) { return String(x.id) === String(me.id); });
+        if (!u) throw new Error('当前账号异常，请重新登录');
+        u.coins = (Number(u.coins) || 0) + Number(c.coins);
+        c.usedBy = u.id;
+        c.usedAt = Date.now();
+        gained = c.coins;
+      }, 'redeem code ' + raw);
+      toggleModal('redeemModal', false);
+      if (inp) inp.value = '';
+      renderCoinBalance();
+      toast('🪙 兑换成功，获得 ' + gained + ' 金币！');
+    } catch (err) {
+      showAlert('❌ 兑换失败：' + err.message);
+    } finally {
+      __interactLock = false;
+    }
+  }
+
+  function openRedeemModal() {
+    const inp = document.getElementById('redeemInput');
+    if (inp) inp.value = '';
+    toggleModal('redeemModal', true);
+  }
+
+  function renderCoinBalance() {
+    const el = document.getElementById('coinBalance');
+    if (!el) return;
+    const me = getCurrentUser();
+    let coins = 0;
+    if (me) {
+      const u = (appState.users || []).find(function (x) { return String(x.id) === String(me.id); });
+      coins = u ? (Number(u.coins) || 0) : 0;
+    }
+    el.textContent = coins;
+  }
+
+  // 管理员：重置用户密码（生成临时密码，登录后须改密）
+  async function resetUserPassword(uid) {
+    if (!isSuper() && !isStaff()) { toast('仅管理员可重置密码'); return; }
+    uid = Number(uid);
+    confirmAction('确定要给该用户重置密码吗？将生成临时密码，用户需用临时密码登录并立即修改新密码。', async function () {
+      const tmp = genTempPwd();
+      try {
+        await patchRemoteState(function (base) {
+          if (!Array.isArray(base.users)) base.users = [];
+          const u = base.users.find(function (x) { return x.id === uid; });
+          if (!u) throw new Error('用户不存在');
+          u.password = tmp;
+          u.mustChangePwd = true;
+        }, 'reset pwd ' + uid);
+        showAlertHtml('✅ 已重置临时密码：<br><br><code style="font-size:18px; font-weight:700; letter-spacing:1px;">' + tmp + '</code><br><br>请把这个临时密码发给用户，他登录后系统会要求立即修改新密码。', '重置成功');
+        if (typeof renderUserCards === 'function') renderUserCards();
+      } catch (err) {
+        showAlert('❌ 重置失败：' + err.message);
+      }
+    }, '重置密码');
+  }
+
+  function genTempPwd() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789abcdefghijkmnpqrstuvwxyz';
+    let s = '';
+    for (let i = 0; i < 8; i++) s += chars[Math.floor(Math.random() * chars.length)];
+    return s;
+  }
+
+  // 用户：打开修改密码（force=true 为临时密码登录后强制改密，不可关闭）
+  function openChangePwdModal(force) {
+    window.__forceChangePwd = !!force;
+    const hint = document.getElementById('changePwdHint');
+    const close = document.getElementById('changePwdClose');
+    if (hint) hint.textContent = force ? '系统检测到你使用的是临时密码，请立即设置一个新密码后再继续使用。' : '出于安全，修改密码后请妥善保管。';
+    if (close) close.style.display = force ? 'none' : 'block';
+    ['chgPwdOld', 'chgPwdNew', 'chgPwdNew2'].forEach(function (id) { const e = document.getElementById(id); if (e) e.value = ''; });
+    toggleModal('changePwdModal', true);
+  }
+
+  async function changeUserPassword() {
+    const me = getCurrentUser();
+    if (!me) { showAlert('请先登录'); return; }
+    const oldV = (document.getElementById('chgPwdOld') || {}).value || '';
+    const newV = (document.getElementById('chgPwdNew') || {}).value || '';
+    const newV2 = (document.getElementById('chgPwdNew2') || {}).value || '';
+    if (!oldV) { showAlert('请填写当前密码'); return; }
+    if (newV.length < 4) { showAlert('新密码至少 4 位'); return; }
+    if (newV !== newV2) { showAlert('两次新密码不一致'); return; }
+    if (__interactLock) return;
+    __interactLock = true;
+    try {
+      await patchRemoteState(function (base) {
+        const u = base.users.find(function (x) { return String(x.id) === String(me.id); });
+        if (!u) throw new Error('账号不存在，请重新登录');
+        if (u.password !== oldV) throw new Error('当前密码不正确');
+        u.password = newV;
+        u.mustChangePwd = false;
+      }, 'change pwd ' + me.id);
+      window.__forceChangePwd = false;
+      toggleModal('changePwdModal', false);
+      toast('✅ 密码已更新');
+      const cur = (appState.users || []).find(function (x) { return String(x.id) === String(me.id); }) || me;
+      setCurrentUser(cur);
+      if (typeof refreshUserPages === 'function') refreshUserPages();
+    } catch (err) {
+      showAlert('❌ 修改失败：' + err.message);
+    } finally {
+      __interactLock = false;
+    }
   }
 
   function scrollToComments() {
@@ -6631,6 +6905,7 @@
             <span class="uploader-tag">👥 群昵称：${escapeHtml(u.groupName || '-')}</span>
             ${banBtn}
             <button class="btn btn-outline" style="font-size:11px; padding:5px 10px;" onclick="openUserComments(${u.id})">💬 查看TA的评论 (${cmtCount})</button>
+            <button class="btn btn-outline" style="font-size:11px; padding:5px 10px; color:var(--danger); border-color:#fca5a5;" onclick="resetUserPassword(${u.id})">🔑 重置密码</button>
           </div>
         </div>
       </div>
