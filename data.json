@@ -1835,6 +1835,14 @@
   ],
   "glassTheme": "forest",
   "updateMode": true,
-  "codes": [],
+  "codes": [
+    {
+      "code": "DUXP-K222-D2BU",
+      "coins": 9999,
+      "usedBy": null,
+      "createdAt": 1788278721886,
+      "createdBy": "管理员"
+    }
+  ],
   "redemptions": []
 }
