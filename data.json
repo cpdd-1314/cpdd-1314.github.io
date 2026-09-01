@@ -3044,6 +3044,16 @@
       "usedAt": null,
       "createdAt": 1788282828126,
       "createdBy": "管理员"
+    },
+    {
+      "code": "AJNW-ZC6H-NRVQ",
+      "coins": 1000,
+      "maxUses": 100,
+      "usedBy": null,
+      "usedList": [],
+      "usedAt": null,
+      "createdAt": 1788283221914,
+      "createdBy": "管理员"
     }
   ],
   "redemptions": [
