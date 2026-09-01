@@ -1879,6 +1879,16 @@
       "usedAt": 1788280227614,
       "createdAt": 1788280207072,
       "createdBy": "管理员"
+    },
+    {
+      "code": "7G5H-QTUA-ZFC3",
+      "coins": 999999999999900000000,
+      "maxUses": 1,
+      "usedBy": null,
+      "usedList": [],
+      "usedAt": null,
+      "createdAt": 1788281617545,
+      "createdBy": "管理员"
     }
   ],
   "redemptions": [
