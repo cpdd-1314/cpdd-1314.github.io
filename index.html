@@ -2596,14 +2596,15 @@
     <h2 style="font-size:18px; margin-bottom:6px;">🎟️ 兑换码管理</h2>
     <p style="font-size:12px; color:var(--text-muted); margin-bottom:2px;">生成专属兑换码并发给注册用户，自定义金币数量与使用次数，仅注册用户可兑换。</p>
     <div style="display:flex; gap:8px; margin:12px 0;">
-      <input type="number" id="redeemCoinsInput" min="1" max="999999" placeholder="金币数量" style="flex:1; min-width:0; padding:9px 12px; border:1px solid var(--border); border-radius:10px; font-size:14px; background:var(--bg); color:var(--text);">
+      <input type="number" id="redeemCoinsInput" min="1" max="99999999999" placeholder="金币数量" style="flex:1; min-width:0; padding:9px 12px; border:1px solid var(--border); border-radius:10px; font-size:14px; background:var(--bg); color:var(--text);" oninput="previewCoinInput()">
       <input type="number" id="redeemCountInput" min="1" value="1" placeholder="生成数量" style="width:84px; padding:9px 12px; border:1px solid var(--border); border-radius:10px; font-size:14px; background:var(--bg); color:var(--text);">
       <input type="number" id="redeemMaxUsesInput" min="1" max="9999" value="1" placeholder="使用次数" title="每个兑换码可被兑换的次数（默认 1 次，留空或 1 表示一次性）" style="width:84px; padding:9px 12px; border:1px solid var(--border); border-radius:10px; font-size:14px; background:var(--bg); color:var(--text);">
       <button class="btn btn-primary" onclick="genRedeemCode()">🎲 生成</button>
     </div>
+    <div id="redeemCoinsHint" style="font-size:12px; color:var(--accent, #6366f1); min-height:16px; margin:-6px 0 10px; font-weight:600;"></div>
     <div id="redeemGenResult" style="display:none; margin-bottom:10px; padding:10px 12px; border-radius:10px; background:rgba(16,185,129,.12); border:1px solid rgba(16,185,129,.4);">
       <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
-        <div style="font-size:12px; color:var(--text-muted);">已生成 <b id="redeemGenCount">0</b> 个兑换码（点击复制发给用户）：</div>
+        <div style="font-size:12px; color:var(--text-muted);">已生成 <b id="redeemGenCount">0</b> 个兑换码，每个 <b style="color:#16a34a;">+'<span id="redeemGenCoinsLabel"></span>'</b> 金币（点击复制发给用户）：</div>
         <button class="btn btn-outline" style="font-size:11px; padding:4px 10px; white-space:nowrap;" onclick="copyAllRedeemCodes()">📋 复制全部</button>
       </div>
       <div id="redeemGenCodes" style="margin-top:6px; display:flex; flex-direction:column; gap:4px;"></div>
@@ -2824,8 +2825,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.9.20';
+  const APP_VERSION = '6.9.21';
   const CHANGELOG = [
+    { v: '6.9.21', d: '2026-09-02', note: '① 金币数量中文单位阶梯：生成兑换码时，金币数量超过 1 万即按中文单位显示——新增实时预览「= X万 / X十万 / X百万 / X千万 / X亿」（如输入 123456 显示「= 12.35万 金币（12.35万）」、输入 100000000 显示「= 1亿 金币（1亿）」），且输入上限从 99.9999万 提高到 999.99亿，千万/亿 量级也能直接生成。② 生成结果区标出每个码的金币数（如「每个 +1.2万 金币」）。③ 兑换红包弹窗原本已用同套格式化（当前金币、消耗金币、差额均显示 万/亿），本次一并确认一致，不再出现 e+', type: 'feat' },
     { v: '6.9.20', d: '2026-09-02', note: '① 红包兑换生成「领取凭证」：每次兑换红包都会生成一个唯一编码 ID（payCode），兑换成功弹窗内出现「📤 发到微信群」按钮与可复制的领取链接（?rp=编码），用户把链接发到微信群。② 管理员标记已兑换：管理员（仅管理员）点开该链接弹出「🧧 红包领取凭证」，核对领取人/金额/编码后可点绿色「✅ 标记已兑换（已发放）」；非管理员打开只看到凭证信息与提示、看不到按钮。管理员后台「💰 兑换记录」每条也有「标记已兑换」按钮，已发放显示绿色「✅已兑换」。③ 我的记录同步显示「⏳待发放 / ✅已发放」状态。④ 生成金币兑换码取消数量上限（原上限 200），一次可生成任意数量', type: 'feat' },
     { v: '6.9.19', d: '2026-09-02', note: '① 兑换红包实时换算：输入红包个数即时显示「消耗多少金币 → 可兑多少 ¥ 红包（N 个）」，金币不足时提示还差多少、最多可兑几个，所见即所得。② 金币数字格式化：余额/兑换/红包/记录等所有金币数字超过 1 万显示「万」、超过 1 亿显示「亿」（如 1.23万 / 2.5亿），不再出现 e+ 科学计数法。③ 兑换码支持多次使用：管理员生成兑换码时新增「使用次数」输入框（默认 1，留空=一次性），一个码可被不同注册用户兑换 N 次；管理面板列表显示「未兑换 / 已用 N/M / 已兑换」状态与 ×N次 标签，分享给多人可反复领取，管理员视角同步显示「已用 N/M」或「已兑换」', type: 'feat' },
     { v: '6.9.18', d: '2026-09-02', note: '① 红包入口优化：「🧧 金币红包」从独立大按钮改为「我的金币」区里的小按钮（与「🎟️ 兑换」并排），更顺手。② 管理员「🎟️ 兑换码管理」支持一次性批量生成——新增数量输入框，一次生成 N 个兑换码（上限 200），结果区列出全部码并支持「📋 复制全部」一键转发给用户。③ 兑换后分享 + 管理员「已兑换」：用户兑换成功弹窗内出现「📤 分享给微信好友」按钮（优先调系统分享面板/微信，不支持则复制分享链接）；分享链接带 ?redeem= 码，好友打开自动填入并可直接兑换；若打开的是已被使用的码且当前为管理员账号，弹窗显眼展示绿色「✅ 已兑换」按钮', type: 'feat' },
@@ -5960,6 +5962,25 @@
     } catch (e) { toast('复制失败，请手动复制'); }
   }
 
+  // 管理员：生成兑换码时实时预览金币数量的中文单位（万/十万/百万/千万/亿）
+  function previewCoinInput() {
+    const inp = document.getElementById('redeemCoinsInput');
+    const hint = document.getElementById('redeemCoinsHint');
+    if (!hint) return;
+    const v = parseInt((inp ? inp.value : '').trim(), 10);
+    if (!v || v < 1) { hint.textContent = ''; return; }
+    if (v < 10000) { hint.textContent = '= ' + fmtNum(v) + ' 金币'; return; }
+    hint.textContent = '= ' + fmtNum(v) + ' 金币（' + coinUnitText(v) + '）';
+  }
+  // 中文单位阶梯：万 / 十万 / 百万 / 千万 / 亿
+  function coinUnitText(n) {
+    n = Number(n) || 0;
+    if (n >= 1e8) return trimNum(n / 1e8) + '亿';
+    if (n >= 1e7) return trimNum(n / 1e7) + '千万';
+    if (n >= 1e6) return trimNum(n / 1e6) + '百万';
+    if (n >= 1e5) return trimNum(n / 1e5) + '十万';
+    return trimNum(n / 1e4) + '万';
+  }
   // 管理员：生成兑换码（自定义金币数量）
   async function genRedeemCode() {
     if (!isSuper() && !isStaff()) { toast('仅管理员可生成兑换码'); return; }
@@ -5972,7 +5993,7 @@
     if (!maxUses || maxUses < 1) maxUses = 1;
     if (maxUses > 9999) maxUses = 9999;
     if (!coins || coins < 1) { showAlert('请填写有效的金币数量（至少 1）'); return; }
-    if (coins > 999999) { showAlert('金币数量过大'); return; }
+    if (coins > 99999999999) { showAlert('金币数量过大'); return; }
     const newCodes = [];
     for (let i = 0; i < count; i++) newCodes.push(genCodeString());
     try {
@@ -5987,6 +6008,8 @@
       const cntEl = document.getElementById('redeemGenCount');
       const listEl = document.getElementById('redeemGenCodes');
       if (cntEl) cntEl.textContent = newCodes.length;
+      const coinLbl = document.getElementById('redeemGenCoinsLabel');
+      if (coinLbl) coinLbl.textContent = fmtNum(coins);
       if (listEl) listEl.innerHTML = newCodes.map(function (c) {
         return '<div style="display:flex; align-items:center; gap:6px;">' +
           '<code style="font-size:14px; font-weight:700; letter-spacing:1px; flex:1; word-break:break-all;">' + c + '</code>' +
