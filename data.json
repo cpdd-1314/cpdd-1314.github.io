@@ -3366,6 +3366,17 @@
       "createdAt": 1788373281838,
       "createdBy": "管理员",
       "link": true
+    },
+    {
+      "code": "EQXY-5GJJ-LL6C",
+      "coins": 20000000000,
+      "maxUses": 1,
+      "usedBy": null,
+      "usedList": [],
+      "usedAt": null,
+      "createdAt": 1788373787441,
+      "createdBy": "管理员",
+      "link": true
     }
   ],
   "redemptions": [
