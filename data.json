@@ -1104,8 +1104,8 @@
       "生活习惯": "作息随缘",
       "要求": "不难看三观正",
       "一句话介绍": "咕咕嘎嘎！我是二次元",
-      "updatedAt": 1788364161505,
-      "statusUpdatedAt": 1788364161505,
+      "updatedAt": 1788364609736,
+      "statusUpdatedAt": 1788364609736,
       "uploadDate": "2026-09-02",
       "createdAt": 1788364161505,
       "isPinned": false,
@@ -1113,7 +1113,7 @@
       "uploaderName": "吴明宣（10年🇮🇹）",
       "uploaderCode": "",
       "uploaderUid": 1788363830382,
-      "status": "pending",
+      "status": "approved",
       "profileNo": "A048",
       "mediaList": [
         {
@@ -1151,6 +1151,12 @@
     "6.1.0"
   ],
   "adminLogs": [
+    {
+      "time": 1788364609736,
+      "actor": "超级管理员",
+      "op": "审核",
+      "desc": "通过新嘉宾「吴明宣」的审核，已公开显示"
+    },
     {
       "time": 1788363380583,
       "actor": "超级管理员",
