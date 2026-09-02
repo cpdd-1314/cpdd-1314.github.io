@@ -2026,6 +2026,15 @@
       "coins": 1,
       "lastCheckin": "2026-09-02",
       "streak": 1
+    },
+    {
+      "id": 1788373325892,
+      "name": "杏",
+      "password": "1983",
+      "groupName": "杏",
+      "avatar": "",
+      "createdAt": 1788373325892,
+      "favorites": []
     }
   ],
   "notifications": [
