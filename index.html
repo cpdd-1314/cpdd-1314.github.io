@@ -2406,6 +2406,31 @@
   </div>
 </div>
 
+<!-- 赠送金币弹窗：登录用户把自己的金币送给其他用户，弹窗内显示全部用户供选择 -->
+<div class="modal-overlay" id="giftModal" onclick="handleOverlayClick(event, 'giftModal')">
+  <div class="modal" style="max-width:420px;">
+    <button class="close-btn" onclick="toggleModal('giftModal', false)">×</button>
+    <h2 style="font-size:18px; margin-bottom:4px;">🎁 赠送金币</h2>
+    <div style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">把你的金币送给其他群友，留下一份心意～</div>
+
+    <div style="display:flex; align-items:center; justify-content:space-between; background:var(--bg); border:1px solid var(--border); border-radius:12px; padding:10px 14px; margin-bottom:12px;">
+      <span style="font-size:13px; color:var(--text-muted);">你的余额</span>
+      <span style="font-size:16px; font-weight:700; color:#16a34a;">🪙 <b id="giftMyCoins">0</b></span>
+    </div>
+
+    <label style="font-size:13px; font-weight:600; display:block; margin-bottom:6px;">赠送金额</label>
+    <input type="number" id="giftAmountInput" min="1" placeholder="输入要赠送的金币数量" style="width:100%; padding:10px 12px; font-size:14px; border:1px solid var(--border); border-radius:10px; outline:none; box-sizing:border-box; background:var(--bg); color:var(--text); margin-bottom:12px;" oninput="giftValidate()">
+
+    <label style="font-size:13px; font-weight:600; display:block; margin-bottom:6px;">选择好友（点一下选中）</label>
+    <input type="text" id="giftSearchInput" placeholder="🔍 搜索昵称 / 群名" style="width:100%; padding:9px 12px; font-size:13px; border:1px solid var(--border); border-radius:10px; outline:none; box-sizing:border-box; background:var(--bg); color:var(--text); margin-bottom:8px;" oninput="renderGiftUserList(this.value)">
+    <div id="giftUserList" style="max-height:230px; overflow-y:auto; display:flex; flex-direction:column; gap:6px; border:1px solid var(--border); border-radius:12px; padding:6px;"></div>
+
+    <div id="giftError" style="color:var(--danger); font-size:12px; margin:8px 0; min-height:14px;"></div>
+
+    <button class="btn btn-primary" id="giftSubmitBtn" style="width:100%; font-size:15px; padding:12px; background:linear-gradient(135deg,#f59e0b,#16a34a); border:none;" onclick="doGiftCoins()" disabled>赠送金币</button>
+  </div>
+</div>
+
 <!-- 编辑我的资料弹窗（修改昵称、群名、头像） -->
 <div class="modal-overlay" id="profileEditModal" onclick="handleOverlayClick(event, 'profileEditModal')">
   <div class="modal" style="max-width:380px;">
@@ -2917,8 +2942,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.9.35';
+  const APP_VERSION = '6.9.36';
   const CHANGELOG = [
+    { v: '6.9.36', d: '2026-09-02', note: '新增「用户互赠金币」：登录用户点顶栏「🎁 赠送金币」后，弹窗内显示全部用户（排除自己与被封禁者）供点选，支持按昵称/群名搜索；输入金额后一键赠送。赠送在远端基线上原子扣减赠送方、增加受赠方，并写入 transfers 记录，金额校验限制在「>0 且不超过自身余额」，余额实时取自 users 权威数据。赠送成功自动刷新「我的金币」与顶栏', type: 'feat' },
     { v: '6.9.35', d: '2026-09-02', note: '未注册用户（游客）点开兑换金币链接（?redeem=xxx）时，不再静默挂着、啥也不显示，而是直接弹出一个好看的「🎁 先注册再领取」引导弹窗：大礼物图标 + 标题「你有一份金币待领取」+ 一句说明，并能从 codes 里查出这份礼包的金额高亮成「+500 🪙 金币」（查不到就不显金额）；按钮「📝 立即注册领取」一键切到注册 tab 并打开登录/注册弹窗，注册成功后会自动把金币兑了（沿用既有的 flushPendingRedeem 链条）；也提供「稍后再说」可关闭。已登录用户点链接行为不变（直接兑换）', type: 'feat' },
     { v: '6.9.34', d: '2026-09-02', note: '管理员复制兑换链接时文案更好发群：生成兑换链接后，结果区每条「复制」、管理列表里链接码的「复制链接」、以及批量「📋 复制全部」，复制出来的不再是光秃秃一个 URL，而是自带好看的群发文案 + 金额——形如「🎟️ 点击领取 500 金币 👉 https://cpdd-1314.github.io/?redeem=XXXX-XXXX-XXXX」，管理员直接整段粘到群里就能发。普通兑换码（需手输）仍只复制纯码', type: 'feat' },
     { v: '6.9.33', d: '2026-09-02', note: '管理员可查看并调整注册用户的火花与金币：管理面板「👥 注册用户」每张卡片新增一行「🔥 火花 N 天 · 🪙 金币 M」，一眼看清每位用户的连续签到天数与金币余额（数字沿用「万/亿」格式化，大额不再显示 e+）。同时新增两个管理员入口——「🔥 改火花」可直接把 TA 的连续签到天数设为 0 ~ 99999 天（并自动把最近签到日设为昨天，今天可继续签到累加，天数越高每天签到领的金币越多）；「🪙 改金币」支持直接填金额设为该值，或填 +500 / -500 在现有基础上增减（负数自动归零）。两项修改均走增量保存在远端最新基线上写入，避免被服务端旧副本覆盖，保存后立即刷新列表。附：金额解析改为只认十进制字面量，顺手修掉「填 1e6 会被 parseInt 误读成 1、把金币改成 1」的隐患，并支持千分位逗号与科学计数法', type: 'feat' },
@@ -5496,6 +5522,7 @@
       '<span style="width:22px; height:22px; border-radius:50%; overflow:hidden; flex-shrink:0;">' + avatarHtml(user, 22, 11) + '</span>' +
       '<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escapeHtml(user.name) + (user.groupName ? ' · ' + escapeHtml(user.groupName) : '') + '</span>' +
       '<span style="font-size:10px; opacity:.55; flex-shrink:0;">✏️</span></button>' +
+      '<button class="btn btn-outline" style="font-size:12px; padding:6px 10px;" onclick="openGiftModal()">🎁 赠送金币</button>' +
       '<button class="btn btn-outline" style="font-size:12px; padding:6px 10px;" onclick="logoutUser()">退出</button>';
     if (typeof updateInboxBadge === 'function') updateInboxBadge();
     if (typeof refreshPublishAccess === 'function') refreshPublishAccess();
@@ -8183,6 +8210,144 @@
       toast('✅ ' + who + ' 的金币' + (changed >= 0 ? ' +' : ' ') + fmtNum(changed) + '，现为 ' + fmtNum(after) + ' 🪙');
     } catch (err) {
       showAlert('❌ 设置失败：' + err.message);
+    } finally {
+      __interactLock = false;
+    }
+  }
+
+  // ===== 用户互赠金币 =====
+  // 登录用户把自己的金币送给其他用户，弹窗内列出全部用户供选择。
+  // 走 patchRemoteState 在远端最新基线上同时扣减赠送方、增加受赠方，并记录一条 transfers。
+  let __giftTo = null;   // 选中的受赠者 id（Number）
+
+  function openGiftModal() {
+    const me = getCurrentUser();
+    if (!me) { toast('请先登录'); toggleModal('userModal', true); return; }
+    const self = findUserById(me.id);
+    if (!self) { showAlert('当前账号在远端不存在，请重新登录'); return; }
+    __giftTo = null;
+    const myCoins = Number(self.coins) || 0;
+    const mc = document.getElementById('giftMyCoins');
+    if (mc) mc.textContent = fmtNum(myCoins);
+    const amt = document.getElementById('giftAmountInput');
+    if (amt) amt.value = '';
+    const search = document.getElementById('giftSearchInput');
+    if (search) search.value = '';
+    const err = document.getElementById('giftError');
+    if (err) err.textContent = '';
+    setGiftSubmitDisabled(true);
+    renderGiftUserList('');
+    toggleModal('giftModal', true);
+  }
+
+  // 渲染可赠送的用户列表（排除自己、排除被封禁用户），支持按昵称/群名搜索
+  function renderGiftUserList(keyword) {
+    const container = document.getElementById('giftUserList');
+    if (!container) return;
+    const me = getCurrentUser();
+    const myId = me ? Number(me.id) : null;
+    const kw = String(keyword == null ? '' : keyword).trim().toLowerCase();
+    const users = (appState.users || []).filter(function (u) {
+      if (!u) return false;
+      if (Number(u.id) === myId) return false;     // 不能送给自己
+      if (u.banned) return false;                  // 被封禁用户不可收礼
+      if (!kw) return true;
+      return (String(u.name || '').toLowerCase().indexOf(kw) > -1)
+          || (String(u.groupName || '').toLowerCase().indexOf(kw) > -1);
+    }).sort(function (a, b) { return (b.createdAt || 0) - (a.createdAt || 0); });
+    if (users.length === 0) {
+      container.innerHTML = '<p style="text-align:center; color:var(--text-muted); padding:18px; font-size:13px;">没有可赠送的用户</p>';
+      return;
+    }
+    container.innerHTML = users.map(function (u) {
+      const sel = Number(__giftTo) === Number(u.id);
+      const border = sel ? ' border-color:#16a34a; background:rgba(22,163,74,.08);' : '';
+      const av = u.avatar
+        ? '<img src="' + safeMediaUrl(u.avatar) + '" alt="' + escapeHtml(u.name) + '" style="width:34px;height:34px;border-radius:50%;object-fit:cover;">'
+        : '<div class="user-avatar-fallback" style="width:34px;height:34px;font-size:14px;">' + escapeHtml((u.name || '?').slice(0, 1)) + '</div>';
+      return '<div onclick="giftSelectUser(' + u.id + ')" style="display:flex; align-items:center; gap:10px; padding:8px 10px; border:1.5px solid var(--border); border-radius:10px; cursor:pointer; transition:border-color .15s;' + border + '">' +
+        av +
+        '<div style="flex:1; min-width:0;">' +
+          '<div style="font-size:14px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escapeHtml(u.name) + '</div>' +
+          '<div style="font-size:12px; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">@' + escapeHtml(u.groupName || '-') + ' · 🪙 ' + fmtNum(Number(u.coins) || 0) + '</div>' +
+        '</div>' +
+        (sel ? '<span style="color:#16a34a; font-weight:700;">✓</span>' : '') +
+        '</div>';
+    }).join('');
+  }
+
+  function giftSelectUser(id) {
+    __giftTo = Number(id);
+    const search = (document.getElementById('giftSearchInput') || {}).value || '';
+    renderGiftUserList(search);
+    giftValidate();
+  }
+
+  // 校验：已选好友 + 金额合法（>0、且不超过余额、仅纯十进制数字），返回是否可提交
+  function giftValidate() {
+    const me = getCurrentUser();
+    const self = me ? findUserById(me.id) : null;
+    const myCoins = Number(self ? self.coins : 0) || 0;
+    const raw = (document.getElementById('giftAmountInput') || {}).value;
+    const rawTrim = String(raw == null ? '' : raw).trim().replace(/,/g, '');
+    const amt = /^\d+(\.\d+)?$/.test(rawTrim) ? Math.floor(Number(rawTrim)) : NaN;
+    let msg = '';
+    if (!__giftTo) msg = '请选择一个好友';
+    else if (!rawTrim || isNaN(amt) || amt <= 0) msg = '请输入大于 0 的赠送金额';
+    else if (amt > myCoins) msg = '余额不足，你只有 ' + fmtNum(myCoins) + ' 金币';
+    const err = document.getElementById('giftError');
+    if (err) err.textContent = msg;
+    setGiftSubmitDisabled(!!msg);
+    return !msg;
+  }
+
+  function setGiftSubmitDisabled(disabled) {
+    const btn = document.getElementById('giftSubmitBtn');
+    if (btn) btn.disabled = !!disabled;
+  }
+
+  async function doGiftCoins() {
+    const me = getCurrentUser();
+    if (!me) { toast('请先登录'); return; }
+    if (!giftValidate()) return;            // 提交前再校验一次（防绕过）
+    const self = findUserById(me.id);
+    if (!self) { showAlert('当前账号在远端不存在，请重新登录'); return; }
+    const toId = Number(__giftTo);
+    const raw = (document.getElementById('giftAmountInput') || {}).value;
+    const rawTrim = String(raw == null ? '' : raw).trim().replace(/,/g, '');
+    const amount = /^\d+(\.\d+)?$/.test(rawTrim) ? Math.floor(Number(rawTrim)) : 0;
+    if (amount <= 0 || amount > (Number(self.coins) || 0)) { giftValidate(); return; }
+    if (Number(self.id) === toId) { showAlert('不能送给自己'); return; }
+    if (__interactLock) return;
+    __interactLock = true;
+    try {
+      await patchRemoteState(function (base) {
+        if (!Array.isArray(base.users)) base.users = [];
+        const from = base.users.find(function (x) { return String(x.id) === String(me.id); });
+        const to = base.users.find(function (x) { return String(x.id) === String(toId); });
+        if (!from) throw new Error('赠送方账号不存在');
+        if (!to) throw new Error('受赠方账号不存在');
+        if (from.banned) throw new Error('你的账号已被封禁，无法赠送');
+        if (to.banned) throw new Error('对方账号已被封禁，无法赠送');
+        const bal = Number(from.coins) || 0;
+        if (amount > bal) throw new Error('余额不足，你只有 ' + fmtNum(bal) + ' 金币');
+        from.coins = bal - amount;
+        to.coins = (Number(to.coins) || 0) + amount;
+        if (!Array.isArray(base.transfers)) base.transfers = [];
+        base.transfers.push({
+          from: me.id, fromName: self.name || '',
+          to: toId, toName: to.name || '',
+          amount: amount, time: Date.now()
+        });
+      }, 'gift ' + amount + ' from ' + me.id + ' to ' + toId);
+      const toName = (findUserById(toId) || {}).name || '对方';
+      toggleModal('giftModal', false);
+      __giftTo = null;          // 清空选择态，避免下次误选
+      toast('🎁 已赠送 ' + fmtNum(amount) + ' 金币给 ' + toName);
+      renderCoinBalance();      // 刷新「我的金币」余额
+      refreshUserUI();          // 刷新顶栏
+    } catch (err) {
+      showAlert('❌ 赠送失败：' + (err && err.message ? err.message : err));
     } finally {
       __interactLock = false;
     }
