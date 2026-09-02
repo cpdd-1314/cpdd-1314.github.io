@@ -1832,6 +1832,7 @@
       <div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;">
         <button class="btn btn-primary" style="font-size:12px; padding:7px 12px;" onclick="openRedeemModal()">🎟️ 兑换</button>
         <button class="btn btn-outline" style="font-size:12px; padding:7px 12px;" onclick="openRedpacketModal()">🧧 红包</button>
+        <button class="btn btn-outline" style="font-size:12px; padding:7px 12px;" onclick="openGiftModal()">🎁 赠送</button>
       </div>
     </div>
     <div class="profile-section" id="checkinSection">
@@ -2942,9 +2943,10 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.9.36';
+  const APP_VERSION = '6.9.37';
   const CHANGELOG = [
-    { v: '6.9.36', d: '2026-09-02', note: '新增「用户互赠金币」：登录用户点顶栏「🎁 赠送金币」后，弹窗内显示全部用户（排除自己与被封禁者）供点选，支持按昵称/群名搜索；输入金额后一键赠送。赠送在远端基线上原子扣减赠送方、增加受赠方，并写入 transfers 记录，金额校验限制在「>0 且不超过自身余额」，余额实时取自 users 权威数据。赠送成功自动刷新「我的金币」与顶栏', type: 'feat' },
+    { v: '6.9.37', d: '2026-09-03', note: '「🎁 赠送金币」入口从顶栏按钮移到「我的金币」卡片操作区，与「🎟️ 兑换」「🧧 红包」并排（改为「🎁 赠送」），更符合使用动线——看余额顺手就能送；顶栏相应移除该按钮', type: 'feat' },
+    { v: '6.9.36', d: '2026-09-02', note: '新增「用户互赠金币」：登录用户在「我的金币」卡片点「🎁 赠送」后，弹窗内显示全部用户（排除自己与被封禁者）供点选，支持按昵称/群名搜索；输入金额后一键赠送。赠送在远端基线上原子扣减赠送方、增加受赠方，并写入 transfers 记录，金额校验限制在「>0 且不超过自身余额」，余额实时取自 users 权威数据。赠送成功自动刷新「我的金币」与顶栏', type: 'feat' },
     { v: '6.9.35', d: '2026-09-02', note: '未注册用户（游客）点开兑换金币链接（?redeem=xxx）时，不再静默挂着、啥也不显示，而是直接弹出一个好看的「🎁 先注册再领取」引导弹窗：大礼物图标 + 标题「你有一份金币待领取」+ 一句说明，并能从 codes 里查出这份礼包的金额高亮成「+500 🪙 金币」（查不到就不显金额）；按钮「📝 立即注册领取」一键切到注册 tab 并打开登录/注册弹窗，注册成功后会自动把金币兑了（沿用既有的 flushPendingRedeem 链条）；也提供「稍后再说」可关闭。已登录用户点链接行为不变（直接兑换）', type: 'feat' },
     { v: '6.9.34', d: '2026-09-02', note: '管理员复制兑换链接时文案更好发群：生成兑换链接后，结果区每条「复制」、管理列表里链接码的「复制链接」、以及批量「📋 复制全部」，复制出来的不再是光秃秃一个 URL，而是自带好看的群发文案 + 金额——形如「🎟️ 点击领取 500 金币 👉 https://cpdd-1314.github.io/?redeem=XXXX-XXXX-XXXX」，管理员直接整段粘到群里就能发。普通兑换码（需手输）仍只复制纯码', type: 'feat' },
     { v: '6.9.33', d: '2026-09-02', note: '管理员可查看并调整注册用户的火花与金币：管理面板「👥 注册用户」每张卡片新增一行「🔥 火花 N 天 · 🪙 金币 M」，一眼看清每位用户的连续签到天数与金币余额（数字沿用「万/亿」格式化，大额不再显示 e+）。同时新增两个管理员入口——「🔥 改火花」可直接把 TA 的连续签到天数设为 0 ~ 99999 天（并自动把最近签到日设为昨天，今天可继续签到累加，天数越高每天签到领的金币越多）；「🪙 改金币」支持直接填金额设为该值，或填 +500 / -500 在现有基础上增减（负数自动归零）。两项修改均走增量保存在远端最新基线上写入，避免被服务端旧副本覆盖，保存后立即刷新列表。附：金额解析改为只认十进制字面量，顺手修掉「填 1e6 会被 parseInt 误读成 1、把金币改成 1」的隐患，并支持千分位逗号与科学计数法', type: 'feat' },
@@ -5522,7 +5524,6 @@
       '<span style="width:22px; height:22px; border-radius:50%; overflow:hidden; flex-shrink:0;">' + avatarHtml(user, 22, 11) + '</span>' +
       '<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escapeHtml(user.name) + (user.groupName ? ' · ' + escapeHtml(user.groupName) : '') + '</span>' +
       '<span style="font-size:10px; opacity:.55; flex-shrink:0;">✏️</span></button>' +
-      '<button class="btn btn-outline" style="font-size:12px; padding:6px 10px;" onclick="openGiftModal()">🎁 赠送金币</button>' +
       '<button class="btn btn-outline" style="font-size:12px; padding:6px 10px;" onclick="logoutUser()">退出</button>';
     if (typeof updateInboxBadge === 'function') updateInboxBadge();
     if (typeof refreshPublishAccess === 'function') refreshPublishAccess();
