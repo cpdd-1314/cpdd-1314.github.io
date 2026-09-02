@@ -2035,7 +2035,7 @@
       "avatar": "",
       "createdAt": 1788373325892,
       "favorites": [],
-      "coins": 3113,
+      "coins": 2113,
       "lastCheckin": "2026-09-02",
       "streak": 1
     },
@@ -3442,6 +3442,18 @@
       "time": 1788282118516,
       "paid": true,
       "paidAt": 1788282220783
+    },
+    {
+      "id": "r1788375773939_623",
+      "payCode": "NGXQ-EP2C-ZLQZ",
+      "uid": 1788373325892,
+      "name": "杏",
+      "count": 1,
+      "coins": 1000,
+      "amount": 0.01,
+      "time": 1788375773939,
+      "paid": false,
+      "paidAt": null
     }
   ],
   "reports": [
