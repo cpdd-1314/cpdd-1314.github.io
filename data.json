@@ -3303,6 +3303,17 @@
       "createdAt": 1788368941168,
       "createdBy": "管理员",
       "link": true
+    },
+    {
+      "code": "5DX3-V368-YUGM",
+      "coins": 777,
+      "maxUses": 1,
+      "usedBy": null,
+      "usedList": [],
+      "usedAt": null,
+      "createdAt": 1788372481835,
+      "createdBy": "管理员",
+      "link": true
     }
   ],
   "redemptions": [
