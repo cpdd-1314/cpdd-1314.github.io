@@ -161,7 +161,7 @@
       "uploaderName": "网友",
       "uploaderCode": "",
       "fromPublic": true,
-      "status": "removed",
+      "status": "approved",
       "profileNo": "A039",
       "mediaList": [
         {
@@ -170,9 +170,8 @@
           "isMain": true
         }
       ],
-      "isHidden": true,
-      "statusUpdatedAt": 1787911216010,
-      "hiddenAt": 1788283058354
+      "isHidden": false,
+      "statusUpdatedAt": 1787911216010
     },
     {
       "id": 1787876777457,
@@ -262,7 +261,7 @@
       "uploaderName": "网友",
       "uploaderCode": "",
       "fromPublic": true,
-      "status": "removed",
+      "status": "approved",
       "profileNo": "A036",
       "mediaList": [
         {
@@ -271,9 +270,8 @@
           "isMain": true
         }
       ],
-      "isHidden": true,
-      "statusUpdatedAt": 1787848900338,
-      "hiddenAt": 1788283058354
+      "isHidden": false,
+      "statusUpdatedAt": 1787848900338
     },
     {
       "id": 1787632261236,
@@ -378,7 +376,7 @@
       "uploaderName": "网友",
       "uploaderCode": "",
       "fromPublic": true,
-      "status": "removed",
+      "status": "approved",
       "profileNo": "A032",
       "mediaList": [
         {
@@ -387,9 +385,8 @@
           "isMain": true
         }
       ],
-      "isHidden": true,
-      "statusUpdatedAt": 1787499885177,
-      "hiddenAt": 1788283058354
+      "isHidden": false,
+      "statusUpdatedAt": 1787499885177
     },
     {
       "id": 1787487909135,
@@ -505,7 +502,7 @@
       "uploaderName": "网友",
       "uploaderCode": "",
       "fromPublic": true,
-      "status": "removed",
+      "status": "approved",
       "profileNo": "A026",
       "mediaList": [
         {
@@ -517,9 +514,8 @@
       "likes": [
         "super"
       ],
-      "isHidden": true,
-      "statusUpdatedAt": 1787462799374,
-      "hiddenAt": 1788283058354
+      "isHidden": false,
+      "statusUpdatedAt": 1787462799374
     },
     {
       "id": 1787435857985,
@@ -673,7 +669,7 @@
       "uploaderName": "网友",
       "uploaderCode": "",
       "fromPublic": true,
-      "status": "removed",
+      "status": "approved",
       "profileNo": "A020",
       "mediaList": [
         {
@@ -687,9 +683,8 @@
       ],
       "updatedAt": 1787414395419,
       "comments": [],
-      "isHidden": true,
-      "statusUpdatedAt": 1787414395419,
-      "hiddenAt": 1788283058354
+      "isHidden": false,
+      "statusUpdatedAt": 1787414395419
     },
     {
       "id": 1787412550807,
@@ -820,10 +815,9 @@
           "type": "video/mp4"
         }
       ],
-      "isHidden": true,
-      "status": "removed",
-      "statusUpdatedAt": 1787348572473,
-      "hiddenAt": 1788283058354
+      "isHidden": false,
+      "status": "approved",
+      "statusUpdatedAt": 1787348572473
     },
     {
       "id": 1787345937110,
@@ -927,10 +921,9 @@
         }
       ],
       "updatedAt": 1787342006042,
-      "isHidden": true,
-      "status": "removed",
-      "statusUpdatedAt": 1787342006042,
-      "hiddenAt": 1788283058354
+      "isHidden": false,
+      "status": "approved",
+      "statusUpdatedAt": 1787342006042
     },
     {
       "id": 1787341261811,
@@ -964,10 +957,9 @@
       ],
       "guestNo": "A005",
       "updatedAt": 1787413723143,
-      "isHidden": true,
-      "status": "removed",
-      "statusUpdatedAt": 1787413723143,
-      "hiddenAt": 1788283058354
+      "isHidden": false,
+      "status": "approved",
+      "statusUpdatedAt": 1787413723143
     },
     {
       "id": 1700000000003,
@@ -1119,6 +1111,12 @@
     "6.1.0"
   ],
   "adminLogs": [
+    {
+      "time": 1788357126238,
+      "actor": "超级管理员",
+      "op": "批量取消隐藏",
+      "desc": "恢复显示 8 条档案"
+    },
     {
       "time": 1788357071058,
       "actor": "超级管理员",
