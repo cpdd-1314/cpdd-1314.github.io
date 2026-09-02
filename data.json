@@ -1912,7 +1912,7 @@
       "favorites": [
         1700000000001
       ],
-      "coins": 2,
+      "coins": 1001,
       "lastCheckin": "2026-09-02",
       "streak": 1
     },
@@ -3327,9 +3327,14 @@
       "code": "YLLH-L4GH-7NLQ",
       "coins": 999,
       "maxUses": 1,
-      "usedBy": null,
-      "usedList": [],
-      "usedAt": null,
+      "usedBy": 1787938757949,
+      "usedList": [
+        {
+          "uid": 1787938757949,
+          "time": 1788373150062
+        }
+      ],
+      "usedAt": 1788373150062,
       "createdAt": 1788372602704,
       "createdBy": "管理员",
       "link": true
