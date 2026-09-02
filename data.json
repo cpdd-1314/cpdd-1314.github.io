@@ -3308,9 +3308,14 @@
       "code": "5DX3-V368-YUGM",
       "coins": 777,
       "maxUses": 1,
-      "usedBy": null,
-      "usedList": [],
-      "usedAt": null,
+      "usedBy": "super",
+      "usedList": [
+        {
+          "uid": "super",
+          "time": 1788372570456
+        }
+      ],
+      "usedAt": 1788372570456,
       "createdAt": 1788372481835,
       "createdBy": "管理员",
       "link": true
