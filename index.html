@@ -2901,8 +2901,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.9.33';
+  const APP_VERSION = '6.9.34';
   const CHANGELOG = [
+    { v: '6.9.34', d: '2026-09-02', note: '管理员复制兑换链接时文案更好发群：生成兑换链接后，结果区每条「复制」、管理列表里链接码的「复制链接」、以及批量「📋 复制全部」，复制出来的不再是光秃秃一个 URL，而是自带好看的群发文案 + 金额——形如「🎟️ 点击领取 500 金币 👉 https://cpdd-1314.github.io/?redeem=XXXX-XXXX-XXXX」，管理员直接整段粘到群里就能发。普通兑换码（需手输）仍只复制纯码', type: 'feat' },
     { v: '6.9.33', d: '2026-09-02', note: '管理员可查看并调整注册用户的火花与金币：管理面板「👥 注册用户」每张卡片新增一行「🔥 火花 N 天 · 🪙 金币 M」，一眼看清每位用户的连续签到天数与金币余额（数字沿用「万/亿」格式化，大额不再显示 e+）。同时新增两个管理员入口——「🔥 改火花」可直接把 TA 的连续签到天数设为 0 ~ 99999 天（并自动把最近签到日设为昨天，今天可继续签到累加，天数越高每天签到领的金币越多）；「🪙 改金币」支持直接填金额设为该值，或填 +500 / -500 在现有基础上增减（负数自动归零）。两项修改均走增量保存在远端最新基线上写入，避免被服务端旧副本覆盖，保存后立即刷新列表。附：金额解析改为只认十进制字面量，顺手修掉「填 1e6 会被 parseInt 误读成 1、把金币改成 1」的隐患，并支持千分位逗号与科学计数法', type: 'feat' },
     { v: '6.9.32', d: '2026-09-02', note: '紧急修复「全站图片和视频都不显示」：上一版为堵 XSS 加的媒体地址白名单只放行 http(s) 与 data:，而本站上传的媒体实际都是站点相对路径（./media/xxx.jpg），被误判为非法、src 被置空，导致所有照片和视频一个都出不来。现改为「只拦危险协议 + 只拦能闭合属性的字符」：相对路径、http(s)、图片/视频 data URI、本地预览 blob 全部正常放行，javascript: / vbscript: / file: / data:text/html 与 `x" onerror="...` 这类注入依旧拦截。已用线上真实地址做回归验证（21 条断言全过）', type: 'fix' },
     { v: '6.9.31', d: '2026-09-02', note: '① 新增「🔗 链接兑换码」：管理员在「🎟️ 兑换码管理」可一键生成兑换链接（金币数量/生成数量/使用次数同普通兑换码），把链接发给用户，用户点开链接<b>已登录就直接兑换到账</b>，不用手输兑换码；未登录会先引导登录/注册，登录成功后自动补上兑换。链接码在管理列表里带 🔗 标记，可一键「复制链接」。② 兑换码 7 天有效：未兑换的兑换码生成满 7 天自动失效并从管理列表消失，用户再兑换会提示「该兑换码已过期」（此前只有「已兑满」的码才会隐藏，未兑换的会一直挂着）。③ 兑换记录 7 天消失：红包兑换记录、金币兑换记录、我的兑换记录统一由 15 天改为 7 天后自动隐藏。④ 管理列表每条兑换码显示剩余有效期（剩 X 天 / 剩 X 小时）；复制链接改为走安全复制通道，避免 URL 里的 ?&= 在 onclick 属性里被转义出错', type: 'feat' },
@@ -6284,6 +6285,7 @@
       }, 'gen redeem ' + (isLink ? 'links' : 'codes') + ' x' + count);
       __lastGenType = isLink ? 'link' : 'code';
       window.__lastGenCodes = isLink ? newCodes.map(redeemCodeUrl) : newCodes.slice();
+      window.__lastGenCoins = isLink ? coins : null;
       const res = document.getElementById('redeemGenResult');
       const cntEl = document.getElementById('redeemGenCount');
       const listEl = document.getElementById('redeemGenCodes');
@@ -6295,10 +6297,11 @@
       const coinLbl = document.getElementById('redeemGenCoinsLabel');
       if (coinLbl) coinLbl.textContent = fmtNum(coins);
       if (listEl) listEl.innerHTML = newCodes.map(function (c) {
-        const text = isLink ? redeemCodeUrl(c) : c;
+        const disp = isLink ? redeemCodeUrl(c) : c;            // 展示：纯链接 / 纯码
+        const cpy = isLink ? redeemShareText(c, coins) : c;    // 复制：链接带「好看文案 + 金额」
         return '<div style="display:flex; align-items:center; gap:6px;">' +
-          '<code style="font-size:' + (isLink ? '11px' : '14px') + '; font-weight:700; letter-spacing:' + (isLink ? '0' : '1px') + '; flex:1; word-break:break-all;">' + escapeHtml(text) + '</code>' +
-          '<button class="btn btn-outline" style="font-size:10px; padding:3px 8px; white-space:nowrap;" onclick="copyStored(' + copyIdx(text) + ')">复制</button></div>';
+          '<code style="font-size:' + (isLink ? '11px' : '14px') + '; font-weight:700; letter-spacing:' + (isLink ? '0' : '1px') + '; flex:1; word-break:break-all;">' + escapeHtml(disp) + '</code>' +
+          '<button class="btn btn-outline" style="font-size:10px; padding:3px 8px; white-space:nowrap;" onclick="copyStored(' + copyIdx(cpy) + ')">复制</button></div>';
       }).join('');
       if (res) res.style.display = 'block';
       if (inp) inp.value = '';
@@ -6332,7 +6335,12 @@
   function copyAllRedeemCodes() {
     const arr = window.__lastGenCodes || [];
     if (!arr.length) { toast(__lastGenType === 'link' ? '没有可复制的兑换链接' : '没有可复制的兑换码'); return; }
-    copyText(arr.join('\n'));
+    // 链接模式：每条带「好看文案 + 金额」，直接整段发群里
+    if (__lastGenType === 'link' && window.__lastGenCoins != null) {
+      copyText(arr.map(function (u) { return '🎟️ 点击领取 ' + fmtNum(window.__lastGenCoins) + ' 金币 👉 ' + u; }).join('\n'));
+    } else {
+      copyText(arr.join('\n'));
+    }
     toast('📋 已复制 ' + arr.length + (__lastGenType === 'link' ? ' 条兑换链接' : ' 个兑换码'));
   }
 
@@ -6382,7 +6390,7 @@
         : '';
       const exp = codeExpireText(c);
       const expTag = exp ? '<span style="font-size:10px; color:var(--text-muted); white-space:nowrap;">' + exp + '</span>' : '';
-      const copyVal = c.link ? redeemCodeUrl(c.code) : c.code;
+      const copyVal = c.link ? redeemShareText(c.code, c.coins) : c.code;
       return '<div style="display:flex; align-items:center; gap:6px; padding:8px 0; border-bottom:1px dashed var(--border); flex-wrap:wrap;">' +
         '<code style="font-size:13px; font-weight:700; flex:1; min-width:0; word-break:break-all;">' + escapeHtml(c.code) + '</code>' +
         linkTag + tag +
@@ -6825,6 +6833,12 @@
   function redeemCodeUrl(code) {
     try { return location.origin + location.pathname + '?redeem=' + encodeURIComponent(code); }
     catch (e) { return '?redeem=' + encodeURIComponent(code); }
+  }
+
+  // 兑换链接的「群发文案」：管理员复制到群直接能发，好看且带金额。
+  // 例如：🎟️ 点击领取 500 金币 👉 https://cpdd-1314.github.io/?redeem=XXXX-XXXX-XXXX
+  function redeemShareText(code, coins) {
+    return '🎟️ 点击领取 ' + fmtNum(Number(coins) || 0) + ' 金币 👉 ' + redeemCodeUrl(code);
   }
 
   function dayStr(d) {
