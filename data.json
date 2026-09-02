@@ -3230,6 +3230,17 @@
       "createdAt": 1788356429689,
       "createdBy": "管理员",
       "link": true
+    },
+    {
+      "code": "MN4H-HBJK-V52R",
+      "coins": 1000,
+      "maxUses": 1,
+      "usedBy": null,
+      "usedList": [],
+      "usedAt": null,
+      "createdAt": 1788364085615,
+      "createdBy": "管理员",
+      "link": true
     }
   ],
   "redemptions": [
