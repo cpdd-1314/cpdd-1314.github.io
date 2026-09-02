@@ -3434,6 +3434,17 @@
       "createdAt": 1788390406473,
       "createdBy": "管理员",
       "link": true
+    },
+    {
+      "code": "HZ4U-XQWM-ADXY",
+      "coins": 8888,
+      "maxUses": 1,
+      "usedBy": null,
+      "usedList": [],
+      "usedAt": null,
+      "createdAt": 1788390520617,
+      "createdBy": "管理员",
+      "link": true
     }
   ],
   "redemptions": [
