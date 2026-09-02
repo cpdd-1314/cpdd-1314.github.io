@@ -3235,6 +3235,17 @@
       "usedAt": null,
       "createdAt": 1788354963585,
       "createdBy": "管理员"
+    },
+    {
+      "code": "KA7W-7SL8-RLJW",
+      "coins": 10000,
+      "maxUses": 1,
+      "usedBy": null,
+      "usedList": [],
+      "usedAt": null,
+      "createdAt": 1788356429689,
+      "createdBy": "管理员",
+      "link": true
     }
   ],
   "redemptions": [
