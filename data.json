@@ -1074,8 +1074,8 @@
       "生活习惯": "",
       "要求": "",
       "一句话介绍": "",
-      "updatedAt": 1788354498698,
-      "statusUpdatedAt": 1788354498698,
+      "updatedAt": 1788363346822,
+      "statusUpdatedAt": 1788363346822,
       "uploadDate": "2026-09-02",
       "createdAt": 1788354498698,
       "isPinned": false,
@@ -1083,7 +1083,7 @@
       "uploaderName": "诺诺（诺诺）",
       "uploaderCode": "",
       "uploaderUid": 1788354341296,
-      "status": "pending",
+      "status": "approved",
       "profileNo": "A047",
       "mediaList": []
     }
@@ -1111,6 +1111,12 @@
     "6.1.0"
   ],
   "adminLogs": [
+    {
+      "time": 1788363346822,
+      "actor": "超级管理员",
+      "op": "审核",
+      "desc": "通过新嘉宾「诺诺」的审核，已公开显示"
+    },
     {
       "time": 1788357126238,
       "actor": "超级管理员",
