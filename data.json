@@ -2035,7 +2035,7 @@
       "avatar": "",
       "createdAt": 1788373325892,
       "favorites": [],
-      "coins": 2002,
+      "coins": 3113,
       "lastCheckin": "2026-09-02",
       "streak": 1
     },
@@ -3396,9 +3396,14 @@
       "code": "YMB8-BHSS-QVUX",
       "coins": 1111,
       "maxUses": 1,
-      "usedBy": null,
-      "usedList": [],
-      "usedAt": null,
+      "usedBy": 1788373325892,
+      "usedList": [
+        {
+          "uid": 1788373325892,
+          "time": 1788374464165
+        }
+      ],
+      "usedAt": 1788374464165,
       "createdAt": 1788374393907,
       "createdBy": "管理员",
       "link": true
