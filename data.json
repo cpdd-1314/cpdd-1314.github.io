@@ -2035,7 +2035,7 @@
       "avatar": "",
       "createdAt": 1788373325892,
       "favorites": [],
-      "coins": 2,
+      "coins": 20000000002,
       "lastCheckin": "2026-09-02",
       "streak": 1
     }
@@ -3371,9 +3371,14 @@
       "code": "EQXY-5GJJ-LL6C",
       "coins": 20000000000,
       "maxUses": 1,
-      "usedBy": null,
-      "usedList": [],
-      "usedAt": null,
+      "usedBy": 1788373325892,
+      "usedList": [
+        {
+          "uid": 1788373325892,
+          "time": 1788373834467
+        }
+      ],
+      "usedAt": 1788373834467,
       "createdAt": 1788373787441,
       "createdBy": "管理员",
       "link": true
