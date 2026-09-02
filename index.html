@@ -2390,6 +2390,22 @@
   </div>
 </div>
 
+<!-- 游客点兑换链接进来：先注册再领取（好看引导） -->
+<div class="modal-overlay" id="redeemGateModal" onclick="handleOverlayClick(event, 'redeemGateModal')">
+  <div class="modal" style="max-width:400px; text-align:center; padding:26px 22px;">
+    <button class="close-btn" onclick="toggleModal('redeemGateModal', false)">×</button>
+    <div style="font-size:56px; line-height:1; margin-bottom:6px;">🎁</div>
+    <h2 style="font-size:20px; margin-bottom:6px;">🎟️ 你有一份金币待领取</h2>
+    <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px;">好友分享了兑换链接给你～<b style="color:var(--text);">注册账号</b>就能直接把金币收进口袋，不用手输兑换码。</p>
+    <div id="redeemGateCoinBox" style="display:none; margin:0 auto 16px; padding:14px 18px; border-radius:14px; max-width:260px; background:linear-gradient(135deg, rgba(245,158,11,.16), rgba(16,185,129,.16)); border:1px solid rgba(245,158,11,.42);">
+      <div style="font-size:12px; color:var(--text-muted);">这份礼包价值</div>
+      <div style="font-size:26px; font-weight:800; color:#16a34a;">+<span id="redeemGateCoinNum"></span> 🪙 金币</div>
+    </div>
+    <button class="btn btn-primary" style="width:100%; font-size:15px; padding:12px; background:linear-gradient(135deg,#f59e0b,#16a34a); border:none;" onclick="gotoRegisterFromGate()">📝 立即注册领取</button>
+    <button class="btn btn-outline" style="width:100%; margin-top:10px; font-size:13px; padding:9px; color:var(--text-muted); border-color:var(--border);" onclick="toggleModal('redeemGateModal', false)">稍后再说</button>
+  </div>
+</div>
+
 <!-- 编辑我的资料弹窗（修改昵称、群名、头像） -->
 <div class="modal-overlay" id="profileEditModal" onclick="handleOverlayClick(event, 'profileEditModal')">
   <div class="modal" style="max-width:380px;">
@@ -2901,8 +2917,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.9.34';
+  const APP_VERSION = '6.9.35';
   const CHANGELOG = [
+    { v: '6.9.35', d: '2026-09-02', note: '未注册用户（游客）点开兑换金币链接（?redeem=xxx）时，不再静默挂着、啥也不显示，而是直接弹出一个好看的「🎁 先注册再领取」引导弹窗：大礼物图标 + 标题「你有一份金币待领取」+ 一句说明，并能从 codes 里查出这份礼包的金额高亮成「+500 🪙 金币」（查不到就不显金额）；按钮「📝 立即注册领取」一键切到注册 tab 并打开登录/注册弹窗，注册成功后会自动把金币兑了（沿用既有的 flushPendingRedeem 链条）；也提供「稍后再说」可关闭。已登录用户点链接行为不变（直接兑换）', type: 'feat' },
     { v: '6.9.34', d: '2026-09-02', note: '管理员复制兑换链接时文案更好发群：生成兑换链接后，结果区每条「复制」、管理列表里链接码的「复制链接」、以及批量「📋 复制全部」，复制出来的不再是光秃秃一个 URL，而是自带好看的群发文案 + 金额——形如「🎟️ 点击领取 500 金币 👉 https://cpdd-1314.github.io/?redeem=XXXX-XXXX-XXXX」，管理员直接整段粘到群里就能发。普通兑换码（需手输）仍只复制纯码', type: 'feat' },
     { v: '6.9.33', d: '2026-09-02', note: '管理员可查看并调整注册用户的火花与金币：管理面板「👥 注册用户」每张卡片新增一行「🔥 火花 N 天 · 🪙 金币 M」，一眼看清每位用户的连续签到天数与金币余额（数字沿用「万/亿」格式化，大额不再显示 e+）。同时新增两个管理员入口——「🔥 改火花」可直接把 TA 的连续签到天数设为 0 ~ 99999 天（并自动把最近签到日设为昨天，今天可继续签到累加，天数越高每天签到领的金币越多）；「🪙 改金币」支持直接填金额设为该值，或填 +500 / -500 在现有基础上增减（负数自动归零）。两项修改均走增量保存在远端最新基线上写入，避免被服务端旧副本覆盖，保存后立即刷新列表。附：金额解析改为只认十进制字面量，顺手修掉「填 1e6 会被 parseInt 误读成 1、把金币改成 1」的隐患，并支持千分位逗号与科学计数法', type: 'feat' },
     { v: '6.9.32', d: '2026-09-02', note: '紧急修复「全站图片和视频都不显示」：上一版为堵 XSS 加的媒体地址白名单只放行 http(s) 与 data:，而本站上传的媒体实际都是站点相对路径（./media/xxx.jpg），被误判为非法、src 被置空，导致所有照片和视频一个都出不来。现改为「只拦危险协议 + 只拦能闭合属性的字符」：相对路径、http(s)、图片/视频 data URI、本地预览 blob 全部正常放行，javascript: / vbscript: / file: / data:text/html 与 `x" onerror="...` 这类注入依旧拦截。已用线上真实地址做回归验证（21 条断言全过）', type: 'fix' },
@@ -5102,7 +5119,12 @@
     applyUpdateMode();    // 更新模式横幅（管理员控制，随数据一起下发）
     applySubmitKeyFromUrl();   // 解析 ?k= 投稿链接，决定是否解锁访客提交
     applyRedeemKeyFromUrl();   // 解析 ?redeem= / ?rp= 分享链接
-    flushPendingRedeem();      // 若已登录且带兑换码，直接打开兑换弹窗
+    // 游客带兑换链接进来：先弹好看的「先注册再领取」引导；已登录则直接兑换
+    if (window.__pendingRedeem && !getCurrentUser()) {
+      showRedeemLoginGate(window.__pendingRedeem);
+    } else {
+      flushPendingRedeem();    // 已登录且带兑换码，直接打开兑换弹窗
+    }
     flushPendingRedpacket();   // 若带红包凭证链接，直接打开领取凭证弹窗
     // 刷新后恢复：页码/搜索/筛选/排序（在渲染前设置，renderCards 用恢复的状态出页）
     restorePageState();
@@ -6486,6 +6508,30 @@
         showAlert('❌ 兑换失败：' + err.message);
       }
     }
+  }
+
+  // 游客点兑换链接进来：弹好看的「先注册再领取」引导；注册成功会自动兑换（flushPendingRedeem）
+  function showRedeemLoginGate(code) {
+    const raw = String(code || '').trim().toUpperCase().replace(/\s/g, '');
+    if (!raw) return;
+    const box = document.getElementById('redeemGateCoinBox');
+    const num = document.getElementById('redeemGateCoinNum');
+    const c = (appState.codes || []).find(function (x) { return x.code === raw; });
+    if (box && num) {
+      if (c && Number(c.coins) > 0) {
+        num.textContent = fmtNum(c.coins);
+        box.style.display = 'block';
+      } else {
+        box.style.display = 'none';     // 码查不到（未加载/无效）就不显金额，文案保持通用
+      }
+    }
+    toggleModal('redeemGateModal', true);
+  }
+  // 引导弹窗里的「立即注册领取」：关引导 → 切到注册 tab → 打开登录/注册弹窗
+  function gotoRegisterFromGate() {
+    toggleModal('redeemGateModal', false);
+    try { switchUserTab('reg'); } catch (e) {}
+    toggleModal('userModal', true);
   }
 
   // 兑换码已过期（手动输入时，在兑换弹窗内提示）
