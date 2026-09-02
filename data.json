@@ -2034,7 +2034,10 @@
       "groupName": "杏",
       "avatar": "",
       "createdAt": 1788373325892,
-      "favorites": []
+      "favorites": [],
+      "coins": 2,
+      "lastCheckin": "2026-09-02",
+      "streak": 1
     }
   ],
   "notifications": [
