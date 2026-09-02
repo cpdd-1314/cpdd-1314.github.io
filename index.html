@@ -889,8 +889,8 @@
         -webkit-backdrop-filter: blur(11px) saturate(155%) brightness(1.04);
         backdrop-filter: blur(11px) saturate(155%) brightness(1.04);
       }
-      body.glass-mode .bottom-tab { -webkit-backdrop-filter: blur(20px) saturate(185%); backdrop-filter: blur(20px) saturate(185%); }
-      body.glass-mode header { -webkit-backdrop-filter: blur(18px) saturate(170%); backdrop-filter: blur(18px) saturate(170%); }
+      body.glass-mode .bottom-tab { -webkit-backdrop-filter: blur(20px) saturate(185%); backdrop-filter: blur(20px) saturate(185%); box-shadow: var(--glass-glow); }
+      body.glass-mode header { -webkit-backdrop-filter: blur(18px) saturate(170%); backdrop-filter: blur(18px) saturate(170%); box-shadow: var(--glass-glow); }
     }
 
     /* --- ② 材质变量：更透、更艳、更厚 --- */
@@ -950,6 +950,12 @@
           0 1px 2px rgba(30,27,75,.09),
           0 10px 24px rgba(30,27,75,.13),
           0 30px 64px rgba(30,27,75,.22);
+      /* 放光：玻璃边缘的彩色辉光 + 亮描边，浅背景上也能看清轮廓、内容更通透（解决"子太白看不清"） */
+      --glass-glow:
+          0 0 0 1px rgba(255,255,255,.6),
+          0 8px 26px rgba(120,160,255,.22),
+          0 0 34px rgba(165,243,252,.26),
+          0 0 48px rgba(236,72,153,.14);
 
       /* 浮层：更厚、折射更强 */
       --glass-fill-strong: linear-gradient(135deg,
@@ -992,7 +998,7 @@
       border: 1px solid transparent;
       -webkit-backdrop-filter: blur(15px) saturate(170%) brightness(1.04);
       backdrop-filter: blur(15px) saturate(170%) brightness(1.04);
-      box-shadow: var(--glass-drop), var(--glass-chroma), var(--glass-thick);
+      box-shadow: var(--glass-drop), var(--glass-chroma), var(--glass-thick), var(--glass-glow);
     }
     body.glass-mode .card { border-radius: 28px; }
     body.glass-mode .modal { border-radius: 34px; }
@@ -2943,8 +2949,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.9.37';
+  const APP_VERSION = '6.9.38';
   const CHANGELOG = [
+    { v: '6.9.38', d: '2026-09-03', note: '① 赠送金币后给受赠方推一条站内通知：落库到远端 notifications，对方打开「💬 收件箱」会看到「🎁 XX 送了你 N 金币」并角标 +1，点通知跳到「我的」看金币余额（gift 通知不关联资料、不会误报"资料已删除"）。② Liquid Glass 优化：新增 --glass-glow 彩色外发光描边并挂到全部玻璃材质（卡片/弹窗/分区/收件箱项/导航条/底栏 tab），浅背景上轮廓更亮、内容更通透，解决"子太白看不清"', type: 'feat' },
     { v: '6.9.37', d: '2026-09-03', note: '「🎁 赠送金币」入口从顶栏按钮移到「我的金币」卡片操作区，与「🎟️ 兑换」「🧧 红包」并排（改为「🎁 赠送」），更符合使用动线——看余额顺手就能送；顶栏相应移除该按钮', type: 'feat' },
     { v: '6.9.36', d: '2026-09-02', note: '新增「用户互赠金币」：登录用户在「我的金币」卡片点「🎁 赠送」后，弹窗内显示全部用户（排除自己与被封禁者）供点选，支持按昵称/群名搜索；输入金额后一键赠送。赠送在远端基线上原子扣减赠送方、增加受赠方，并写入 transfers 记录，金额校验限制在「>0 且不超过自身余额」，余额实时取自 users 权威数据。赠送成功自动刷新「我的金币」与顶栏', type: 'feat' },
     { v: '6.9.35', d: '2026-09-02', note: '未注册用户（游客）点开兑换金币链接（?redeem=xxx）时，不再静默挂着、啥也不显示，而是直接弹出一个好看的「🎁 先注册再领取」引导弹窗：大礼物图标 + 标题「你有一份金币待领取」+ 一句说明，并能从 codes 里查出这份礼包的金额高亮成「+500 🪙 金币」（查不到就不显金额）；按钮「📝 立即注册领取」一键切到注册 tab 并打开登录/注册弹窗，注册成功后会自动把金币兑了（沿用既有的 flushPendingRedeem 链条）；也提供「稍后再说」可关闭。已登录用户点链接行为不变（直接兑换）', type: 'feat' },
@@ -7257,11 +7264,13 @@
       const t = new Date(n.time);
       const pad = function(x) { return String(x).padStart(2, '0'); };
       const ts = (t.getMonth() + 1) + '月' + t.getDate() + '日 ' + t.getHours() + ':' + pad(t.getMinutes());
-      const icon = n.type === 'like' ? '👍' : n.type === 'favorite' ? '⭐' : n.type === 'comment' ? '💬' : n.type === 'review' ? '📝' : '🔔';
+      const icon = n.type === 'like' ? '👍' : n.type === 'favorite' ? '⭐' : n.type === 'comment' ? '💬' : n.type === 'review' ? '📝' : n.type === 'gift' ? '🎁' : '🔔';
       const isReview = n.type === 'review';
+      const isGift = n.type === 'gift';
       // 进入即标记为已读
       if (!n.read) n.read = true;
-      return '<div class="notif-item" style="' + (isReview ? 'cursor:pointer;' : '') + '" onclick="' + (isReview ? 'openRewriteFromNotif()' : 'notifOpenProfile(' + n.profileId + ')') + '">' +
+      const clickFn = isReview ? 'openRewriteFromNotif()' : isGift ? "switchTab('profile')" : 'notifOpenProfile(' + n.profileId + ')';
+      return '<div class="notif-item" style="' + ((isReview || isGift) ? 'cursor:pointer;' : '') + '" onclick="' + clickFn + '">' +
         '<span class="notif-dot"></span>' +
         '<span style="font-size:20px; line-height:1.2;">' + icon + '</span>' +
         '<div style="flex:1;">' +
@@ -8334,6 +8343,16 @@
         if (amount > bal) throw new Error('余额不足，你只有 ' + fmtNum(bal) + ' 金币');
         from.coins = bal - amount;
         to.coins = (Number(to.coins) || 0) + amount;
+        // 给受赠方推一条站内通知（随本次保存一起落库，对方打开收件箱可见，角标+1）
+        if (!Array.isArray(base.notifications)) base.notifications = [];
+        base.notifications.unshift({
+          id: Date.now() + '-' + Math.floor(Math.random() * 1000),
+          toUid: toId, type: 'gift', profileId: 0,
+          actorUid: me.id, actorName: self.name || '有人',
+          text: '送了你 ' + fmtNum(amount) + ' 金币🎁',
+          time: Date.now(), read: false
+        });
+        if (base.notifications.length > 800) base.notifications.length = 800;
         if (!Array.isArray(base.transfers)) base.transfers = [];
         base.transfers.push({
           from: me.id, fromName: self.name || '',
