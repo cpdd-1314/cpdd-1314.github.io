@@ -3452,8 +3452,8 @@
       "coins": 1000,
       "amount": 0.01,
       "time": 1788375773939,
-      "paid": false,
-      "paidAt": null
+      "paid": true,
+      "paidAt": 1788375953732
     }
   ],
   "reports": [
