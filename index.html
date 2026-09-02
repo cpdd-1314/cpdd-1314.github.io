@@ -2901,8 +2901,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.9.31';
+  const APP_VERSION = '6.9.32';
   const CHANGELOG = [
+    { v: '6.9.32', d: '2026-09-02', note: '紧急修复「全站图片和视频都不显示」：上一版为堵 XSS 加的媒体地址白名单只放行 http(s) 与 data:，而本站上传的媒体实际都是站点相对路径（./media/xxx.jpg），被误判为非法、src 被置空，导致所有照片和视频一个都出不来。现改为「只拦危险协议 + 只拦能闭合属性的字符」：相对路径、http(s)、图片/视频 data URI、本地预览 blob 全部正常放行，javascript: / vbscript: / file: / data:text/html 与 `x" onerror="...` 这类注入依旧拦截。已用线上真实地址做回归验证（21 条断言全过）', type: 'fix' },
     { v: '6.9.31', d: '2026-09-02', note: '① 新增「🔗 链接兑换码」：管理员在「🎟️ 兑换码管理」可一键生成兑换链接（金币数量/生成数量/使用次数同普通兑换码），把链接发给用户，用户点开链接<b>已登录就直接兑换到账</b>，不用手输兑换码；未登录会先引导登录/注册，登录成功后自动补上兑换。链接码在管理列表里带 🔗 标记，可一键「复制链接」。② 兑换码 7 天有效：未兑换的兑换码生成满 7 天自动失效并从管理列表消失，用户再兑换会提示「该兑换码已过期」（此前只有「已兑满」的码才会隐藏，未兑换的会一直挂着）。③ 兑换记录 7 天消失：红包兑换记录、金币兑换记录、我的兑换记录统一由 15 天改为 7 天后自动隐藏。④ 管理列表每条兑换码显示剩余有效期（剩 X 天 / 剩 X 小时）；复制链接改为走安全复制通道，避免 URL 里的 ?&= 在 onclick 属性里被转义出错', type: 'feat' },
     { v: '6.9.30', d: '2026-09-02', note: '修复「隐藏 / 置顶 / 排版位置保存不住」+ 一处存储型 XSS 等一批隐患：① 根因——这三个操作只在本地改 isHidden/isPinned/sortOrder 且不推进任何时间戳，随后 saveToGitHub 以远端为基线合并，mergeProfiles 在时间戳相等时保留服务端副本，本地改动被静默吞掉，表现为「点了隐藏界面变了，刷新后又出现」。现改为走增量保存（直接在远端最新基线上改）并同时推进 statusUpdatedAt，隐藏/取消隐藏、置顶/取消置顶、放置与交换位置、取消自定义位置全部真正落库，且与批量隐藏的 status 口径统一。② 位置弹窗：悬停变色/放大此前被拼进了 style="" 值内部导致完全失效（已移出为标签属性）、翻页加了最后一页上限（不再出现点空位"假成功"）、格子序号改用与首页一致的过滤口径（排除已软删除/已合并资料，不再错位）。③ 修复「编辑资料保存成功但刷新后还是旧内容」：管理员编辑只更新 updatedAt，若期间他人审核过该资料，合并时服务端整份胜出，编辑连同新上传的照片一起丢失；现同步推进 statusUpdatedAt。④ 安全：资料字段（姓名/城市/年龄/身高/职业/介绍等）、媒体与头像地址、上传者标签、管理员操作记录在渲染时统一转义，并对媒体地址做 http(s)/data 白名单校验，堵掉 javascript: 与闭合属性注入；此前一份姓名写成 `"><img src=x onerror=...>` 的资料过审后会对全站访客执行脚本。⑤ 举报 24h 去重改为在远端最新数据上判定（换设备/未刷新时不再失效）；⑥ 全量保存补上 reports 合并，避免老数据里举报记录被整段丢弃', type: 'fix' },
     { v: '6.9.29', d: '2026-09-01', note: '举报弹窗层叠修复：点开嘉宾资料后点「🚩 举报」，举报弹窗现在正确显示在资料前面（把 #reportModal / #reportAdminModal 的 z-index 提到 300，遵循与「加微信 / 进群」弹窗相同的置顶约定，不再被详情弹窗挡住）', type: 'fix' },
@@ -5347,13 +5348,25 @@
     if (v === undefined || v === null || v === '') return fallback === undefined ? '' : fallback;
     return escapeHtml(String(v));
   }
-  // 媒体地址白名单：只放行 http(s) 与 data: 内联媒体，堵掉 javascript: 以及
-  // 靠提前闭合 src 属性（x" onerror="...）注入的写法。
+  // 媒体地址白名单：堵掉 javascript: 之类的危险协议，以及靠提前闭合 src 属性
+  // （x" onerror="...）注入的写法；其余合法来源一律放行。
+  // 注意：本站上传的媒体都是站点相对路径（./media/xxx.jpg，见 uploadToRepo），
+  // 早期版本只放行 http(s) 与 data:，把相对路径全判为非法返回空串，
+  // 导致全站图片/视频 src 变空、一个都显示不出来 —— 相对路径必须放行。
   function safeMediaUrl(u) {
-    const s = String(u == null ? '' : u);
-    if (/^https?:\/\//i.test(s)) return escapeHtml(s);
-    if (/^data:[a-z0-9.+-]+\/[a-z0-9.+-]+[;,]/i.test(s)) return escapeHtml(s);
-    return '';
+    const s = String(u == null ? '' : u).trim();
+    if (!s) return '';
+    if (/^[a-z][a-z0-9+.\-]*:/i.test(s)) {
+      // 带协议头：只放行 http/https、图片与视频 data URI、本地预览 blob
+      if (/^https?:\/\//i.test(s)) return escapeHtml(s);
+      if (/^data:(image|video)\//i.test(s)) return escapeHtml(s);
+      if (/^blob:/i.test(s)) return escapeHtml(s);
+      return '';                                  // javascript: / vbscript: / file: 等一律拦截
+    }
+    // 无协议头 = 站点相对路径（./media/xxx.jpg、media/xxx.jpg、/media/xxx.jpg）
+    // 只拦掉能提前闭合属性或塞进事件的字符
+    if (/["'<>\s]/.test(s)) return '';
+    return escapeHtml(s);
   }
   // 当前登录用户存 localStorage：{id, name, groupName}
   function getCurrentUser() {
