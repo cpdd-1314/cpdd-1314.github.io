@@ -3407,6 +3407,17 @@
       "createdAt": 1788374393907,
       "createdBy": "管理员",
       "link": true
+    },
+    {
+      "code": "9ATF-M5CQ-9HT6",
+      "coins": 1314,
+      "maxUses": 1,
+      "usedBy": null,
+      "usedList": [],
+      "usedAt": null,
+      "createdAt": 1788389635321,
+      "createdBy": "管理员",
+      "link": true
     }
   ],
   "redemptions": [
