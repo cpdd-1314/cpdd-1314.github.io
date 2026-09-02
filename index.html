@@ -2664,17 +2664,20 @@
   <div class="modal" style="max-width:560px;">
     <button class="close-btn" onclick="toggleModal('redeemAdminModal', false)">×</button>
     <h2 style="font-size:18px; margin-bottom:6px;">🎟️ 兑换码管理</h2>
-    <p style="font-size:12px; color:var(--text-muted); margin-bottom:2px;">生成专属兑换码并发给注册用户，自定义金币数量与使用次数，仅注册用户可兑换。</p>
-    <div style="display:flex; gap:8px; margin:12px 0;">
+    <p style="font-size:12px; color:var(--text-muted); margin-bottom:2px;">生成专属兑换码并发给注册用户，自定义金币数量与使用次数，仅注册用户可兑换。<b style="color:#b45309;">兑换码自生成起 7 天内有效</b>，过期自动失效并从列表消失。</p>
+    <div style="display:flex; gap:8px; margin:12px 0 8px;">
       <input type="number" id="redeemCoinsInput" min="1" max="999999999999999999999" placeholder="金币数量" style="flex:1; min-width:0; padding:9px 12px; border:1px solid var(--border); border-radius:10px; font-size:14px; background:var(--bg); color:var(--text);" oninput="previewCoinInput()">
-      <input type="number" id="redeemCountInput" min="1" value="1" placeholder="生成数量" style="width:84px; padding:9px 12px; border:1px solid var(--border); border-radius:10px; font-size:14px; background:var(--bg); color:var(--text);">
-      <input type="number" id="redeemMaxUsesInput" min="1" max="9999" value="1" placeholder="使用次数" title="每个兑换码可被兑换的次数（默认 1 次，留空或 1 表示一次性）" style="width:84px; padding:9px 12px; border:1px solid var(--border); border-radius:10px; font-size:14px; background:var(--bg); color:var(--text);">
-      <button class="btn btn-primary" onclick="genRedeemCode()">🎲 生成</button>
+      <input type="number" id="redeemCountInput" min="1" value="1" placeholder="生成数量" style="width:80px; padding:9px 12px; border:1px solid var(--border); border-radius:10px; font-size:14px; background:var(--bg); color:var(--text);">
+      <input type="number" id="redeemMaxUsesInput" min="1" max="9999" value="1" placeholder="使用次数" title="每个兑换码可被兑换的次数（默认 1 次，留空或 1 表示一次性）" style="width:80px; padding:9px 12px; border:1px solid var(--border); border-radius:10px; font-size:14px; background:var(--bg); color:var(--text);">
+    </div>
+    <div style="display:flex; gap:8px; margin-bottom:10px;">
+      <button class="btn btn-primary" style="flex:1; white-space:nowrap;" onclick="genRedeemCode()">🎲 生成兑换码</button>
+      <button class="btn btn-primary" style="flex:1; white-space:nowrap; background:#0891b2; border-color:#0891b2;" onclick="genRedeemLink()" title="生成一条链接，用户点开即自动兑换金币（需先登录）">🔗 生成兑换链接</button>
     </div>
     <div id="redeemCoinsHint" style="font-size:12px; color:var(--accent, #6366f1); min-height:16px; margin:-6px 0 10px; font-weight:600;"></div>
     <div id="redeemGenResult" style="display:none; margin-bottom:10px; padding:10px 12px; border-radius:10px; background:rgba(16,185,129,.12); border:1px solid rgba(16,185,129,.4);">
       <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
-        <div style="font-size:12px; color:var(--text-muted);">已生成 <b id="redeemGenCount">0</b> 个兑换码，每个 <b style="color:#16a34a;">+'<span id="redeemGenCoinsLabel"></span>'</b> 金币（点击复制发给用户）：</div>
+        <div style="font-size:12px; color:var(--text-muted);">已生成 <b id="redeemGenCount">0</b> 个<b id="redeemGenTypeLabel">兑换码</b>，每个 <b style="color:#16a34a;">+'<span id="redeemGenCoinsLabel"></span>'</b> 金币<span id="redeemGenTip"></span></div>
         <button class="btn btn-outline" style="font-size:11px; padding:4px 10px; white-space:nowrap;" onclick="copyAllRedeemCodes()">📋 复制全部</button>
       </div>
       <div id="redeemGenCodes" style="margin-top:6px; display:flex; flex-direction:column; gap:4px;"></div>
@@ -2689,7 +2692,7 @@
   <div class="modal" style="max-width:420px;">
     <button class="close-btn" onclick="toggleModal('redeemModal', false)">×</button>
     <h2 style="font-size:18px; margin-bottom:6px;">🎟️ 兑换金币</h2>
-    <p style="font-size:12px; color:var(--text-muted); margin-bottom:2px;">输入兑换码即可领取金币（仅注册用户可兑换）。通过好友分享链接打开可直接兑换。</p>
+    <p style="font-size:12px; color:var(--text-muted); margin-bottom:2px;">输入兑换码即可领取金币（仅注册用户可兑换）。点开好友或管理员发的<b>兑换链接</b>，登录后自动到账、不用输码；兑换码 7 天内有效。</p>
     <input type="text" id="redeemInput" placeholder="例如：AB12-CD34-EF56" style="width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:10px; font-size:14px; margin:12px 0; background:var(--bg); color:var(--text); text-transform:uppercase; letter-spacing:1px;">
     <button class="btn btn-primary" style="width:100%;" onclick="redeemCode()">✅ 确认兑换</button>
     <div id="redeemResult" style="display:none; margin-top:12px; padding:12px; border-radius:10px; background:rgba(16,185,129,.12); border:1px solid rgba(16,185,129,.4);"></div>
@@ -2898,8 +2901,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.9.30';
+  const APP_VERSION = '6.9.31';
   const CHANGELOG = [
+    { v: '6.9.31', d: '2026-09-02', note: '① 新增「🔗 链接兑换码」：管理员在「🎟️ 兑换码管理」可一键生成兑换链接（金币数量/生成数量/使用次数同普通兑换码），把链接发给用户，用户点开链接<b>已登录就直接兑换到账</b>，不用手输兑换码；未登录会先引导登录/注册，登录成功后自动补上兑换。链接码在管理列表里带 🔗 标记，可一键「复制链接」。② 兑换码 7 天有效：未兑换的兑换码生成满 7 天自动失效并从管理列表消失，用户再兑换会提示「该兑换码已过期」（此前只有「已兑满」的码才会隐藏，未兑换的会一直挂着）。③ 兑换记录 7 天消失：红包兑换记录、金币兑换记录、我的兑换记录统一由 15 天改为 7 天后自动隐藏。④ 管理列表每条兑换码显示剩余有效期（剩 X 天 / 剩 X 小时）；复制链接改为走安全复制通道，避免 URL 里的 ?&= 在 onclick 属性里被转义出错', type: 'feat' },
     { v: '6.9.30', d: '2026-09-02', note: '修复「隐藏 / 置顶 / 排版位置保存不住」+ 一处存储型 XSS 等一批隐患：① 根因——这三个操作只在本地改 isHidden/isPinned/sortOrder 且不推进任何时间戳，随后 saveToGitHub 以远端为基线合并，mergeProfiles 在时间戳相等时保留服务端副本，本地改动被静默吞掉，表现为「点了隐藏界面变了，刷新后又出现」。现改为走增量保存（直接在远端最新基线上改）并同时推进 statusUpdatedAt，隐藏/取消隐藏、置顶/取消置顶、放置与交换位置、取消自定义位置全部真正落库，且与批量隐藏的 status 口径统一。② 位置弹窗：悬停变色/放大此前被拼进了 style="" 值内部导致完全失效（已移出为标签属性）、翻页加了最后一页上限（不再出现点空位"假成功"）、格子序号改用与首页一致的过滤口径（排除已软删除/已合并资料，不再错位）。③ 修复「编辑资料保存成功但刷新后还是旧内容」：管理员编辑只更新 updatedAt，若期间他人审核过该资料，合并时服务端整份胜出，编辑连同新上传的照片一起丢失；现同步推进 statusUpdatedAt。④ 安全：资料字段（姓名/城市/年龄/身高/职业/介绍等）、媒体与头像地址、上传者标签、管理员操作记录在渲染时统一转义，并对媒体地址做 http(s)/data 白名单校验，堵掉 javascript: 与闭合属性注入；此前一份姓名写成 `"><img src=x onerror=...>` 的资料过审后会对全站访客执行脚本。⑤ 举报 24h 去重改为在远端最新数据上判定（换设备/未刷新时不再失效）；⑥ 全量保存补上 reports 合并，避免老数据里举报记录被整段丢弃', type: 'fix' },
     { v: '6.9.29', d: '2026-09-01', note: '举报弹窗层叠修复：点开嘉宾资料后点「🚩 举报」，举报弹窗现在正确显示在资料前面（把 #reportModal / #reportAdminModal 的 z-index 提到 300，遵循与「加微信 / 进群」弹窗相同的置顶约定，不再被详情弹窗挡住）', type: 'fix' },
     { v: '6.9.28', d: '2026-09-02', note: '① 新增「🚩 举报嘉宾资料」：任意用户（含游客）在嘉宾详情页点举报，可选原因 + 选填说明提交，24h 内同资料去重；管理员「我的 → 管理面板」新增「🚩 举报管理」入口，按待处理/已处理列出全部举报，可一键「查看资料 / 隐藏资料 / 标记已处理 / 删除记录」，角标实时显示待处理数量。② Liquid Glass 流畅度与显示修复：模糊半径 34px→16px（手机 11px）、饱和度 280%→165%、去掉每张卡每帧重混合的 feTurbulence 颗粒层与 soft-light 混合、移除卡片常驻 will-change 与 3D 倾斜、降低背景极光模糊与全屏颗粒不透明度、触屏设备关闭指针跟随高光与悬浮倾斜。滚动/移动明显更顺、文字对比更清晰、不再发虚掉帧', type: 'feat' },
@@ -4527,17 +4531,14 @@
     openAddForm('public', 'guest');
   }
 
-  // 登录/注册成功后，若之前通过分享链接带 ?redeem= 进来，则自动打开兑换弹窗
+  // 通过兑换链接（?redeem=xxx）进来：已登录就直接兑换金币；
+  // 未登录先留着 pending，等登录/注册成功后自动补上兑换（不必再手动输码）
   function flushPendingRedeem() {
     if (!window.__pendingRedeem) return false;
     const code = window.__pendingRedeem;
+    if (!getCurrentUser()) return false;      // 仍未登录：保留 pending，登录后再来
     window.__pendingRedeem = null;
-    if (!getCurrentUser() && !isSuper() && !isStaff()) return false;
-    setTimeout(function () {
-      const inp = document.getElementById('redeemInput');
-      if (inp) inp.value = code;
-      openRedeemModal();
-    }, 300);
+    setTimeout(function () { autoRedeemFromLink(code); }, 300);
     return true;
   }
 
@@ -5528,6 +5529,8 @@
       document.getElementById('regPwdInput').value = '';
       document.getElementById('regPwd2Input').value = '';
       clearRegAvatar();
+      // 点兑换链接进来注册的：注册成功直接把金币兑了
+      if (flushPendingRedeem()) return;
       // 点过「登录提交」的用户：注册成功后直接继续发资料，不跳走
       if (!flushPendingPublish()) {
         switchTab('profile');   // 注册后自动跳到"我的"tab
@@ -6237,8 +6240,10 @@
     if (n >= 1e5) return trimNum(n / 1e5) + '十万';
     return trimNum(n / 1e4) + '万';
   }
-  // 管理员：生成兑换码（自定义金币数量）
-  async function genRedeemCode() {
+  // 管理员：生成兑换码（自定义金币数量）。
+  // isLink=true 生成「链接兑换码」——把链接发给用户，点开（登录后）直接到账，不用手输码。
+  let __lastGenType = 'code';   // 'code' 普通兑换码 | 'link' 链接兑换码
+  async function genRedeemBatch(isLink) {
     if (!isSuper() && !isStaff()) { toast('仅管理员可生成兑换码'); return; }
     const inp = document.getElementById('redeemCoinsInput');
     const cntInp = document.getElementById('redeemCountInput');
@@ -6256,37 +6261,65 @@
       await patchRemoteState(function (base) {
         if (!Array.isArray(base.codes)) base.codes = [];
         newCodes.forEach(function (code) {
-          base.codes.push({ code: code, coins: coins, maxUses: maxUses, usedBy: null, usedList: [], usedAt: null, createdAt: Date.now(), createdBy: (getCurrentIdentity() || {}).name || 'admin' });
+          base.codes.push({
+            code: code, coins: coins, maxUses: maxUses, usedBy: null, usedList: [], usedAt: null,
+            createdAt: Date.now(), createdBy: (getCurrentIdentity() || {}).name || 'admin',
+            link: !!isLink          // 链接兑换码：以链接形式发放，点开直接兑换
+          });
         });
-      }, 'gen redeem codes x' + count);
-      window.__lastGenCodes = newCodes.slice();
+      }, 'gen redeem ' + (isLink ? 'links' : 'codes') + ' x' + count);
+      __lastGenType = isLink ? 'link' : 'code';
+      window.__lastGenCodes = isLink ? newCodes.map(redeemCodeUrl) : newCodes.slice();
       const res = document.getElementById('redeemGenResult');
       const cntEl = document.getElementById('redeemGenCount');
       const listEl = document.getElementById('redeemGenCodes');
+      const typeEl = document.getElementById('redeemGenTypeLabel');
+      const tipEl = document.getElementById('redeemGenTip');
       if (cntEl) cntEl.textContent = newCodes.length;
+      if (typeEl) typeEl.textContent = isLink ? '兑换链接' : '兑换码';
+      if (tipEl) tipEl.textContent = isLink ? '（点开链接、登录后直接到账）' : '（点击复制发给用户）';
       const coinLbl = document.getElementById('redeemGenCoinsLabel');
       if (coinLbl) coinLbl.textContent = fmtNum(coins);
       if (listEl) listEl.innerHTML = newCodes.map(function (c) {
+        const text = isLink ? redeemCodeUrl(c) : c;
         return '<div style="display:flex; align-items:center; gap:6px;">' +
-          '<code style="font-size:14px; font-weight:700; letter-spacing:1px; flex:1; word-break:break-all;">' + c + '</code>' +
-          '<button class="btn btn-outline" style="font-size:10px; padding:3px 8px;" onclick="copyText(\'' + c + '\')">复制</button></div>';
+          '<code style="font-size:' + (isLink ? '11px' : '14px') + '; font-weight:700; letter-spacing:' + (isLink ? '0' : '1px') + '; flex:1; word-break:break-all;">' + escapeHtml(text) + '</code>' +
+          '<button class="btn btn-outline" style="font-size:10px; padding:3px 8px; white-space:nowrap;" onclick="copyStored(' + copyIdx(text) + ')">复制</button></div>';
       }).join('');
       if (res) res.style.display = 'block';
       if (inp) inp.value = '';
       if (cntInp) cntInp.value = 1;
       if (useInp) useInp.value = 1;
       renderRedeemCodesAdmin();
-      toast('🎟️ 已生成 ' + newCodes.length + ' 个兑换码（每个 +' + fmtNum(coins) + ' 金币，可用 ' + maxUses + ' 次）');
+      toast((isLink ? '🔗 已生成 ' : '🎟️ 已生成 ') + newCodes.length +
+        (isLink ? ' 条兑换链接' : ' 个兑换码') + '（每个 +' + fmtNum(coins) + ' 金币，可用 ' + maxUses + ' 次，' + CODE_EXPIRE_DAYS + ' 天有效）');
     } catch (err) {
       showAlert('❌ 生成失败：' + err.message);
     }
   }
+  function genRedeemCode() { return genRedeemBatch(false); }
+  function genRedeemLink() { return genRedeemBatch(true); }
+
+  // 安全复制通道：URL 之类含 ?&= 的长文本不适合硬塞进 onclick="copyText('...')"
+  // （& 在 HTML 属性里会被当成实体转义），改为存进数组、按索引取。
+  let __copyStore = [];
+  // 登记待复制内容，返回索引（超过 500 条重置，避免数组无限增长）
+  function copyIdx(text) {
+    if (__copyStore.length > 500) __copyStore = [];
+    __copyStore.push(text);
+    return __copyStore.length - 1;
+  }
+  function copyStored(i) {
+    const v = __copyStore[i];
+    if (v == null) { toast('内容已刷新，请重新打开'); return; }
+    copyText(v);
+  }
 
   function copyAllRedeemCodes() {
     const arr = window.__lastGenCodes || [];
-    if (!arr.length) { toast('没有可复制的兑换码'); return; }
+    if (!arr.length) { toast(__lastGenType === 'link' ? '没有可复制的兑换链接' : '没有可复制的兑换码'); return; }
     copyText(arr.join('\n'));
-    toast('📋 已复制 ' + arr.length + ' 个兑换码');
+    toast('📋 已复制 ' + arr.length + (__lastGenType === 'link' ? ' 条兑换链接' : ' 个兑换码'));
   }
 
   function genCodeString() {
@@ -6312,10 +6345,14 @@
     const box = document.getElementById('redeemCodeList');
     if (!box) return;
     const raw = (appState.codes || []).slice().sort(function (a, b) { return (b.createdAt || 0) - (a.createdAt || 0); });
-    const list = raw.filter(function (c) { return !isRedeemCodeExpired(c); });  // 兑满且满 15 天自动隐藏
+    const list = raw.filter(function (c) { return !isRedeemCodeExpired(c); });  // 生成满 7 天自动失效并隐藏
     const total = document.getElementById('redeemCodeTotal');
     if (total) total.textContent = list.length;
-    if (list.length === 0) { box.innerHTML = '<p style="padding:16px; text-align:center; color:var(--text-muted); font-size:12px;">' + (raw.length ? '已兑换的兑换码满 15 天后会自动消失～' : '还没有生成任何兑换码') + '</p>'; return; }
+    if (list.length === 0) {
+      box.innerHTML = '<p style="padding:16px; text-align:center; color:var(--text-muted); font-size:12px;">' +
+        (raw.length ? ('兑换码生成满 ' + CODE_EXPIRE_DAYS + ' 天后自动失效并消失～') : '还没有生成任何兑换码') + '</p>';
+      return;
+    }
     box.innerHTML = list.map(function (c) {
       const uc = codeUsedCount(c);
       const mu = codeMaxUses(c);
@@ -6326,31 +6363,37 @@
       else if (full) status = '<span style="color:#16a34a; font-weight:600;">已兑换 · ' + escapeHtml(first || '他人') + '</span>';
       else status = '<span style="color:#16a34a; font-weight:600;">已用 ' + uc + '/' + mu + '</span>';
       const tag = mu > 1 ? '<span style="font-size:10px; color:var(--text-muted); border:1px solid var(--border); border-radius:6px; padding:1px 5px; white-space:nowrap;">×' + mu + '次</span>' : '';
-      return '<div style="display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px dashed var(--border);">' +
-        '<code style="font-size:13px; font-weight:700; flex:1; word-break:break-all;">' + escapeHtml(c.code) + '</code>' +
-        tag +
+      const linkTag = c.link
+        ? '<span style="font-size:10px; color:#0891b2; border:1px solid #a5f3fc; background:rgba(8,145,178,.08); border-radius:6px; padding:1px 5px; white-space:nowrap;">🔗 链接</span>'
+        : '';
+      const exp = codeExpireText(c);
+      const expTag = exp ? '<span style="font-size:10px; color:var(--text-muted); white-space:nowrap;">' + exp + '</span>' : '';
+      const copyVal = c.link ? redeemCodeUrl(c.code) : c.code;
+      return '<div style="display:flex; align-items:center; gap:6px; padding:8px 0; border-bottom:1px dashed var(--border); flex-wrap:wrap;">' +
+        '<code style="font-size:13px; font-weight:700; flex:1; min-width:0; word-break:break-all;">' + escapeHtml(c.code) + '</code>' +
+        linkTag + tag +
         '<span style="font-size:12px; color:var(--text-muted); white-space:nowrap;">+' + fmtNum(c.coins) + '🪙</span>' +
         '<span style="font-size:11px; white-space:nowrap;">' + status + '</span>' +
-        (full ? '' : '<button class="btn btn-outline" style="font-size:10px; padding:3px 8px; white-space:nowrap;" onclick="copyText(\'' + c.code + '\')">复制</button>') +
+        expTag +
+        (full ? '' : '<button class="btn btn-outline" style="font-size:10px; padding:3px 8px; white-space:nowrap;" onclick="copyStored(' + copyIdx(copyVal) + ')">' + (c.link ? '复制链接' : '复制') + '</button>') +
         '</div>';
     }).join('');
   }
 
-  // 用户：兑换金币（仅注册用户）；支持管理员设置的多次数兑换码
-  async function redeemCode() {
+  // 兑换核心（仅注册用户）：手动输入兑换与「点开链接直接兑换」共用同一套逻辑。
+  // 特殊错误码由调用方决定怎么呈现：__NEED_LOGIN__ 需登录 / __USED__ 已使用 / __EXPIRED__ 已过期
+  async function doRedeemCode(raw) {
     const me = getCurrentUser();
-    if (!me) { toggleModal('redeemModal', false); toggleModal('userModal', true); return; }  // 未登录=未注册用户
-    const inp = document.getElementById('redeemInput');
-    const raw = (inp ? inp.value : '').trim().toUpperCase().replace(/\s/g, '');
-    if (!raw) { showAlert('请输入兑换码'); return; }
-    if (__interactLock) return;
+    if (!me) throw new Error('__NEED_LOGIN__');
+    if (__interactLock) throw new Error('操作太快啦，请稍候再试');
     __interactLock = true;
+    let gained = 0, usedName = null, selfUsed = false;
     try {
-      let gained = 0, usedName = null, selfUsed = false;
       await patchRemoteState(function (base) {
         if (!Array.isArray(base.codes)) base.codes = [];
-        const c = base.codes.find(function (x) { return x.code === raw; });
+        const c = base.codes.find(function (x) { return String(x.code).toUpperCase() === raw; });
         if (!c) throw new Error('兑换码不存在');
+        if (isRedeemCodeExpired(c)) throw new Error('__EXPIRED__');   // 生成满 7 天即失效
         if (!Array.isArray(c.usedList)) c.usedList = c.usedBy != null ? [{ uid: c.usedBy, time: c.usedAt || null }] : [];
         const maxUses = (c.maxUses && c.maxUses > 0) ? c.maxUses : 1;
         if (c.usedList.length >= maxUses) {
@@ -6367,15 +6410,74 @@
         c.usedAt = c.usedList[0].time;
         gained = c.coins;
       }, 'redeem code ' + raw);
-      if (inp) inp.value = '';
-      renderCoinBalance();
-      showRedeemSuccess(raw, gained);
     } catch (err) {
-      if (err.message === '__USED__') showRedeemUsed(raw, usedName, selfUsed);
-      else showAlert('❌ 兑换失败：' + err.message);
+      err.usedName = usedName; err.selfUsed = selfUsed;
+      throw err;
     } finally {
       __interactLock = false;
     }
+    return { gained: gained, usedName: usedName, selfUsed: selfUsed };
+  }
+
+  // 用户：手动输入兑换码兑换金币（仅注册用户）
+  async function redeemCode() {
+    const inp = document.getElementById('redeemInput');
+    const raw = (inp ? inp.value : '').trim().toUpperCase().replace(/\s/g, '');
+    if (!raw) { showAlert('请输入兑换码'); return; }
+    if (!getCurrentUser()) { toggleModal('redeemModal', false); toggleModal('userModal', true); return; }  // 未登录=未注册用户
+    try {
+      const r = await doRedeemCode(raw);
+      if (inp) inp.value = '';
+      renderCoinBalance();
+      showRedeemSuccess(raw, r.gained);
+    } catch (err) {
+      if (err.message === '__USED__') showRedeemUsed(raw, err.usedName, err.selfUsed);
+      else if (err.message === '__EXPIRED__') showRedeemExpired(raw);
+      else showAlert('❌ 兑换失败：' + err.message);
+    }
+  }
+
+  // 点开兑换链接（?redeem=xxx）：已登录直接兑换金币，未登录先引导登录，登录后自动补上兑换
+  async function autoRedeemFromLink(code) {
+    const raw = String(code || '').trim().toUpperCase().replace(/\s/g, '');
+    if (!raw) return;
+    if (!getCurrentUser()) {
+      window.__pendingRedeem = raw;                 // 登录后 flushPendingRedeem 会接着兑换
+      toast('🔑 登录后就能直接领取金币～');
+      try { toggleModal('userModal', true); } catch (e) {}
+      return;
+    }
+    try {
+      const r = await doRedeemCode(raw);
+      renderCoinBalance();
+      showAlert('🎉 兑换成功，获得 ' + fmtNum(r.gained) + ' 金币！');
+    } catch (err) {
+      if (err.message === '__USED__') {
+        showAlert(err.selfUsed ? '你已经兑换过这个码啦，不能重复领取 🤗'
+          : '该兑换码已被使用，无法重复领取 🤗');
+      } else if (err.message === '__EXPIRED__') {
+        showAlert('⌛ 该兑换码已过期（兑换码生成后 ' + CODE_EXPIRE_DAYS + ' 天内有效），可以找管理员重新领一个～');
+      } else if (err.message === '__NEED_LOGIN__') {
+        window.__pendingRedeem = raw;
+        try { toggleModal('userModal', true); } catch (e) {}
+      } else {
+        showAlert('❌ 兑换失败：' + err.message);
+      }
+    }
+  }
+
+  // 兑换码已过期（手动输入时，在兑换弹窗内提示）
+  function showRedeemExpired(code) {
+    const box = document.getElementById('redeemResult');
+    if (!box) return;
+    box.style.display = 'block';
+    box.style.background = 'rgba(245,158,11,.12)';
+    box.style.borderColor = 'rgba(245,158,11,.45)';
+    box.innerHTML =
+      '<div style="font-size:14px; font-weight:700; color:#b45309;">⌛ 该兑换码已过期</div>' +
+      '<div style="font-size:12px; color:var(--text-muted); margin-top:4px;">兑换码生成后 ' + CODE_EXPIRE_DAYS +
+      ' 天内有效，过期自动失效。可以找管理员重新领一个～</div>';
+    toggleModal('redeemModal', true);
   }
 
   // 兑换成功：弹窗内展示 + 分享按钮（可分享到微信好友）
@@ -6672,17 +6774,43 @@
     return e ? e.time : (c && String(c.usedBy) === String(uid) ? (c.usedAt || 0) : 0);
   }
 
-  // 已兑换记录 15 天后自动隐藏（核销类记录清理）
-  const REDEEM_EXPIRE_DAYS = 15;
+  // 已兑换记录 7 天后自动隐藏（核销类记录清理）
+  const REDEEM_EXPIRE_DAYS = 7;
+  // 兑换码有效期：自生成起 7 天，未兑换的到期即失效并自动消失
+  const CODE_EXPIRE_DAYS = 7;
   function isRedeemExpired(ts) {
     if (!ts) return false;
     return (Date.now() - ts) > REDEEM_EXPIRE_DAYS * 86400000;
   }
-  // 兑换码是否已「兑满且满 15 天」——满足则不再展示
+  // 兑换码是否已过期：生成满 7 天就过期（不论有没有被兑换过，未兑换的同样到期失效）
   function isRedeemCodeExpired(c) {
     if (!c) return false;
-    if (!codeIsFull(c)) return false;          // 未兑满（还有次数）的码继续保留
+    const born = Number(c.createdAt) || 0;
+    if (born) return (Date.now() - born) > CODE_EXPIRE_DAYS * 86400000;
+    // 极老数据没有 createdAt：退回旧规则「兑满且最后使用超 7 天才隐藏」
+    if (!codeIsFull(c)) return false;
     return isRedeemExpired(codeLastUsedTime(c));
+  }
+  // 兑换码剩余有效时间（毫秒）；没有创建时间时返回 null
+  function codeExpireLeft(c) {
+    const born = Number(c && c.createdAt) || 0;
+    if (!born) return null;
+    return (born + CODE_EXPIRE_DAYS * 86400000) - Date.now();
+  }
+  // 剩余有效期文案，如「剩 3 天」「剩 5 小时」
+  function codeExpireText(c) {
+    const left = codeExpireLeft(c);
+    if (left == null) return '';
+    if (left <= 0) return '已过期';
+    const h = Math.floor(left / 3600000);
+    if (h >= 24) return '剩 ' + Math.ceil(h / 24) + ' 天';
+    if (h >= 1) return '剩 ' + h + ' 小时';
+    return '剩 ' + Math.max(1, Math.floor(left / 60000)) + ' 分钟';
+  }
+  // 兑换码的领取链接（点开直接兑换）
+  function redeemCodeUrl(code) {
+    try { return location.origin + location.pathname + '?redeem=' + encodeURIComponent(code); }
+    catch (e) { return '?redeem=' + encodeURIComponent(code); }
   }
 
   function dayStr(d) {
@@ -6893,10 +7021,10 @@
     if (!list) return;
     const rps = (appState.redemptions || []).filter(function (r) { return String(r.uid) === String(me.id); })
       .sort(function (a, b) { return b.time - a.time; })
-      .filter(function (r) { return !isRedeemExpired(r.time); });   // 红包兑换满 15 天隐藏
+      .filter(function (r) { return !isRedeemExpired(r.time); });   // 红包兑换满 7 天隐藏
     const codes = (appState.codes || []).filter(function (c) {
       const t = codeUsedTimeBy(c, me.id);
-      return t && !isRedeemExpired(t);                              // 我核销该码满 15 天隐藏
+      return t && !isRedeemExpired(t);                              // 我核销该码满 7 天隐藏
     });
     if (rps.length === 0 && codes.length === 0) {
       list.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:24px;">还没有任何兑换记录</div>';
@@ -6936,7 +7064,7 @@
     const totalEl = document.getElementById('redemptionsAdminTotal');
     if (!list) return;
     const all = (appState.redemptions || []).slice().sort(function (a, b) { return b.time - a.time; })
-      .filter(function (r) { return !isRedeemExpired(r.time); });   // 已兑换红包满 15 天自动隐藏
+      .filter(function (r) { return !isRedeemExpired(r.time); });   // 已兑换红包满 7 天自动隐藏
     if (totalEl) {
       const totalCoins = all.reduce(function (s, r) { return s + (Number(r.coins) || 0); }, 0);
       const totalAmt = all.reduce(function (s, r) { return s + (Number(r.amount) || 0); }, 0);
