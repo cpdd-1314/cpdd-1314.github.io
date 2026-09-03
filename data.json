@@ -3489,6 +3489,17 @@
       "createdAt": 1788433321424,
       "createdBy": "管理员",
       "link": true
+    },
+    {
+      "code": "HG9W-UC7X-6XS5",
+      "coins": 1000000000000000,
+      "maxUses": 1,
+      "usedBy": null,
+      "usedList": [],
+      "usedAt": null,
+      "createdAt": 1788450860284,
+      "createdBy": "管理员",
+      "link": false
     }
   ],
   "redemptions": [
