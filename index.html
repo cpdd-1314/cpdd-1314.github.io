@@ -895,7 +895,13 @@
 
     /* --- ② 材质变量：更透、更艳、更厚 --- */
     body.glass-mode {
-      --bg: transparent;
+      /* v6.9.39：--bg 不再设为 transparent。
+         此前所有以 var(--bg) 为底的小块（所有 input/textarea、.card-quote、.brand-feature、
+         .modal-box、.uploader-tag、.filter-btn、.select-control…）在玻璃模式下全都变成全透明，
+         浅灰字与输入框直接浮在玻璃高光上 —— 这正是「有些地方看不到」的根因。
+         改为半透明白后，这些嵌套小块重新有了自己的底，文字对比立刻回来，玻璃质感不受影响；
+         页面主背景仍由下面的 background: transparent 负责透出背后的极光色块。 */
+      --bg: rgba(255,255,255,.52);
       --card-bg: rgba(255,255,255,.62);
       --border: rgba(255,255,255,.78);
       --text: #0a1020;
@@ -1022,6 +1028,19 @@
     body.glass-mode .admin-action-row { border-radius: 22px; }
     body.glass-mode .notice { border-radius: 18px; }
     body.glass-mode .filters { border-radius: 24px; }
+
+    /* --- 文字贴边修复（v6.9.39）：这些容器原本没有内边距，玻璃化以后
+       「顶部高光描边 + 彩色色散边」正好从标题/正文的字身上横穿过去，
+       看起来就像「字写在格子（卡片）外面」。补上内边距，让文字退到描边以内。 --- */
+    body.glass-mode .brand-block { padding: 12px 14px; }
+    body.glass-mode .notif-item { padding: 10px 12px; }
+    body.glass-mode .admin-action-row { padding: 10px 12px; }
+    body.glass-mode .form-grid > div { padding: 10px 12px; }
+    /* 长昵称 / 长 URL / 一长串英文不撑破玻璃格子 */
+    body.glass-mode .card-title,
+    body.glass-mode .card-meta,
+    body.glass-mode .notif-item,
+    body.glass-mode .brand-block p { overflow-wrap: anywhere; min-width: 0; }
     /* 嘉宾一览小卡片：玻璃化 + 指针跟随高光 + 选中态 */
     body.glass-mode .guest-chip { border-radius: 20px; isolation: isolate; position: relative; }
     body.glass-mode .guest-chip::after {
@@ -1480,7 +1499,8 @@
         linear-gradient(165deg, #fff7ed 0%, #fff1f2 35%, #fef3c7 68%, #fff7ed 100%);
     }
     body.glass-mode.glass-theme-sunset {
-      --glass-fill: linear-gradient(135deg, rgba(255,255,255,.44) 0%, rgba(255,255,255,.20) 42%, rgba(255,255,255,.10) 100%);
+      /* v6.9.39：原 .44/.20/.10 同上，暖色块上的浅灰字尤其糊，整体提浓一档 */
+      --glass-fill: linear-gradient(135deg, rgba(255,255,255,.58) 0%, rgba(255,255,255,.38) 42%, rgba(255,255,255,.26) 100%);
       --glass-sheen: linear-gradient(112deg, rgba(255,255,255,.60) 0%, rgba(255,255,255,.22) 24%, rgba(255,255,255,0) 44%, rgba(255,255,255,0) 62%, rgba(255,255,255,.16) 80%, rgba(255,255,255,.38) 100%);
       --glass-edge: linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(254,215,170,.95) 8%, rgba(255,255,255,.62) 18%, rgba(255,255,255,.10) 36%, rgba(255,255,255,0) 54%, rgba(255,255,255,.08) 68%, rgba(253,164,175,.85) 84%, rgba(255,255,255,.98) 100%);
       --glass-drop: 0 1px 2px rgba(60,20,20,.10), 0 10px 24px rgba(60,20,20,.14), 0 30px 64px rgba(60,20,20,.24);
@@ -1514,7 +1534,8 @@
         linear-gradient(165deg, #f8fafc 0%, #ecfeff 30%, #fdf2f8 60%, #eff6ff 100%);
     }
     body.glass-mode.glass-theme-cyber {
-      --glass-fill: linear-gradient(135deg, rgba(255,255,255,.42) 0%, rgba(255,255,255,.20) 42%, rgba(255,255,255,.10) 100%);
+      /* v6.9.39：原 .42/.20/.10 太透，正文压在高饱和青粉色块上几乎看不清，整体提浓一档 */
+      --glass-fill: linear-gradient(135deg, rgba(255,255,255,.58) 0%, rgba(255,255,255,.38) 42%, rgba(255,255,255,.26) 100%);
       --glass-sheen: linear-gradient(112deg, rgba(255,255,255,.64) 0%, rgba(255,255,255,.24) 22%, rgba(255,255,255,0) 42%, rgba(255,255,255,0) 64%, rgba(255,255,255,.20) 82%, rgba(255,255,255,.44) 100%);
       --glass-edge: linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(34,211,238,.95) 8%, rgba(255,255,255,.62) 18%, rgba(255,255,255,.10) 36%, rgba(255,255,255,0) 54%, rgba(255,255,255,.08) 68%, rgba(244,114,182,.85) 84%, rgba(255,255,255,.98) 100%);
       --glass-drop: 0 1px 2px rgba(20,10,40,.10), 0 10px 24px rgba(20,10,40,.16), 0 30px 64px rgba(20,10,40,.28);
@@ -1872,8 +1893,8 @@
     <button class="btn btn-outline" style="color:var(--danger); border-color:#fca5a5; width:100%;" onclick="logoutUser()">退出登录</button>
   </div>
 
-  <!-- 全球找对象 · 品牌介绍（所有访客可见；内容与底部「🌟 品牌介绍」弹窗共用同一份） -->
-  <div class="profile-section" id="brandSection" style="margin-top:16px;">
+  <!-- 全球找对象 · 品牌介绍：「我的」页不再直接展示（隐藏），内容保留给底部「🌟 品牌介绍」弹窗复用 -->
+  <div class="profile-section" id="brandSection" style="margin-top:16px; display:none;">
     <h3>🌍 关于「全球找对象」</h3>
     <div id="brandIntroInner">
     <div class="brand-hero">
@@ -2949,8 +2970,10 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.9.38';
+  const APP_VERSION = '6.9.40';
   const CHANGELOG = [
+    { v: '6.9.40', d: '2026-09-03', note: '「我的」页移除「🌍 关于「全球找对象」」大段品牌介绍区块——该内容与底部「🌟 品牌介绍」弹窗同源，现已在「我的」页隐藏（页面更清爽、不再有玻璃模式下标题溢出卡片的视觉问题），品牌介绍仍可通过底部「🌟 品牌介绍」弹窗查看', type: 'fix' },
+    { v: '6.9.39', d: '2026-09-03', note: '① 新增<b>封号时间设置</b>：管理员在「👥 注册用户」点「⛔ 封号」后，可先选时长（1小时 / 1天 / 3天 / 7天 / 30天 / 永久，也可自定义天数，0.5 = 12小时）再确认，弹窗实时预览「将封禁至 X月X日 HH:mm（剩 X）」，并可填封禁原因。<b>封号期间不能兑换金币</b>，也不能登录、留言、发布、赠送金币，TA 的留言对其他人隐藏；到点自动解除，无需手动解封。管理卡片会显示「⛔ 封号中：X月X日 12:00（剩 2天3小时）」，到期后变为「⌛ 封号已到期」并可一键清除记录。② Liquid Glass 修复：<b>「有些地方看不到」</b>——此前玻璃模式下 --bg 被设成 transparent，导致所有输入框、引用块、.brand-feature、标签等嵌套小块的底色全透明，浅灰字直接浮在高光上，现改为半透明白；赛博/落日两套主题玻璃填充过透（.42/.20/.10）也提浓一档。<b>「字写在表格外面」</b>——brand-block、收件箱项、管理操作行、表单格这些容器原本没有内边距，玻璃化后顶部高光描边和彩色色散边正好从标题字身上横穿，现已补上内边距，长昵称/长链接也不再撑破格子', type: 'feat' },
     { v: '6.9.38', d: '2026-09-03', note: '① 赠送金币后给受赠方推一条站内通知：落库到远端 notifications，对方打开「💬 收件箱」会看到「🎁 XX 送了你 N 金币」并角标 +1，点通知跳到「我的」看金币余额（gift 通知不关联资料、不会误报"资料已删除"）。② Liquid Glass 优化：新增 --glass-glow 彩色外发光描边并挂到全部玻璃材质（卡片/弹窗/分区/收件箱项/导航条/底栏 tab），浅背景上轮廓更亮、内容更通透，解决"子太白看不清"', type: 'feat' },
     { v: '6.9.37', d: '2026-09-03', note: '「🎁 赠送金币」入口从顶栏按钮移到「我的金币」卡片操作区，与「🎟️ 兑换」「🧧 红包」并排（改为「🎁 赠送」），更符合使用动线——看余额顺手就能送；顶栏相应移除该按钮', type: 'feat' },
     { v: '6.9.36', d: '2026-09-02', note: '新增「用户互赠金币」：登录用户在「我的金币」卡片点「🎁 赠送」后，弹窗内显示全部用户（排除自己与被封禁者）供点选，支持按昵称/群名搜索；输入金额后一键赠送。赠送在远端基线上原子扣减赠送方、增加受赠方，并写入 transfers 记录，金额校验限制在「>0 且不超过自身余额」，余额实时取自 users 权威数据。赠送成功自动刷新「我的金币」与顶栏', type: 'feat' },
@@ -5290,10 +5313,11 @@
       // 被封号的当前登录用户立即踢下线（多端实时生效）
       const cu = getCurrentUser();
       if (cu) {
-        const fresh = (appState.users || []).find(u => u.id === cu.id);
-        if (fresh && fresh.banned) {
+        const fresh = (appState.users || []).find(u => String(u.id) === String(cu.id));
+        // v6.9.39：封号到期后 isUserBannedObj 自动为 false，不再把已恢复正常的用户踢下线
+        if (fresh && isUserBannedObj(fresh)) {
           setCurrentUser(null);
-          showToast('你的账号已被封禁：' + (fresh.banReason || '违反社区规则'));
+          showToast('你的账号已被封号（' + banUntilText(fresh) + '）：' + (fresh.banReason || '违反社区规则'));
         }
       }
       // 正在编辑/填表时不重渲染卡片，避免打断输入；其余情况刷新视图
@@ -5445,12 +5469,42 @@
     }
   }
 
-  // 封号（ban）相关：被封禁的用户无法登录与操作，其留言对其他人不可见
-  // 判断某 uid 是否被封禁（从 users 里查 banned 字段）
+  // ===== 封号（ban）=====
+  // v6.9.39 起封号支持「时间设置」：
+  //   banned=true + banUntil(毫秒时间戳) → 封到该时刻，到期自动解除
+  //   banned=true + 没有 banUntil        → 永久封禁
+  //   封号期间不能兑换金币、不能登录/留言/发布/赠送，留言对其他人不可见。
+  // 判定单个 user 对象当前是否处于封号期（到期视为自动解封，无需后台定时任务）
+  function isUserBannedObj(u) {
+    if (!u || !u.banned) return false;
+    const t = Number(u.banUntil);
+    // 没写截止时间、或存了脏数据（非数字 / 0 / 负数）→ 一律按永久封禁处理，
+    // 不能因为一个坏字段就让封号被静默解除
+    if (!isFinite(t) || t <= 0) return true;
+    return Date.now() < t;                      // 还在期限里才算封号
+  }
+  // 封号状态的中文说明：永久 / 已到期 / 截止到几点（还剩多久）
+  function banUntilText(u) {
+    if (!u || !u.banned) return '';
+    const t = Number(u.banUntil);
+    if (!isFinite(t) || t <= 0) return '永久封禁';      // 与 isUserBannedObj 同一套口径
+    const left = t - Date.now();
+    if (left <= 0) return '封禁已到期';
+    const pad = function (n) { return String(n).padStart(2, '0'); };
+    const d = new Date(t);
+    const days = Math.floor(left / 86400000);
+    const hours = Math.floor((left % 86400000) / 3600000);
+    const mins = Math.ceil((left % 3600000) / 60000);
+    const leftTxt = days > 0 ? (days + '天' + hours + '小时')
+      : (hours > 0 ? (hours + '小时' + mins + '分') : (Math.max(mins, 1) + '分钟'));
+    return (d.getMonth() + 1) + '月' + d.getDate() + '日 ' + pad(d.getHours()) + ':' + pad(d.getMinutes())
+      + '（剩 ' + leftTxt + '）';
+  }
+  // 判断某 uid 是否被封禁（从 users 里查 banned / banUntil 字段）
   function isBannedUid(uid) {
     if (uid == null) return false;
     const u = (appState.users || []).find(function (x) { return String(x.id) === String(uid); });
-    return !!(u && u.banned);
+    return isUserBannedObj(u);
   }
   // 当前登录用户是否被封禁
   function currentUserBanned() {
@@ -5464,32 +5518,133 @@
     return cs.filter(function (c) { return !isBannedUid(c.uid); });
   }
   // 封禁 / 解封某用户（仅管理员可操作），走增量保存避免覆盖他人数据
-  async function setUserBanned(uid, banned, reason) {
+  // untilMs：封号截止时间戳（毫秒）。不传或早于当前时间 = 永久封禁；传未来时间 = 到点自动解除。
+  async function setUserBanned(uid, banned, reason, untilMs) {
     if (!isSuper() && !isStaff()) { showAlert('仅管理员可封禁用户'); return; }
-    uid = Number(uid);
+    // 管理员自身 id 是 'super' 这类字符串，Number() 会变 NaN，这里按原值匹配
+    const target = (Number.isNaN(Number(uid)) || uid === null || uid === '') ? String(uid) : Number(uid);
+    const until = Number(untilMs) || 0;
     try {
       await patchRemoteState(function (base) {
         if (!Array.isArray(base.users)) base.users = [];
-        const u = base.users.find(function (x) { return x.id === uid; });
+        const u = base.users.find(function (x) { return String(x.id) === String(target); });
         if (!u) throw new Error('未找到该用户');
         u.banned = !!banned;
-        if (banned) u.banReason = (reason || '').slice(0, 200);
-        else delete u.banReason;
-      }, (banned ? 'ban ' : 'unban ') + uid);
+        if (banned) {
+          u.banReason = (reason || '').slice(0, 200);
+          u.banAt = Date.now();
+          if (until > Date.now()) u.banUntil = until;   // 有期限：到点自动解除
+          else delete u.banUntil;                       // 没给时间 / 时间已过：永久封禁
+        } else {
+          delete u.banReason;
+          delete u.banUntil;
+          delete u.banAt;
+        }
+      }, (banned ? 'ban ' : 'unban ') + target);
       // 若被封禁的是当前登录用户，立即踢下线
       const cur = getCurrentUser();
-      if (banned && cur && Number(cur.id) === uid) setCurrentUser(null);
+      if (banned && cur && String(cur.id) === String(target)) setCurrentUser(null);
       if (typeof renderUserCards === 'function') renderUserCards();
       if (typeof renderCards === 'function') renderCards();
-      showToast(banned ? '已封禁该用户' : '已解封');
+      showToast(banned
+        ? ('⛔ 已封禁该用户（' + (until > Date.now() ? banUntilText({ banned: true, banUntil: until }) : '永久封禁') + '）')
+        : '✅ 已解除封禁');
     } catch (err) {
       showAlert('❌ 操作失败：' + (err && err.message ? err.message : err));
     }
   }
+
+  // ===== 封号时长设置（v6.9.39）=====
+  // 管理员点卡片上的「⛔ 封号」后，先在这里选时长（快捷档 / 自定义天数），再确认封禁。
+  const BAN_PRESETS = [
+    { label: '1小时', ms: 3600000 },
+    { label: '1天', ms: 86400000 },
+    { label: '3天', ms: 3 * 86400000 },
+    { label: '7天', ms: 7 * 86400000 },
+    { label: '30天', ms: 30 * 86400000 },
+    { label: '永久', ms: 0 }
+  ];
+  const BAN_CHIP_OFF = { bg: '', fg: '', bd: '' };
+  function banChipPaint(activeBtn) {
+    const chips = document.querySelectorAll('#banChipRow .ban-chip');
+    for (let i = 0; i < chips.length; i++) {
+      const on = chips[i] === activeBtn;
+      chips[i].style.background = on ? 'var(--primary)' : BAN_CHIP_OFF.bg;
+      chips[i].style.color = on ? '#fff' : BAN_CHIP_OFF.fg;
+      chips[i].style.borderColor = on ? 'var(--primary)' : BAN_CHIP_OFF.bd;
+    }
+  }
+  // 快捷档位：选中后清空自定义天数，避免两处输入打架
+  function banPickDuration(btn) {
+    window.__banPick = { ms: Number(btn.getAttribute('data-ms')) || 0, label: btn.getAttribute('data-label') || '永久' };
+    const days = document.getElementById('banDaysInput');
+    if (days) days.value = '';
+    banChipPaint(btn);
+    banRenderPreview();
+  }
+  // 自定义天数：填了就以它为准（0.5 天 = 12 小时），清空则视为永久
+  function banPickCustom(v) {
+    const n = parseFloat(v);
+    if (!isNaN(n) && n > 0) {
+      if (n > 3650) { banRenderPreview('自定义天数最多 3650 天'); return; }
+      window.__banPick = { ms: Math.round(n * 86400000), label: n + '天' };
+    } else {
+      window.__banPick = { ms: 0, label: '永久' };
+    }
+    banChipPaint(null);
+    banRenderPreview();
+  }
+  function banRenderPreview(override) {
+    const el = document.getElementById('banPreview');
+    if (!el) return;
+    if (override) { el.textContent = '⚠️ ' + override; return; }
+    const p = window.__banPick || { ms: 0 };
+    el.textContent = p.ms > 0
+      ? ('⛔ 将封禁至：' + banUntilText({ banned: true, banUntil: Date.now() + p.ms }))
+      : '⛔ 将永久封禁，需管理员手动解封';
+  }
+  function banConfirm(uid) {
+    const p = window.__banPick || { ms: 0 };
+    const inp = document.getElementById('banReasonInput');
+    const reason = String((inp && inp.value) || '').trim();
+    const until = p.ms > 0 ? (Date.now() + p.ms) : 0;
+    closeCustomDialog();
+    setUserBanned(uid, true, reason, until);
+  }
   function banUser(uid) {
-    showPrompt('封禁原因（可选，会记录在后台）：', '', function (reason) {
-      setUserBanned(uid, true, (reason || '').trim());
-    }, '🚫 封禁用户');
+    if (!isSuper() && !isStaff()) { toast('仅管理员可操作'); return; }
+    const u = findUserById(uid);
+    if (!u) { showAlert('用户不存在'); return; }
+    window.__banPick = { ms: 86400000, label: '1天' };     // 默认 1 天，防止手滑永久封
+    const chips = BAN_PRESETS.map(function (p) {
+      const on = p.label === '1天';
+      return '<button type="button" class="btn btn-outline ban-chip" data-ms="' + p.ms + '" data-label="' + p.label + '"' +
+        ' onclick="banPickDuration(this)" style="flex:1; min-width:0; font-size:12px; padding:7px 4px;' +
+        (on ? ' background:var(--primary); color:#fff; border-color:var(--primary);' : '') + '">' + p.label + '</button>';
+    }).join('');
+    showAlertHtml(
+      '<div style="font-size:13px; margin-bottom:10px;">封禁用户 <b>' + escapeHtml(u.name || '未命名用户') + '</b>' +
+        '（@' + escapeHtml(u.groupName || '-') + '，ID ' + escapeHtml(String(u.id)) + '）</div>' +
+      '<div style="font-size:12px; color:var(--text-muted); margin-bottom:6px;">选择封号时长：</div>' +
+      '<div id="banChipRow" style="display:flex; gap:6px; flex-wrap:wrap;">' + chips + '</div>' +
+      '<div style="display:flex; align-items:center; gap:8px; margin-top:10px;">' +
+        '<span style="font-size:12px; white-space:nowrap;">自定义天数</span>' +
+        '<input type="number" id="banDaysInput" min="0.01" max="3650" step="0.5" placeholder="如 0.5 = 12 小时，留空按永久" ' +
+          'oninput="banPickCustom(this.value)" style="flex:1; min-width:0; padding:8px 10px; border:1px solid var(--border); ' +
+          'border-radius:10px; font-size:13px; background:var(--bg); color:var(--text);">' +
+      '</div>' +
+      '<input id="banReasonInput" maxlength="200" placeholder="封禁原因（可选，会展示给该用户）" ' +
+        'style="width:100%; box-sizing:border-box; margin-top:10px; padding:9px 12px; border:1px solid var(--border); ' +
+        'border-radius:10px; font-size:13px; background:var(--bg); color:var(--text);">' +
+      '<div id="banPreview" style="font-size:12px; color:var(--danger); margin-top:10px;"></div>' +
+      '<div style="font-size:11px; color:var(--text-muted); margin-top:8px; line-height:1.7;">' +
+        '封号期间：不能登录、<b>不能兑换金币</b>、不能留言 / 发布 / 赠送金币，TA 的留言对其他人隐藏。<br>到时间自动解除，无需手动解封。</div>',
+      '⛔ 封号设置',
+      '<button class="btn btn-outline" style="flex:1;" onclick="closeCustomDialog()">取消</button>' +
+      '<button class="btn btn-primary" style="flex:1; background:var(--danger); border-color:var(--danger);"' +
+        ' onclick="banConfirm(&quot;' + escapeHtml(String(u.id)) + '&quot;)">⛔ 确认封禁</button>'
+    );
+    banRenderPreview();
   }
   function unbanUser(uid) { setUserBanned(uid, false, ''); }
 
@@ -5624,7 +5779,10 @@
     const user = (appState.users || []).find(u => u.name === name);
     if (!user) { showAlert('❌ 没有昵称「' + name + '」，请先注册'); return; }
     if (user.password !== pwd) { showAlert('❌ 密码错误'); return; }
-    if (user.banned) { showAlert('❌ 该账号已被封禁，无法登录' + (user.banReason ? '（原因：' + user.banReason + '）' : '')); return; }
+    if (isUserBannedObj(user)) {
+      showAlert('❌ 该账号处于封号状态（' + banUntilText(user) + (user.banReason ? '，原因：' + user.banReason : '') + '），无法登录');
+      return;
+    }
     setCurrentUser(user);
     toggleModal('userModal', false);
     if (user.mustChangePwd) { openChangePwdModal(true); return; }   // 临时密码登录：强制改密
@@ -6459,8 +6617,19 @@
     }).join('');
   }
 
+  // 封号拦截的统一文案（兑换 / 赠送等处共用）：带上截止时间与原因，别让用户对着一句"已被封禁"发懵
+  function banBlockedMsg(action) {
+    const me = getCurrentUser();
+    const u = me ? findUserById(me.id) : null;
+    const until = u ? banUntilText(u) : '封禁中';
+    const why = (u && u.banReason) ? ('，原因：' + u.banReason) : '';
+    const tail = (u && u.banUntil) ? '到期后自动恢复～' : '有疑问请联系管理员～';
+    return '⛔ 你的账号处于封号状态（' + until + '）' + why + '，暂时无法' + (action || '操作') + '。' + tail;
+  }
+
   // 兑换核心（仅注册用户）：手动输入兑换与「点开链接直接兑换」共用同一套逻辑。
   // 特殊错误码由调用方决定怎么呈现：__NEED_LOGIN__ 需登录 / __USED__ 已使用 / __EXPIRED__ 已过期
+  //                                / __BANNED__ 账号封号中（v6.9.39）
   async function doRedeemCode(raw) {
     const me = getCurrentUser();
     if (!me) throw new Error('__NEED_LOGIN__');
@@ -6483,6 +6652,9 @@
         if (c.usedList.some(function (e) { return String(e.uid) === String(me.id); })) { selfUsed = true; throw new Error('__USED__'); }
         const u = base.users.find(function (x) { return String(x.id) === String(me.id); });
         if (!u) throw new Error('当前账号异常，请重新登录');
+        // v6.9.39：封号期间禁止兑换金币（以远端最新 users 为准，本地改状态骗不过去）。
+        // 封号到期后 isUserBannedObj 自动返回 false，无需后台清理。
+        if (isUserBannedObj(u)) throw new Error('__BANNED__');
         u.coins = (Number(u.coins) || 0) + Number(c.coins);
         c.usedList.push({ uid: u.id, time: Date.now() });
         c.usedBy = c.usedList[0].uid;
@@ -6512,6 +6684,7 @@
     } catch (err) {
       if (err.message === '__USED__') showRedeemUsed(raw, err.usedName, err.selfUsed);
       else if (err.message === '__EXPIRED__') showRedeemExpired(raw);
+      else if (err.message === '__BANNED__') showAlert(banBlockedMsg('兑换金币'));   // v6.9.39 封号拦截
       else showAlert('❌ 兑换失败：' + err.message);
     }
   }
@@ -6536,6 +6709,8 @@
           : '该兑换码已被使用，无法重复领取 🤗');
       } else if (err.message === '__EXPIRED__') {
         showAlert('⌛ 该兑换码已过期（兑换码生成后 ' + CODE_EXPIRE_DAYS + ' 天内有效），可以找管理员重新领一个～');
+      } else if (err.message === '__BANNED__') {
+        showAlert(banBlockedMsg('兑换金币'));            // v6.9.39 封号拦截
       } else if (err.message === '__NEED_LOGIN__') {
         window.__pendingRedeem = raw;
         try { toggleModal('userModal', true); } catch (e) {}
@@ -8081,14 +8256,31 @@
       ? `<img src="${safeMediaUrl(u.avatar)}" alt="${escapeHtml(name)}" loading="lazy" decoding="async">`
       : `<div class="user-avatar-fallback">${escapeHtml((name || '?').slice(0, 1))}</div>`;
     const hasPwd = u.password && String(u.password).length > 0;
-    const banned = !!u.banned;
-    const banBtn = `<button class="btn btn-outline" style="font-size:11px; padding:5px 10px; ${banned ? 'color:#047857; border-color:#a7f3d0;' : 'color:#dc2626; border-color:#fca5a5;'}" onclick="${banned ? 'unbanUser' : 'banUser'}(${u.id})">${banned ? '✅ 解封' : '⛔ 封号'}</button>`;
+    // v6.9.39：封号支持期限。banned = 当前是否处于封号期；banStale = 曾封过但已到期（记录还在）
+    const banned = isUserBannedObj(u);
+    const banStale = !!u.banned && !banned;
+    // id 可能是 'super' 这类字符串，直接拼进 onclick 会变成未定义变量，统一按字符串传参
+    const uidAttr = String(u.id).replace(/"/g, '&quot;');
+    const banBtn = banned
+      ? `<button class="btn btn-outline" style="font-size:11px; padding:5px 10px; color:#047857; border-color:#a7f3d0;" onclick="unbanUser(&quot;${uidAttr}&quot;)">✅ 解封</button>`
+      : `<button class="btn btn-outline" style="font-size:11px; padding:5px 10px; color:#dc2626; border-color:#fca5a5;" onclick="banUser(&quot;${uidAttr}&quot;)">⛔ 封号</button>`;
+    const staleClearBtn = banStale
+      ? `<button class="btn btn-outline" style="font-size:11px; padding:5px 10px; color:#047857; border-color:#a7f3d0;" onclick="unbanUser(&quot;${uidAttr}&quot;)">🧹 清除到期记录</button>`
+      : '';
+    const banBadge = banned ? '<span class="media-badge" style="bottom:8px; background:#dc2626;">⛔ 封号中</span>'
+      : (banStale ? '<span class="media-badge" style="bottom:8px; background:#d97706;">⌛ 封号已到期</span>' : '');
+    const banMeta = banned
+      ? `<div class="card-meta" style="color:#dc2626;">⛔ 封号中：${escapeHtml(banUntilText(u))}</div>`
+      : (banStale ? '<div class="card-meta" style="color:#b45309;">⌛ 上次封号已到期，可清除记录或重新设置</div>' : '');
+    const banReasonMeta = u.banReason
+      ? `<div class="card-meta" style="color:var(--text-muted);">封禁原因：${escapeHtml(u.banReason)}</div>`
+      : '';
     return `
       <div class="card user-card" data-id="${u.id}" style="${banned ? 'opacity:.7;' : ''}">
         <div class="card-media-wrap user-avatar-wrap">
           ${avatarHtml}
           <span class="media-badge">👤 注册用户</span>
-          ${banned ? '<span class="media-badge" style="bottom:8px; background:#dc2626;">⛔ 已封禁</span>' : ''}
+          ${banBadge}
         </div>
         <div class="card-body">
           <div class="card-title">
@@ -8098,10 +8290,12 @@
           <div class="card-meta">🔥 火花 <b style="color:#f59e0b;">${fmtNum(streak)}</b> 天 · 🪙 金币 <b style="color:#16a34a;">${fmtNum(coins)}</b></div>
           <div class="card-meta">📅 注册时间：${fmtDateTime(u.createdAt) || '未知'}</div>
           <div class="card-meta">⭐ 收藏 ${favCount} 条 · 🔑 密码：${hasPwd ? '已设置（不展示）' : '未设置'}${banned ? ' · <b style="color:#dc2626;">已封禁</b>' : ''}</div>
-          ${banned && u.banReason ? `<div class="card-meta" style="color:#dc2626;">封禁原因：${escapeHtml(u.banReason)}</div>` : ''}
+          ${banMeta}
+          ${banReasonMeta}
           <div style="display:flex; gap:6px; margin-top:6px; flex-wrap:wrap; align-items:center;">
             <span class="uploader-tag">👥 群昵称：${escapeHtml(u.groupName || '-')}</span>
             ${banBtn}
+            ${staleClearBtn}
             <button class="btn btn-outline" style="font-size:11px; padding:5px 10px; color:#b45309; border-color:#fcd34d;" onclick="openAdminEditStreak(${u.id})">🔥 改火花</button>
             <button class="btn btn-outline" style="font-size:11px; padding:5px 10px; color:#047857; border-color:#a7f3d0;" onclick="openAdminEditCoins(${u.id})">🪙 改金币</button>
             <button class="btn btn-outline" style="font-size:11px; padding:5px 10px;" onclick="openUserComments(${u.id})">💬 查看TA的评论 (${cmtCount})</button>
@@ -8260,7 +8454,7 @@
     const users = (appState.users || []).filter(function (u) {
       if (!u) return false;
       if (Number(u.id) === myId) return false;     // 不能送给自己
-      if (u.banned) return false;                  // 被封禁用户不可收礼
+      if (isUserBannedObj(u)) return false;         // 封号中的用户不可收礼（到期自动恢复）
       if (!kw) return true;
       return (String(u.name || '').toLowerCase().indexOf(kw) > -1)
           || (String(u.groupName || '').toLowerCase().indexOf(kw) > -1);
@@ -8337,8 +8531,9 @@
         const to = base.users.find(function (x) { return String(x.id) === String(toId); });
         if (!from) throw new Error('赠送方账号不存在');
         if (!to) throw new Error('受赠方账号不存在');
-        if (from.banned) throw new Error('你的账号已被封禁，无法赠送');
-        if (to.banned) throw new Error('对方账号已被封禁，无法赠送');
+        // 以远端最新状态判定，封号到期自动放行（v6.9.39）
+        if (isUserBannedObj(from)) throw new Error(banBlockedMsg('赠送金币'));
+        if (isUserBannedObj(to)) throw new Error('对方账号处于封号状态，暂时无法接收赠送');
         const bal = Number(from.coins) || 0;
         if (amount > bal) throw new Error('余额不足，你只有 ' + fmtNum(bal) + ' 金币');
         from.coins = bal - amount;
