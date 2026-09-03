@@ -43,9 +43,10 @@
           "isMain": true
         }
       ],
-      "statusUpdatedAt": 1788443588812,
+      "statusUpdatedAt": 1788443621891,
       "isHidden": false,
-      "updatedAt": 1788443588812
+      "updatedAt": 1788443621891,
+      "guestNo": "A043"
     },
     {
       "id": 1788019789328,
@@ -1152,6 +1153,12 @@
     "6.1.0"
   ],
   "adminLogs": [
+    {
+      "time": 1788443621899,
+      "actor": "超级管理员",
+      "op": "编辑",
+      "desc": "编辑「小非洲人」的资料"
+    },
     {
       "time": 1788443588812,
       "actor": "超级管理员",
