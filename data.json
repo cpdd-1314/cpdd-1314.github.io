@@ -34,7 +34,7 @@
       "uploaderName": "非洲人（非洲）",
       "uploaderCode": "",
       "uploaderUid": 1788020564369,
-      "status": "pending",
+      "status": "approved",
       "profileNo": "A043",
       "mediaList": [
         {
@@ -43,8 +43,9 @@
           "isMain": true
         }
       ],
-      "statusUpdatedAt": 1788020818392,
-      "isHidden": false
+      "statusUpdatedAt": 1788443588812,
+      "isHidden": false,
+      "updatedAt": 1788443588812
     },
     {
       "id": 1788019789328,
@@ -1151,6 +1152,12 @@
     "6.1.0"
   ],
   "adminLogs": [
+    {
+      "time": 1788443588812,
+      "actor": "超级管理员",
+      "op": "审核",
+      "desc": "通过新嘉宾「小非洲人」的审核，已公开显示"
+    },
     {
       "time": 1788364609736,
       "actor": "超级管理员",
