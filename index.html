@@ -222,6 +222,15 @@
       cursor: pointer;
     }
     .batch-check input { width: 17px; height: 17px; cursor: pointer; margin: 0; accent-color: var(--primary); }
+    /* 管理视图卡片右下角「🔗 复制链接」按钮：待审核/已隐藏/已公开都能一键复制，无需先审核 */
+    .copy-link-btn {
+      position: absolute; right: 8px; bottom: 8px; z-index: 6;
+      height: 30px; padding: 0 11px; border: none; border-radius: 9px;
+      background: rgba(17,24,39,.82); color: #fff; font-size: 12px; font-weight: 700;
+      display: inline-flex; align-items: center; gap: 4px; cursor: pointer;
+      box-shadow: 0 2px 10px rgba(15,23,42,.32);
+    }
+    .copy-link-btn:active { transform: scale(.96); }
     .card.is-batch-selected { outline: 3px solid var(--primary); outline-offset: -3px; }
     .batch-bar {
       display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
@@ -2970,8 +2979,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.9.41';
+  const APP_VERSION = '6.9.42';
   const CHANGELOG = [
+    { v: '6.9.42', d: '2026-09-03', note: '管理员嘉宾资料可<b>随时复制直达链接</b>（不只在审核通过后）：每张管理视图的嘉宾卡片右下角新增「🔗 复制」按钮，待审核 / 已隐藏 / 已公开状态均可一键复制该嘉宾的 ?guest= 直达链接，无需先审核、无需进详情弹窗（复制会阻止冒泡，不会误开详情）；详情弹窗右上角的「🔗 转发」原本就对任意状态可用，本次只是补齐卡片级快速复制', type: 'feat' },
     { v: '6.9.41', d: '2026-09-03', note: '修复弹窗被底部导航栏遮挡的问题：.modal-overlay 基础层级从 100 提升到 950，customDialog/wechatModal/groupModal/reportModal/reportAdminModal 层级提升到 960/970（均高于底栏 z-index:800）；打开任意弹窗时自动给 body 加 <b>nav-hidden</b> 把底栏收走，关闭最后一个弹窗后再恢复，避免弹窗里的图片/按钮/输入框被底栏盖住', type: 'fix' },
     { v: '6.9.40', d: '2026-09-03', note: '「我的」页移除「🌍 关于「全球找对象」」大段品牌介绍区块——该内容与底部「🌟 品牌介绍」弹窗同源，现已在「我的」页隐藏（页面更清爽、不再有玻璃模式下标题溢出卡片的视觉问题），品牌介绍仍可通过底部「🌟 品牌介绍」弹窗查看', type: 'fix' },
     { v: '6.9.39', d: '2026-09-03', note: '① 新增<b>封号时间设置</b>：管理员在「👥 注册用户」点「⛔ 封号」后，可先选时长（1小时 / 1天 / 3天 / 7天 / 30天 / 永久，也可自定义天数，0.5 = 12小时）再确认，弹窗实时预览「将封禁至 X月X日 HH:mm（剩 X）」，并可填封禁原因。<b>封号期间不能兑换金币</b>，也不能登录、留言、发布、赠送金币，TA 的留言对其他人隐藏；到点自动解除，无需手动解封。管理卡片会显示「⛔ 封号中：X月X日 12:00（剩 2天3小时）」，到期后变为「⌛ 封号已到期」并可一键清除记录。② Liquid Glass 修复：<b>「有些地方看不到」</b>——此前玻璃模式下 --bg 被设成 transparent，导致所有输入框、引用块、.brand-feature、标签等嵌套小块的底色全透明，浅灰字直接浮在高光上，现改为半透明白；赛博/落日两套主题玻璃填充过透（.42/.20/.10）也提浓一档。<b>「字写在表格外面」</b>——brand-block、收件箱项、管理操作行、表单格这些容器原本没有内边距，玻璃化后顶部高光描边和彩色色散边正好从标题字身上横穿，现已补上内边距，长昵称/长链接也不再撑破格子', type: 'feat' },
@@ -8109,6 +8119,7 @@
           ${(inAdminView && item.status === 'pending' && (() => { const a = parseInt((item['年龄']||'').toString().replace(/岁/g,'')); return !isNaN(a) && a < 18; })()) ? `<span class="pin-badge" style="background:#dc2626;">🔞 未成年</span>` : ''}
           ${badgeText ? `<span class="media-badge">${badgeText}</span>` : ''}
           <span class="date-badge">📅 ${displayDate}</span>
+          ${inAdminView ? `<button class="copy-link-btn" title="复制该嘉宾的直达链接（任何状态均可）" onclick="copyProfileLink(${item.id}); event.stopPropagation();">🔗 复制</button>` : ''}
         </div>
         <div class="card-body">
           <div class="card-title">
@@ -8788,9 +8799,22 @@
     document.getElementById('adminPageInfo').textContent = `共 ${total} 位 · 第 ${adminCurrentPage}/${maxPage} 页`;
   }
 
+  // 管理员专用：复制任意嘉宾（待审核 / 已隐藏 / 已公开）的直达链接，无需先审核、无需进详情
+  function copyProfileLink(id) {
+    if (id == null) return;
+    const item = (appState.profiles || []).find(function (p) { return p.id === id; });
+    if (!item) { showToast('找不到该资料'); return; }
+    const link = location.origin + location.pathname + '?guest=' + item.id;
+    const done = function () { showToast('🔗 已复制资料链接'); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(link).then(done).catch(function () { fallbackCopyText(link, done); });
+    } else {
+      fallbackCopyText(link, done);
+    }
+  }
+
   // 转发按钮：复制当前嘉宾的直达链接（朋友打开即弹出该嘉宾资料）
-  function shareGuestLink() {
-    if (!currentDetailId) return;
+  function shareGuestLink() {    if (!currentDetailId) return;
     const link = location.origin + location.pathname + '?guest=' + currentDetailId;
     const btn = document.getElementById('detailShareBtn');
     const done = function() {
