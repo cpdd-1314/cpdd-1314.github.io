@@ -1148,8 +1148,8 @@
       "生活习惯": "不抽烟",
       "要求": "真心谈到最后的，热情的，能主动找我说话的",
       "一句话介绍": "爱情是双向奔赴的，也是一起奔赴到最后的",
-      "updatedAt": 1788610200707,
-      "statusUpdatedAt": 1788610200707,
+      "updatedAt": 1788610379277,
+      "statusUpdatedAt": 1788610379277,
       "uploadDate": "2026-09-05",
       "createdAt": 1788610200707,
       "isPinned": false,
@@ -1157,7 +1157,7 @@
       "uploaderName": "林小九（林小九🇪🇸08）",
       "uploaderCode": "",
       "uploaderUid": 1788609826296,
-      "status": "pending",
+      "status": "approved",
       "profileNo": "A049",
       "mediaList": [
         {
@@ -1191,6 +1191,12 @@
     "6.1.0"
   ],
   "adminLogs": [
+    {
+      "time": 1788610379278,
+      "actor": "超级管理员",
+      "op": "审核",
+      "desc": "通过新嘉宾「林小九」的审核，已公开显示"
+    },
     {
       "time": 1788517473593,
       "actor": "超级管理员",
