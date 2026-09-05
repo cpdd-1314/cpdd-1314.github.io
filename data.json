@@ -1130,6 +1130,42 @@
           "type": "image/jpeg"
         }
       ]
+    },
+    {
+      "id": 1788610200707,
+      "姓名": "林小九",
+      "性别": "男",
+      "性取向": "异性恋",
+      "国家/城市": "西班牙/TORREVIEJA",
+      "生日": "2008-08",
+      "年龄": "18",
+      "身高": "165",
+      "体重": "58",
+      "星座": "狮子座",
+      "职业/学生": "上班族",
+      "性格": "情绪稳定，有点i",
+      "兴趣爱好": "打游戏",
+      "生活习惯": "不抽烟",
+      "要求": "真心谈到最后的，热情的，能主动找我说话的",
+      "一句话介绍": "爱情是双向奔赴的，也是一起奔赴到最后的",
+      "updatedAt": 1788610200707,
+      "statusUpdatedAt": 1788610200707,
+      "uploadDate": "2026-09-05",
+      "createdAt": 1788610200707,
+      "isPinned": false,
+      "uploaderType": "user",
+      "uploaderName": "林小九（林小九🇪🇸08）",
+      "uploaderCode": "",
+      "uploaderUid": 1788609826296,
+      "status": "pending",
+      "profileNo": "A049",
+      "mediaList": [
+        {
+          "url": "./media/1788610201862_IMG_20260826_154113.jpg",
+          "type": "image/jpeg",
+          "isMain": true
+        }
+      ]
     }
   ],
   "staffs": [
@@ -1144,7 +1180,7 @@
       "password": "714956"
     }
   ],
-  "nextProfileNo": 49,
+  "nextProfileNo": 50,
   "version": "",
   "hideVersionInfo": false,
   "hiddenVersions": [
