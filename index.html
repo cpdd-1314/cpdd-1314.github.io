@@ -2009,6 +2009,11 @@
           </div>
         </div>
       </div>
+      <div class="profile-section" style="border-color:#fca5a5;">
+        <h3>🗑 管理员回收站 <span id="adminTrashCount" style="font-size:13px; color:var(--text-muted); font-weight:400;"></span></h3>
+        <div id="adminTrashSection"></div>
+        <div style="font-size:11px; color:var(--text-muted); margin-top:6px; line-height:1.5;">被删除的嘉宾档案会整份留在这里，仅管理员可见；30 天内可「↩️ 恢复」放回原处，或「🗑 彻底删除」，到期自动消失、不可恢复。</div>
+      </div>
     </div>
   </div>
 
@@ -2984,8 +2989,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.9.43';
+  const APP_VERSION = '6.9.44';
   const CHANGELOG = [
+    { v: '6.9.44', d: '2026-09-05', note: '新增<b>管理员回收站（嘉宾资料）</b>：管理员删除/批量删除嘉宾档案不再硬删消失，而是整份进入「🗑 管理员回收站」（仅管理员在管理面板可见，普通用户/嘉宾完全看不到）。回收站内可「↩️ 恢复」把整份资料放回原处（保留原审核状态与内容），或「🗑 彻底删除」永久移除；满 <b>30 天</b>自动从数据里消失、不可恢复。每条显示「剩 X天Y小时消失」倒计时。删除走原子增量保存，彻底解决了此前「_deleted 软删被合并丢弃、删完即永久消失、无法找回」的事故', type: 'feat' },
     { v: '6.9.43', d: '2026-09-05', note: '新增<b>回收站</b>：用户删除自己的留言不再直接消失，而是先进「我的 → 回收站」，保留 <b>30 天</b>后自动从数据里消失；期内可「↩️ 恢复」放回原嘉宾、或「🗑 彻底删除」。每条显示「剩 X天Y小时消失」倒计时。管理员/内部管理员删除<b>别人</b>的留言仍直接真删（不进回收站）。回收站数据随 data.json 持久化，启动与每分钟定时清理到期项', type: 'feat' },
     { v: '6.9.42', d: '2026-09-03', note: '管理员嘉宾资料可<b>随时复制直达链接</b>（不只在审核通过后）：每张管理视图的嘉宾卡片右下角新增「🔗 复制」按钮，待审核 / 已隐藏 / 已公开状态均可一键复制该嘉宾的 ?guest= 直达链接，无需先审核、无需进详情弹窗（复制会阻止冒泡，不会误开详情）；详情弹窗右上角的「🔗 转发」原本就对任意状态可用，本次只是补齐卡片级快速复制', type: 'feat' },
     { v: '6.9.41', d: '2026-09-03', note: '修复弹窗被底部导航栏遮挡的问题：.modal-overlay 基础层级从 100 提升到 950，customDialog/wechatModal/groupModal/reportModal/reportAdminModal 层级提升到 960/970（均高于底栏 z-index:800）；打开任意弹窗时自动给 body 加 <b>nav-hidden</b> 把底栏收走，关闭最后一个弹窗后再恢复，避免弹窗里的图片/按钮/输入框被底栏盖住', type: 'fix' },
@@ -6564,6 +6570,106 @@
     }
   }
 
+  // 管理员回收站（嘉宾资料）：仅管理员在管理面板可见。列出所有被删、且未过期的嘉宾档案，
+  // 支持「↩️ 恢复」（整份放回原处）与「🗑 彻底删除」（永久移除）。数据来自 appState.trash 中 type==='profile' 的条目。
+  function renderAdminTrash() {
+    const box = document.getElementById('adminTrashSection');
+    if (!box) return;
+    const cnt = document.getElementById('adminTrashCount');
+    const now = Date.now();
+    const list = (appState.trash || []).filter(function (t) {
+      return t.type === 'profile' && t.profile && (t.expireAt || 0) > now;
+    }).sort(function (a, b) { return (b.deletedAt || 0) - (a.deletedAt || 0); });
+    if (cnt) cnt.textContent = list.length ? '(' + list.length + ')' : '';
+    if (list.length === 0) {
+      box.innerHTML = '<div style="color:var(--text-muted); font-size:13px; padding:8px 0;">回收站是空的</div>';
+      return;
+    }
+    box.innerHTML = list.map(function (t) {
+      const p = t.profile;
+      const name = p['姓名'] || '未填';
+      const info = [
+        p['性别'], p['年龄'] ? p['年龄'] + '岁' : '', p['国家/城市'], p['身高']
+      ].filter(Boolean).join(' · ');
+      const req = (p['要求'] || '').toString();
+      const reqShow = req ? (req.length > 40 ? escapeHtml(req.slice(0, 40)) + '…' : escapeHtml(req)) : '（无要求）';
+      const left = trashLeftText(t);
+      return '<div style="padding:8px 0; border-bottom:1px dashed var(--border);">' +
+        '<div style="font-size:13px; word-break:break-word;">' + escapeHtml(name) +
+        (info ? ' <span style="font-size:12px; color:var(--text-muted);">· ' + escapeHtml(info) + '</span>' : '') + '</div>' +
+        '<div style="font-size:12px; color:var(--text-muted); margin-top:2px;">要求：' + reqShow + '</div>' +
+        '<div style="font-size:12px; color:var(--text-muted); margin-top:2px;">' + left + '</div>' +
+        '<div style="display:flex; gap:8px; margin-top:6px;">' +
+        '<button class="btn btn-outline" style="font-size:11px; padding:4px 10px; color:#047857; border-color:#a7f3d0;" onclick="restoreProfileFromTrash(\'' + t.id + '\')">↩️ 恢复</button>' +
+        '<button class="btn btn-outline" style="font-size:11px; padding:4px 10px; color:var(--danger); border-color:#fca5a5;" onclick="purgeTrashProfile(\'' + t.id + '\')">🗑 彻底删除</button>' +
+        '</div></div>';
+    }).join('');
+  }
+
+  // 从回收站恢复一份嘉宾档案：整份放回 profiles（清掉 _deleted 标记），并从 trash 移除
+  async function restoreProfileFromTrash(trashId) {
+    if (__interactLock) return;
+    __interactLock = true;
+    try {
+      const ident = getCurrentIdentity();
+      const actorName = ident ? (ident.type === 'super' ? '超级管理员' : (ident.name || '内部管理员')) : '管理员';
+      await patchRemoteState(function (base) {
+        if (!Array.isArray(base.trash)) base.trash = [];
+        const idx = base.trash.findIndex(function (t) { return t.id === trashId; });
+        if (idx < 0) return;
+        const item = base.trash[idx];
+        if (item.type !== 'profile' || !item.profile) { base.trash.splice(idx, 1); return; }
+        const copy = JSON.parse(JSON.stringify(item.profile));
+        delete copy._deleted;
+        if (!Array.isArray(base.profiles)) base.profiles = [];
+        if (!base.profiles.some(function (x) { return String(x.id) === String(copy.id); })) {
+          base.profiles.push(copy);
+        }
+        base.trash.splice(idx, 1);
+        if (!Array.isArray(base.adminLogs)) base.adminLogs = [];
+        base.adminLogs.unshift({
+          time: Date.now(), actor: actorName, op: '恢复',
+          desc: '从回收站恢复档案「' + (copy['姓名'] || '未填') + '」'
+        });
+        if (base.adminLogs.length > 200) base.adminLogs.length = 200;
+      }, 'restore profile from trash ' + trashId);
+      refreshViews();
+      if (typeof renderAdminTrash === 'function') renderAdminTrash();
+      toast('↩️ 已恢复该嘉宾档案');
+    } catch (err) {
+      showAlert('❌ 恢复失败：' + err.message);
+    } finally {
+      __interactLock = false;
+    }
+  }
+
+  // 彻底删除回收站里的一份嘉宾档案（不可再恢复）
+  async function purgeTrashProfile(trashId) {
+    if (__interactLock) return;
+    __interactLock = true;
+    try {
+      const ident = getCurrentIdentity();
+      const actorName = ident ? (ident.type === 'super' ? '超级管理员' : (ident.name || '内部管理员')) : '管理员';
+      await patchRemoteState(function (base) {
+        if (!Array.isArray(base.trash)) base.trash = [];
+        const item = base.trash.find(function (t) { return t.id === trashId; });
+        base.trash = base.trash.filter(function (t) { return t.id !== trashId; });
+        if (!Array.isArray(base.adminLogs)) base.adminLogs = [];
+        base.adminLogs.unshift({
+          time: Date.now(), actor: actorName, op: '彻底删除',
+          desc: '彻底删除回收站档案「' + ((item && item.profile && (item.profile['姓名'] || '未填')) || '未知') + '」'
+        });
+        if (base.adminLogs.length > 200) base.adminLogs.length = 200;
+      }, 'purge trash profile ' + trashId);
+      if (typeof renderAdminTrash === 'function') renderAdminTrash();
+      toast('🗑️ 已彻底删除');
+    } catch (err) {
+      showAlert('❌ 操作失败：' + err.message);
+    } finally {
+      __interactLock = false;
+    }
+  }
+
   // 查看某注册用户在所有嘉宾下的全部留言（管理员视角：展示全部，含被封禁用户自己的留言）
   function openUserComments(uid) {
     const u = (appState.users || []).find(function (x) { return String(x.id) === String(uid); });
@@ -7646,7 +7752,10 @@
     const adminPanel = document.getElementById('adminPanel');
     if (adminPanel) {
       adminPanel.style.display = isAdmin ? 'block' : 'none';
-      if (isAdmin) updatePendingCount();
+      if (isAdmin) {
+        updatePendingCount();
+        if (typeof renderAdminTrash === 'function') renderAdminTrash();
+      }
     }
     if (!u) {
       if (needLogin) needLogin.style.display = isAdmin ? 'none' : 'block';
@@ -8828,31 +8937,50 @@
     }
   }
 
-  // 多选删除：把「嘉宾一览」里勾选的所有嘉宾一次性软删除并同步到服务端。
-  // 复用单删 deleteProfile 的软删除策略（标记 _deleted，由 mergeProfiles 合并时丢弃），
-  // 避免「直接本地删除数组 → 服务端旧副本在合并时把条目复活」的问题。
+  // 多选删除：把「嘉宾一览」里勾选的所有嘉宾整份移入「管理员回收站」（不再硬删），
+  // 原子增量保存，满 30 天自动消失；期内可在管理面板恢复。
   async function deleteSelectedGuests() {
     if (adminGuestSelected.size === 0) { toast('还没有选择任何嘉宾'); return; }
     if (!isSuper() && !isStaff()) { toast('仅管理员可删除嘉宾'); return; }
     const n = adminGuestSelected.size;
-    confirmAction(`确定要永久删除已勾选的 ${n} 位嘉宾吗？\n删除后无法恢复，所有访客都将看不到他们。`, async function () {
-      let removed = 0;
-      adminGuestSelected.forEach(function (k) {
-        const victim = appState.profiles.find(function (p) { return String(p.id) === k; });
-        if (victim) {
-          victim._deleted = true;     // 软删除：保留数组引用，服务端合并时真正移除
-          addAdminLog('批量删除', '删除嘉宾「' + (victim['姓名'] || '未填') + '」');
-          removed++;
-        }
-      });
+    confirmAction(`确定要删除已勾选的 ${n} 位嘉宾吗？\n删除后进入「管理员回收站」，30 天内可在管理面板恢复，到期自动消失。`, async function () {
+      const ident = getCurrentIdentity();
+      const actorName = ident ? (ident.type === 'super' ? '超级管理员' : (ident.name || '内部管理员')) : '管理员';
+      const actorId = (ident && ident.id) || 'admin';
+      let moved = 0;
+      const ids = Array.from(adminGuestSelected);
       try {
-        await saveToGitHub();
+        await patchRemoteState(function (base) {
+          if (!Array.isArray(base.profiles)) base.profiles = [];
+          if (!Array.isArray(base.trash)) base.trash = [];
+          if (!Array.isArray(base.adminLogs)) base.adminLogs = [];
+          const now = Date.now();
+          ids.forEach(function (k) {
+            const idx = base.profiles.findIndex(function (p) { return String(p.id) === k; });
+            if (idx < 0) return;
+            const copy = JSON.parse(JSON.stringify(base.profiles[idx]));
+            delete copy._deleted;
+            const nm = copy['姓名'] || '未填';
+            base.profiles.splice(idx, 1);
+            base.trash.push({
+              id: 'tp_' + now + '_' + Math.random().toString(36).slice(2, 8),
+              type: 'profile',
+              profile: copy,
+              deletedAt: now,
+              expireAt: now + TRASH_EXPIRE_DAYS * 86400000
+            });
+            base.adminLogs.unshift({ time: now, actor: actorName, op: '批量删除', desc: '删除嘉宾「' + nm + '」（进入管理员回收站）' });
+            moved++;
+          });
+          if (base.adminLogs.length > 200) base.adminLogs.length = 200;
+        }, 'batch delete profiles to trash');
         adminGuestSelected.clear();
         toggleModal('guestSelModal', false);
         refreshViews();           // 同时刷新管理视图与公共信息流
         if (adminMode === 'guests') renderGuestCards();
         updateGuestCount();
-        toast(`✅ 已删除 ${removed} 位嘉宾`);
+        if (typeof renderAdminTrash === 'function') renderAdminTrash();
+        toast(`✅ 已移入回收站 ${moved} 位嘉宾`);
       } catch (err) {
         showAlert('❌ 同步失败：' + err.message);
       }
@@ -9572,34 +9700,72 @@
     );
   }
 
+  // 删除一份嘉宾档案：不再硬删（此前 _deleted 软删会被 mergeProfiles 合并时丢弃，删完即永久消失无法找回）。
+  // 改为整份进入「管理员回收站」（type:'profile'），满 TRASH_EXPIRE_DAYS 天自动消失；期内管理员可恢复或彻底删除。
+  // 走 patchRemoteState 原子增量：在远端最新基线上同时「从 profiles 移除 + 写入 trash」，避免旧副本复活，也保证回收站落库。
   function deleteProfile(id) {
-    confirmAction("确定要删除这份嘉宾档案吗？", async () => {
+    confirmAction("确定要删除这份嘉宾档案吗？\n删除后进入「管理员回收站」，30 天内可在管理面板恢复，到期自动消失。", async () => {
       const victim = appState.profiles.find(p => p.id === id);
-      // 不本地删除副本：saveToGitHub 以服务端为基线合并会保留「仅服务端有」的条目，
-      // 直接删本地会被服务端旧副本「复活」（删除后刷新又出现）。改为标记软删除 _deleted，
-      // mergeProfiles 合并时丢弃该条目，从而真正从服务端移除。
-      const wasPending = victim && victim.status === 'pending';   // 拒绝的是待审核 = 审核未通过
-      const ownerUid = victim && victim.uploaderUid;              // 提交者账号（注册用户才有）
-      if (victim) victim._deleted = true;
-      addAdminLog('删除', '删除档案「' + ((victim && victim['姓名']) || '未填') + '」');
-      // 拒绝审核：通知提交用户重新填写（仅注册用户可收到站内信；游客提交无账号可通知）
-      if (wasPending && ownerUid) {
-        const actor = (getCurrentIdentity() || {}).name || '管理员';
-        pushNotification(
-          ownerUid, 'review', victim.id,
-          (getCurrentIdentity() || {}).id || 'admin', actor,
-          '您的资料未通过审核，请重新填写后再次提交 🙏'
-        );
-      }
+      if (!victim) return;
+      const wasPending = victim.status === 'pending';   // 拒绝的是待审核 = 审核未通过
+      const ownerUid = victim.uploaderUid;              // 提交者账号（注册用户才有）
+      const name = victim['姓名'] || '未填';
+      const ident = getCurrentIdentity();
+      const actorName = ident ? (ident.type === 'super' ? '超级管理员' : (ident.name || '内部管理员')) : '管理员';
+      const actorId = (ident && ident.id) || 'admin';
       try {
-        await saveToGitHub();
-        renderCards();
+        await patchRemoteState(function (base) {
+          if (!Array.isArray(base.profiles)) base.profiles = [];
+          const idx = base.profiles.findIndex(function (p) { return String(p.id) === String(id); });
+          if (idx < 0) return;
+          const copy = JSON.parse(JSON.stringify(base.profiles[idx]));
+          delete copy._deleted;   // 清掉任何历史软删标记，存进回收站的应是干净整份
+          base.profiles.splice(idx, 1);
+          if (!Array.isArray(base.trash)) base.trash = [];
+          const now = Date.now();
+          base.trash.push({
+            id: 'tp_' + now + '_' + Math.random().toString(36).slice(2, 8),
+            type: 'profile',
+            profile: copy,
+            deletedAt: now,
+            expireAt: now + TRASH_EXPIRE_DAYS * 86400000
+          });
+          // 拒绝审核：通知提交用户重新填写（仅注册用户可收到站内信；游客提交无账号可通知）
+          if (wasPending && ownerUid) {
+            if (!Array.isArray(base.notifications)) base.notifications = [];
+            const dup = base.notifications.find(function (n) {
+              return n.toUid === ownerUid && n.profileId === id && n.type === 'review' &&
+                n.actorUid === actorId && (Date.now() - n.time) < 86400000;
+            });
+            if (!dup) {
+              base.notifications.unshift({
+                id: Date.now() + Math.floor(Math.random() * 1000),
+                toUid: ownerUid, type: 'review', profileId: id,
+                actorUid: actorId, actorName: actorName,
+                text: '您的资料未通过审核，请重新填写后再次提交 🙏',
+                time: Date.now(), read: false
+              });
+              if (base.notifications.length > 500) base.notifications.length = 500;
+            }
+          }
+          // 管理操作记录（直接写进基线，随本次提交持久化）
+          if (!Array.isArray(base.adminLogs)) base.adminLogs = [];
+          base.adminLogs.unshift({
+            time: Date.now(),
+            actor: actorName,
+            op: '删除',
+            desc: '删除档案「' + name + '」（进入管理员回收站）'
+          });
+          if (base.adminLogs.length > 200) base.adminLogs.length = 200;
+        }, 'delete profile to trash ' + id);
+        refreshViews();
+        if (typeof renderAdminTrash === 'function') renderAdminTrash();
         toggleModal('detailModal', false);
-        showAlert(wasPending && ownerUid ? "✅ 已拒绝该资料，已通知提交用户重新填写。" : "✅ 档案已删除。");
+        showAlert(wasPending && ownerUid ? "✅ 已拒绝该资料并移入回收站，已通知提交用户重新填写。" : "✅ 档案已删除，已进入「管理员回收站」，30 天内可在管理面板恢复。");
       } catch (err) {
         showAlert("❌ 同步失败：" + err.message);
       }
-    });
+    }, '删除嘉宾档案');
   }
 
   // 重新渲染「当前可见视图」：管理员停在待审核/已隐藏/全部/注册用户标签时，
