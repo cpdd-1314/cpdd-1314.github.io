@@ -1899,6 +1899,11 @@
       <h3>💬 我的留言</h3>
       <div id="myCommentsSection"></div>
     </div>
+    <div class="profile-section">
+      <h3>🗑 回收站 <span id="trashCount" style="font-size:13px; color:var(--text-muted); font-weight:400;"></span></h3>
+      <div id="trashSection"></div>
+      <div style="font-size:11px; color:var(--text-muted); margin-top:6px; line-height:1.5;">删除的留言会先放在这里，30 天内可在回收站恢复，到期自动消失。</div>
+    </div>
     <button class="btn btn-outline" style="color:var(--danger); border-color:#fca5a5; width:100%;" onclick="logoutUser()">退出登录</button>
   </div>
 
@@ -2979,8 +2984,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.9.42';
+  const APP_VERSION = '6.9.43';
   const CHANGELOG = [
+    { v: '6.9.43', d: '2026-09-05', note: '新增<b>回收站</b>：用户删除自己的留言不再直接消失，而是先进「我的 → 回收站」，保留 <b>30 天</b>后自动从数据里消失；期内可「↩️ 恢复」放回原嘉宾、或「🗑 彻底删除」。每条显示「剩 X天Y小时消失」倒计时。管理员/内部管理员删除<b>别人</b>的留言仍直接真删（不进回收站）。回收站数据随 data.json 持久化，启动与每分钟定时清理到期项', type: 'feat' },
     { v: '6.9.42', d: '2026-09-03', note: '管理员嘉宾资料可<b>随时复制直达链接</b>（不只在审核通过后）：每张管理视图的嘉宾卡片右下角新增「🔗 复制」按钮，待审核 / 已隐藏 / 已公开状态均可一键复制该嘉宾的 ?guest= 直达链接，无需先审核、无需进详情弹窗（复制会阻止冒泡，不会误开详情）；详情弹窗右上角的「🔗 转发」原本就对任意状态可用，本次只是补齐卡片级快速复制', type: 'feat' },
     { v: '6.9.41', d: '2026-09-03', note: '修复弹窗被底部导航栏遮挡的问题：.modal-overlay 基础层级从 100 提升到 950，customDialog/wechatModal/groupModal/reportModal/reportAdminModal 层级提升到 960/970（均高于底栏 z-index:800）；打开任意弹窗时自动给 body 加 <b>nav-hidden</b> 把底栏收走，关闭最后一个弹窗后再恢复，避免弹窗里的图片/按钮/输入框被底栏盖住', type: 'fix' },
     { v: '6.9.40', d: '2026-09-03', note: '「我的」页移除「🌍 关于「全球找对象」」大段品牌介绍区块——该内容与底部「🌟 品牌介绍」弹窗同源，现已在「我的」页隐藏（页面更清爽、不再有玻璃模式下标题溢出卡片的视觉问题），品牌介绍仍可通过底部「🌟 品牌介绍」弹窗查看', type: 'fix' },
@@ -3502,7 +3508,8 @@
     submitLinks: [],     // 投稿链接 [{key:hash, maxUses, used, note, createdAt}]；访客须凭有效链接(?k=)才能提交
     codes: [],           // 金币兑换码 [{code, coins, maxUses, usedBy, usedList:[{uid,time}], usedAt, createdAt, createdBy}]；管理员生成、注册用户可兑换 maxUses 次
     redemptions: [],     // 红包兑换记录 [{id, payCode, uid, name, count, coins, amount, time, paid, paidAt}]；payCode 为领取凭证编码，paid 标记管理员是否已发放；1000 金币 = ¥0.01
-    reports: []          // 举报记录 [{id, profileId, reporterUid, reporterName, reason, detail, time, status}]；status: pending / resolved
+    reports: [],         // 举报记录 [{id, profileId, reporterUid, reporterName, reason, detail, time, status}]；status: pending / resolved
+    trash: []            // 回收站 [{id, type, profileId, deletedAt, expireAt, comment}]；用户删除的留言先进回收站，满 TRASH_EXPIRE_DAYS 天自动消失，期内可恢复
   };
 
   // 内置示例兜底：当取不到仓库 data.json（本地预览 / 分享链接 / 直接双击打开）时，
@@ -3874,6 +3881,8 @@
     out.redemptions = mergeByKey(base.redemptions, local.redemptions);
     // 举报记录：老数据里远端可能还没有 reports 字段，全量保存时会整段丢掉本地已提交的举报
     out.reports = mergeById(base.reports, local.reports);
+    // 回收站：追加型数据（只增不减、过期清理独立处理），保存时以本地为准，避免丢失刚移入的条目
+    if (Array.isArray(local.trash)) out.trash = local.trash;
     return out;
   }
   function mergeById(baseArr, localArr) {
@@ -3989,6 +3998,7 @@
     if (!Array.isArray(base.codes)) base.codes = appState.codes || [];
     if (!Array.isArray(base.redemptions)) base.redemptions = appState.redemptions || [];
     if (!Array.isArray(base.reports)) base.reports = appState.reports || [];
+    if (!Array.isArray(base.trash)) base.trash = appState.trash || [];
 
     const ret = patchFn(base);   // 在最新基线上打补丁
 
@@ -5168,6 +5178,7 @@
       if (Array.isArray(data.codes)) appState.codes = data.codes;
       if (Array.isArray(data.redemptions)) appState.redemptions = data.redemptions;
       if (Array.isArray(data.reports)) appState.reports = data.reports;
+      if (Array.isArray(data.trash)) appState.trash = data.trash;
       // 兼容老数据：v6.9.4 起的审核状态粘性依赖 statusUpdatedAt；旧资料没有该字段时
       // 退化成 createdAt 比较，并发合并可能把已通过的审核打回 pending。这里在加载时补默认时间戳。
       if (Array.isArray(appState.profiles)) {
@@ -5203,6 +5214,7 @@
     refreshUserUI();
     renderCoinBalance();   // 后台刷新数据后同步「我的金币」余额显示
     updateInboxBadge();
+    cleanupTrash();   // 启动后清理已到 30 天的回收站条目（异步，不阻塞渲染）
     // 底部 Tab 栏显示（首次访问即可见）
     const bottomTab = document.getElementById('bottomTab');
     if (bottomTab) bottomTab.style.display = 'flex';
@@ -5360,6 +5372,9 @@
     __syncTick(); // 立即同步一次，建立基准指纹
     if (__syncTimer) clearInterval(__syncTimer);
     __syncTimer = setInterval(__syncTick, 15000);
+    // 回收站：每分钟清理一次已到期的条目（满 30 天自动从数据里消失）
+    if (window.__trashTimer) clearInterval(window.__trashTimer);
+    window.__trashTimer = setInterval(cleanupTrash, 60000);
     // 页面从后台切回前台时立即同步一次
     document.addEventListener('visibilitychange', function () {
       if (!document.hidden) __syncTick();
@@ -6390,25 +6405,163 @@
   function deleteComment(profileId, commentId) {
     const item = appState.profiles.find(function(p) { return String(p.id) === String(profileId); });
     if (!item) return;
-    confirmAction('确定删除这条留言吗？', async () => {
+    const cu = getCurrentUser();
+    const byAdmin = isSuper() || isStaff();
+    const target = (item.comments || []).find(function(c) { return String(c.id) === String(commentId); });
+    const isMine = !!(cu && target && String(cu.id) === String(target.uid));
+    // 只把普通用户「自己」的留言移入回收站；管理员/内部管理员删除他人留言仍直接真删
+    const willTrash = isMine;
+    const tip = willTrash
+      ? '删除后这条留言会进入「回收站」，' + TRASH_EXPIRE_DAYS + ' 天内可在「我的 → 回收站」恢复，到期自动消失。'
+      : '确定删除这条留言吗？';
+    confirmAction(tip, async () => {
       if (__interactLock) return;
       __interactLock = true;
       try {
         await patchRemoteState(function(base) {
           const p = findProfileIn(base, profileId);
           if (!p || !Array.isArray(p.comments)) return;
-          p.comments = p.comments.filter(function(c) { return String(c.id) !== String(commentId); });
-        }, 'delete comment ' + commentId);
+          const c = p.comments.find(function(x) { return String(x.id) === String(commentId); });
+          p.comments = p.comments.filter(function(x) { return String(x.id) !== String(commentId); });
+          if (willTrash && c) {
+            if (!Array.isArray(base.trash)) base.trash = [];
+            const now = Date.now();
+            base.trash.push({
+              id: 't_' + now + '_' + Math.random().toString(36).slice(2, 8),
+              type: 'comment',
+              profileId: p.id,
+              deletedAt: now,
+              expireAt: now + TRASH_EXPIRE_DAYS * 86400000,
+              comment: c
+            });
+          }
+        }, willTrash ? 'trash comment ' + commentId : 'delete comment ' + commentId);
         const fresh = findProfileIn(appState, profileId) || item;
         renderComments(fresh);
         renderActionBar(fresh);
-        toast('🗑️ 留言已删除');
+        if (typeof renderTrashSection === 'function') renderTrashSection();
+        toast(willTrash ? '🗑️ 已移入回收站（' + TRASH_EXPIRE_DAYS + '天内可恢复）' : '🗑️ 留言已删除');
       } catch (err) {
         showAlert('❌ 删除失败：' + err.message);
       } finally {
         __interactLock = false;
       }
     });
+  }
+
+  // 回收站相关：用户删除的留言先进回收站，满 TRASH_EXPIRE_DAYS 天自动消失，期内可恢复
+  function trashLeftText(t) {
+    const left = (t.expireAt || 0) - Date.now();
+    if (left <= 0) return '即将消失';
+    const d = Math.floor(left / 86400000);
+    const h = Math.floor((left % 86400000) / 3600000);
+    const m = Math.floor((left % 3600000) / 60000);
+    if (d > 0) return '剩 ' + d + '天' + (h > 0 ? h + '小时' : '') + '消失';
+    if (h > 0) return '剩 ' + h + '小时' + (m > 0 ? m + '分' : '') + '消失';
+    return '剩 ' + m + '分钟消失';
+  }
+
+  // 渲染「我的 → 回收站」：仅显示当前登录用户自己删除、且未过期的留言
+  function renderTrashSection() {
+    const box = document.getElementById('trashSection');
+    if (!box) return;
+    const cnt = document.getElementById('trashCount');
+    const u = getCurrentUser();
+    const now = Date.now();
+    const list = (appState.trash || []).filter(function(t) {
+      return t.type === 'comment' && t.comment && String(t.comment.uid) === String(u && u.id) && (t.expireAt || 0) > now;
+    }).sort(function(a, b) { return (b.deletedAt || 0) - (a.deletedAt || 0); });
+    if (cnt) cnt.textContent = list.length ? '(' + list.length + ')' : '';
+    if (list.length === 0) {
+      box.innerHTML = '<div style="color:var(--text-muted); font-size:13px; padding:8px 0;">回收站是空的</div>';
+      return;
+    }
+    box.innerHTML = list.map(function(t) {
+      const c = t.comment;
+      const prof = findProfileIn(appState, t.profileId);
+      const pname = prof ? (prof['姓名'] || '未填') : '嘉宾';
+      const left = trashLeftText(t);
+      return '<div style="padding:8px 0; border-bottom:1px dashed var(--border);">' +
+        '<div style="font-size:12px; color:var(--text-muted);">在《' + escapeHtml(pname) + '》的留言 · ' + left + '</div>' +
+        '<div style="font-size:13px; word-break:break-word;">' + escapeHtml(c.text) + '</div>' +
+        '<div style="display:flex; gap:8px; margin-top:6px;">' +
+        '<button class="btn btn-outline" style="font-size:11px; padding:4px 10px; color:#047857; border-color:#a7f3d0;" onclick="restoreFromTrash(\'' + t.id + '\')">↩️ 恢复</button>' +
+        '<button class="btn btn-outline" style="font-size:11px; padding:4px 10px; color:var(--danger); border-color:#fca5a5;" onclick="purgeTrashItem(\'' + t.id + '\')">🗑 彻底删除</button>' +
+        '</div></div>';
+    }).join('');
+  }
+
+  // 从回收站恢复一条留言：放回原嘉宾评论列表，并从 trash 移除
+  async function restoreFromTrash(trashId) {
+    if (__interactLock) return;
+    __interactLock = true;
+    try {
+      await patchRemoteState(function(base) {
+        if (!Array.isArray(base.trash)) base.trash = [];
+        const idx = base.trash.findIndex(function(t) { return t.id === trashId; });
+        if (idx < 0) return;
+        const item = base.trash[idx];
+        const p = findProfileIn(base, item.profileId);
+        if (p) {
+          if (!Array.isArray(p.comments)) p.comments = [];
+          if (!p.comments.some(function(x) { return String(x.id) === String(item.comment.id); })) {
+            p.comments.push(item.comment);
+            p.comments.sort(function(a, b) { return (a.time || 0) - (b.time || 0); });
+          }
+        }
+        base.trash.splice(idx, 1);
+      }, 'restore from trash ' + trashId);
+      if (typeof renderTrashSection === 'function') renderTrashSection();
+      if (currentDetailId != null) {
+        const fresh = findProfileIn(appState, currentDetailId);
+        if (fresh) renderComments(fresh);
+      }
+      toast('↩️ 已恢复');
+    } catch (err) {
+      showAlert('❌ 恢复失败：' + err.message);
+    } finally {
+      __interactLock = false;
+    }
+  }
+
+  // 彻底删除回收站里的一条（不可再恢复）
+  async function purgeTrashItem(trashId) {
+    if (__interactLock) return;
+    __interactLock = true;
+    try {
+      await patchRemoteState(function(base) {
+        if (!Array.isArray(base.trash)) base.trash = [];
+        base.trash = base.trash.filter(function(t) { return t.id !== trashId; });
+      }, 'purge trash ' + trashId);
+      if (typeof renderTrashSection === 'function') renderTrashSection();
+      toast('🗑️ 已彻底删除');
+    } catch (err) {
+      showAlert('❌ 操作失败：' + err.message);
+    } finally {
+      __interactLock = false;
+    }
+  }
+
+  // 清理过期项：满 TRASH_EXPIRE_DAYS 天的 trash 条目真正从数据里消失。带锁防重入，无过期项不触发任何保存。
+  let __trashCleaning = false;
+  async function cleanupTrash() {
+    if (__trashCleaning) return;
+    if (!Array.isArray(appState.trash) || appState.trash.length === 0) return;
+    const now = Date.now();
+    const hasExpired = appState.trash.some(function(t) { return (t.expireAt || 0) < now; });
+    if (!hasExpired) return;
+    __trashCleaning = true;
+    try {
+      await patchRemoteState(function(base) {
+        if (!Array.isArray(base.trash)) base.trash = [];
+        base.trash = base.trash.filter(function(t) { return (t.expireAt || 0) >= now; });
+      }, 'cleanup expired trash');
+      if (typeof renderTrashSection === 'function') renderTrashSection();
+    } catch (e) {
+      // 清理失败静默：下次再试
+    } finally {
+      __trashCleaning = false;
+    }
   }
 
   // 查看某注册用户在所有嘉宾下的全部留言（管理员视角：展示全部，含被封禁用户自己的留言）
@@ -7067,6 +7220,7 @@
   const REDEEM_EXPIRE_DAYS = 7;
   // 兑换码有效期：自生成起 7 天，未兑换的到期即失效并自动消失
   const CODE_EXPIRE_DAYS = 7;
+  const TRASH_EXPIRE_DAYS = 30;   // 回收站保留天数：满 30 天后自动从数据里消失
   function isRedeemExpired(ts) {
     if (!ts) return false;
     return (Date.now() - ts) > REDEEM_EXPIRE_DAYS * 86400000;
@@ -7544,6 +7698,7 @@
       }).join('');
     renderCheckin();
     renderCoinBalance();   // 刷新「我的金币」余额，避免兑换/签到后卡在旧金额
+    renderTrashSection();  // 刷新回收站（仅登录用户可见该区块，未登录时区块不显示）
   }
 
   // 渲染"我发过的资料"列表（发布 tab 用）
