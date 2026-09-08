@@ -1157,6 +1157,54 @@
           "isMain": true
         }
       ]
+    },
+    {
+      "id": 1788874146541,
+      "姓名": "怡",
+      "性别": "女",
+      "性取向": "异性恋",
+      "国家/城市": "中国",
+      "生日": "20100523",
+      "年龄": "17",
+      "身高": "163",
+      "体重": "46kg",
+      "星座": "双子座",
+      "职业/学生": "学生",
+      "性格": "",
+      "兴趣爱好": "",
+      "生活习惯": "",
+      "要求": "真心",
+      "一句话介绍": "",
+      "updatedAt": 1788874146541,
+      "statusUpdatedAt": 1788874146541,
+      "uploadDate": "2026-09-08",
+      "createdAt": 1788874146541,
+      "isPinned": false,
+      "uploaderType": "user",
+      "uploaderName": "Lsland（小怡）",
+      "uploaderCode": "",
+      "uploaderUid": 1788873979765,
+      "status": "pending",
+      "profileNo": "A050",
+      "mediaList": [
+        {
+          "url": "./media/1788874147277_Screenshot_20260907_155632_com_hihonor_photos_SlotAlbumActivity.jpg",
+          "type": "image/jpeg",
+          "isMain": true
+        },
+        {
+          "url": "./media/1788874150488_synthesis_b7b2e032-63ef-444a-a1f8-5bffd618d5b7_image_save_local1786798706522_edit_3272504199295855.jpg",
+          "type": "image/jpeg"
+        },
+        {
+          "url": "./media/1788874154040_Screenshot_20260812_190501_com_hihonor_photos_SlotAlbumActivity.jpg",
+          "type": "image/jpeg"
+        },
+        {
+          "url": "./media/1788874161362_51949023656776646041779612974347_edit_3587860673078890.jpg",
+          "type": "image/jpeg"
+        }
+      ]
     }
   ],
   "staffs": [
@@ -1171,7 +1219,7 @@
       "password": "714956"
     }
   ],
-  "nextProfileNo": 50,
+  "nextProfileNo": 51,
   "version": "",
   "hideVersionInfo": false,
   "hiddenVersions": [
