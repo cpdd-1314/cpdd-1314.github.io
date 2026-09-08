@@ -1175,8 +1175,8 @@
       "生活习惯": "",
       "要求": "真心",
       "一句话介绍": "",
-      "updatedAt": 1788874146541,
-      "statusUpdatedAt": 1788874146541,
+      "updatedAt": 1788874441144,
+      "statusUpdatedAt": 1788874441144,
       "uploadDate": "2026-09-08",
       "createdAt": 1788874146541,
       "isPinned": false,
@@ -1184,7 +1184,7 @@
       "uploaderName": "Lsland（小怡）",
       "uploaderCode": "",
       "uploaderUid": 1788873979765,
-      "status": "pending",
+      "status": "approved",
       "profileNo": "A050",
       "mediaList": [
         {
@@ -1230,6 +1230,12 @@
     "6.1.0"
   ],
   "adminLogs": [
+    {
+      "time": 1788874441144,
+      "actor": "超级管理员",
+      "op": "审核",
+      "desc": "通过新嘉宾「怡」的审核，已公开显示"
+    },
     {
       "time": 1788784732256,
       "actor": "超级管理员",
