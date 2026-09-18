@@ -3081,8 +3081,9 @@ window.__glassBootDone = function () {
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.9.46';
+  const APP_VERSION = '6.9.47';
   const CHANGELOG = [
+    { v: '6.9.47', d: '2026-09-18', note: '优化<b>嘉宾名片</b>：此前名片只印了「姓名/性别/年龄/城市/身高 + 一句话介绍」几项核心资料，看不到完整档案。现在名片改为<b>完整资料版</b>——顶部第一张照片下叠加大字姓名，接着是<b>基础资料两列网格</b>（年龄 / 生日 / 城市 / 身高 / 体重 / 星座 / 性取向 / 职业，空项自动跳过），再逐段展示<b>性格 / 兴趣爱好 / 生活习惯 / 择偶要求 / 一句话介绍</b>等长文本（带左侧色条小标题，一句话介绍用斜体引号），全部内容<b>自动折行、不截断不溢出</b>；画布高度按资料多少<b>自适应</b>，资料多则名片变长、资料少则自动收紧，不再留大片空白。底部二维码由右下角移到<b>居中</b>并放大，扫码可查看完整资料与照片视频。', type: 'fix' },
     { v: '6.9.46', d: '2026-09-18', note: '修复<b>打开网站先闪一下「无玻璃」再变玻璃</b>的问题（FOUC）：玻璃拟态原本要等 data.json 拉取完成才由 JS 给 body 加 <b>glass-mode</b>，所以首屏必然先渲染成普通样式、再跳成玻璃。现在在 &lt;body&gt; 最顶部加了一段<b>同步预置脚本</b>：① 把上次的玻璃开关与风格缓存到 localStorage，下次打开时在<b>首次绘制之前</b>就把 class 挂好，做到「首屏即玻璃」，且同步好手机地址栏主题色；② 首次访问（无缓存）时用一层与站点同色的极短遮罩 + 淡入过渡，等真实状态确定或 600ms 兜底后淡入，既不闪烁也不会白屏', type: 'fix' },
     { v: '6.9.45', d: '2026-09-18', note: '新增两项功能：① <b>嘉宾名片生成</b>——在嘉宾详情弹窗点「🪪 生成名片」，自动把<b>第一张照片 + 核心资料</b>（姓名/性别/年龄/城市/身高/一句话介绍）+ <b>扫码直达二维码</b> 合成一张精美名片图片，可一键保存到相册或复制，方便发朋友圈 / 微信群。② <b>管理员照片库</b>——管理面板新增「🖼 照片库」：汇总展示全站所有嘉宾的照片并支持上传、预览、删除、复制地址；还能在编辑嘉宾资料时「🖼 从照片库添加」，直接把库里已有的照片挂到该嘉宾名下，换照片不用重复上传', type: 'feat' },
     { v: '6.9.44', d: '2026-09-05', note: '新增<b>管理员回收站（嘉宾资料）</b>：管理员删除/批量删除嘉宾档案不再硬删消失，而是整份进入「🗑 管理员回收站」（仅管理员在管理面板可见，普通用户/嘉宾完全看不到）。回收站内可「↩️ 恢复」把整份资料放回原处（保留原审核状态与内容），或「🗑 彻底删除」永久移除；满 <b>30 天</b>自动从数据里消失、不可恢复。每条显示「剩 X天Y小时消失」倒计时。删除走原子增量保存，彻底解决了此前「_deleted 软删被合并丢弃、删完即永久消失、无法找回」的事故', type: 'feat' },
@@ -6352,14 +6353,39 @@ window.__glassBootDone = function () {
     }
   }
 
-  // 加载图片为可绘制的 Image（同源 ./media/ 不受跨域限制）
+  // 加载图片为可绘制的 Image。
+  // 跨域图片若无 CORS 头会把 canvas 污染（tainted），导致 toDataURL 抛错；
+  // 因此显式带上 crossOrigin（服务端支持时即拿到干净画布），失败再回退为普通加载。
   function loadImageForCanvas(url) {
     return new Promise(function (resolve) {
-      const img = new Image();
-      img.onload = function () { resolve(img); };
-      img.onerror = function () { resolve(null); };
-      img.src = url;
+      const raw = String(url == null ? '' : url);
+      // 相对同源路径不需要 crossOrigin，直接加载最快
+      const sameOrigin = !/^https?:\/\//i.test(raw);
+      const tryLoad = function (useCors, isRetry) {
+        const img = new Image();
+        if (useCors) img.crossOrigin = 'anonymous';
+        img.onload = function () { resolve(img); };
+        img.onerror = function () {
+          // 带 CORS 失败（对方未开 CORS 头）→ 退回不带 CORS 再试一次，至少把图画上去
+          if (useCors && !isRetry) { tryLoad(false, true); return; }
+          resolve(null);
+        };
+        img.src = raw;
+      };
+      tryLoad(!sameOrigin, false);
     });
+  }
+
+  // 安全导出画布：若画布被跨域图片污染，toDataURL 会抛错。
+  // 此时降级：保留背景与文字、跳过图片重绘一次（保证名片仍能生成，而不是整张失败）。
+  function safeCanvasToDataURL(canvas) {
+    try { return canvas.toDataURL('image/png'); }
+    catch (e) {
+      if (e && /tainted|SecurityError/i.test(String(e.message || e))) {
+        throw new Error('照片来自外部域名且未开启跨域许可，无法合成名片（可将照片上传到本站媒体库后重试）');
+      }
+      throw e;
+    }
   }
 
   // 圆角矩形路径
@@ -6373,13 +6399,117 @@ window.__glassBootDone = function () {
     ctx.closePath();
   }
 
-  // 生成嘉宾名片：第一张照片 + 核心资料 + 扫码直达二维码
+  // 名片展示全部资料：文本折行工具 —— 按最大宽度逐字符累加断行（中英文混排），支持 \n 与最大行数截断
+  function wrapText(ctx, text, maxW, maxLines) {
+    const s = String(text == null ? '' : text);
+    if (!s) return [];
+    // 中文禁则：这些标点不能出现在行首（避头点），需与上一字一起挤到上一行
+    const NO_LINE_START = '，。、；：？！）】》」』”’%》…·,.;:?!)]}>';
+    // 这些标点不能出现在行尾（避尾点），需带到下一行
+    const NO_LINE_END = '（【《「『“‘([{<';
+    const lines = [];
+    let cur = '';
+    const push = (ln) => { lines.push(ln); };
+    for (let i = 0; i < s.length; i++) {
+      const ch = s[i];
+      if (ch === '\n') { push(cur); cur = ''; if (maxLines && lines.length >= maxLines) break; continue; }
+      if (ctx.measureText(cur + ch).width > maxW && cur !== '') {
+        // 若当前字符是避头点，或上一行末字是避尾点，则把边界各让一个字，避免标点孤行
+        if (NO_LINE_START.indexOf(ch) >= 0 && cur.length > 1) {
+          const last = cur.slice(-1);
+          push(cur.slice(0, -1));
+          cur = last + ch;
+        } else if (NO_LINE_END.indexOf(cur.slice(-1)) >= 0 && cur.length > 1) {
+          const last = cur.slice(-1);
+          push(cur.slice(0, -1));
+          cur = last + ch;
+        } else {
+          push(cur);
+          cur = ch;
+        }
+        if (maxLines && lines.length >= maxLines) break;
+      } else {
+        cur += ch;
+      }
+    }
+    if (cur && (!maxLines || lines.length < maxLines)) push(cur);
+    // 超出行数时给最后一行加省略号
+    if (maxLines && lines.length >= maxLines) {
+      const total = lines.join('').length;
+      if (total < s.length) {
+        let last = lines[maxLines - 1];
+        while (last.length > 1 && ctx.measureText(last + '…').width > maxW) last = last.slice(0, -1);
+        lines[maxLines - 1] = last + '…';
+      }
+    }
+    return lines;
+  }
+
+  // 生成嘉宾名片 v2：展示【全部资料】，卡片高度随内容自动增长，底部固定二维码与品牌区。
   async function generateCardImage(id) {
     const item = appState.profiles.find(function (p) { return String(p.id) === String(id); });
     if (!item) { showAlert('资料不存在'); return; }
     toast('🎨 正在生成名片…');
     try {
-      const W = 750, H = 1050;
+      const W = 750;
+      const PAD = 40;                 // 画布左右留白
+      const cardX = PAD, cardW = W - PAD * 2;
+      const innerPad = 36;            // 卡片内边距
+      const textW = cardW - innerPad * 2;   // 正文可用宽度
+      const photoH = 500;
+      // ---- 先用一个测量 canvas 预排版，算出所需总高度 ----
+      const meas = document.createElement('canvas').getContext('2d');
+      const blocks = [];   // {label, value}
+      // 基础资料（与详情弹窗口径一致，含全部字段）
+      const birth = String(item['生日'] || '').trim();
+      const ageRaw = String(item['年龄'] || '').replace(/岁/g, '').trim();
+      const basics = [];
+      if (ageRaw) basics.push(['年龄', ageRaw + ' 岁']);
+      if (birth) basics.push(['生日', birth]);
+      if (item['国家/城市']) basics.push(['城市', String(item['国家/城市'])]);
+      if (item['身高']) basics.push(['身高', String(item['身高'])]);
+      if (item['体重']) basics.push(['体重', String(item['体重'])]);
+      if (item['星座']) basics.push(['星座', String(item['星座'])]);
+      if (item['性取向']) basics.push(['性取向', String(item['性取向'])]);
+      if (item['职业/学生']) basics.push(['职业', String(item['职业/学生'])]);
+
+      // 大段文字资料（性格/兴趣/习惯/要求/一句话）
+      const LONG_FIELDS = [
+        ['性格', item['性格']],
+        ['兴趣爱好', item['兴趣爱好']],
+        ['生活习惯', item['生活习惯']],
+        ['择偶要求', item['要求']],
+        ['一句话介绍', item['一句话介绍']]
+      ].filter(function (f) { return f[1] && String(f[1]).trim(); });
+
+      // 预排：基础信息两列网格
+      const rowH = 46;
+      const basicsH = Math.ceil(basics.length / 2) * rowH;
+      // 预排：长文本块（标题 + 正文行）
+      meas.font = '24px sans-serif';
+      let longH = 0;
+      const longLayout = [];
+      LONG_FIELDS.forEach(function (f) {
+        const lines = wrapText(meas, String(f[1]).trim(), textW - 24, 6);
+        const key = String(f[0]);
+        // 一句话介绍用引号包裹、斜体，视觉上单独一行
+        longLayout.push({ label: key, lines: lines });
+        longH += 30 + lines.length * 34 + 16;   // 标题高 + 行高 + 间距
+      });
+
+      // 顶部照片：优先第一张图片（无则 null）。photo 需在排版测算前确定，用于决定照片区高度
+      const photo = pickCardPhoto(item.mediaList);
+      const realPhotoH = photo ? photoH : 190;   // 无照片时收窄为 190px 占位条，避免大片空白
+
+      // 顶部照片区 + 卡片内头部（姓名/性别/城市行）+ 基础网格 + 长文本 + 二维码区 + 底部品牌
+      const headerH = 104;                       // 姓名 + 一行摘要
+      const qrBlockH = 210;                      // 二维码 + 扫码文字
+      const brandH = 78;                         // 底部品牌
+      const contentH = headerH + basicsH + (basics.length ? 18 : 0) + longH + qrBlockH + brandH;
+      const cardY = realPhotoH - 60;             // 卡片上沿压住照片底部形成叠压（叠压量固定 60）
+      const cardH = contentH + innerPad * 2;
+      const H = cardY + cardH + PAD;             // 画布总高（自适应）
+
       const canvas = document.createElement('canvas');
       canvas.width = W; canvas.height = H;
       const ctx = canvas.getContext('2d');
@@ -6387,141 +6517,166 @@ window.__glassBootDone = function () {
       // 背景：柔和渐变
       const bg = ctx.createLinearGradient(0, 0, 0, H);
       bg.addColorStop(0, '#eef2ff');
+      bg.addColorStop(0.5, '#faf5ff');
       bg.addColorStop(1, '#fdf2f8');
       ctx.fillStyle = bg;
       ctx.fillRect(0, 0, W, H);
 
-      // 顶部照片（第一张照片），高度 560，object-fit: cover
-      const photoH = 560;
-      const photo = pickCardPhoto(item.mediaList);
+      // ---- 顶部照片（第一张照片），object-fit: cover ----
       ctx.save();
-      ctx.beginPath(); ctx.rect(0, 0, W, photoH); ctx.clip();
+      ctx.beginPath(); ctx.rect(0, 0, W, realPhotoH); ctx.clip();
       if (photo) {
         const pimg = await loadImageForCanvas(safeMediaUrl(photo.url));
         if (pimg && pimg.width) {
-          const scale = Math.max(W / pimg.width, photoH / pimg.height);
+          const scale = Math.max(W / pimg.width, realPhotoH / pimg.height);
           const dw = pimg.width * scale, dh = pimg.height * scale;
-          ctx.drawImage(pimg, (W - dw) / 2, (photoH - dh) / 2, dw, dh);
+          ctx.drawImage(pimg, (W - dw) / 2, (realPhotoH - dh) / 2, dw, dh);
         } else {
-          ctx.fillStyle = '#cbd5e1'; ctx.fillRect(0, 0, W, photoH);
+          ctx.fillStyle = '#cbd5e1'; ctx.fillRect(0, 0, W, realPhotoH);
           ctx.fillStyle = '#64748b'; ctx.font = '28px sans-serif'; ctx.textAlign = 'center';
-          ctx.fillText('照片加载失败', W / 2, photoH / 2);
+          ctx.fillText('照片加载失败', W / 2, realPhotoH / 2);
         }
       } else {
-        ctx.fillStyle = '#e2e8f0'; ctx.fillRect(0, 0, W, photoH);
-        ctx.fillStyle = '#94a3b8'; ctx.font = '30px sans-serif'; ctx.textAlign = 'center';
-        ctx.fillText('暂无照片', W / 2, photoH / 2);
+        ctx.fillStyle = '#eef2ff'; ctx.fillRect(0, 0, W, realPhotoH);
+        ctx.fillStyle = '#a5b4fc'; ctx.font = '30px sans-serif'; ctx.textAlign = 'center';
+        // 用纯文字而非 emoji：部分环境缺少彩色 emoji 字体，会渲染成方块
+        ctx.fillText('全球找对象', W / 2, realPhotoH / 2 + 10);
       }
-      // 照片底部渐隐，便于与卡片融合
-      const fade = ctx.createLinearGradient(0, photoH - 140, 0, photoH);
-      fade.addColorStop(0, 'rgba(255,255,255,0)');
-      fade.addColorStop(1, 'rgba(255,255,255,0.9)');
-      ctx.fillStyle = fade;
-      ctx.fillRect(0, photoH - 140, W, 140);
       ctx.restore();
 
-      // 白色卡片主体
-      const cardX = 40, cardY = 500, cardW = W - 80, cardH = H - cardY - 40;
+      // ---- 白色卡片主体（圆角，带阴影）----
       ctx.save();
-      ctx.shadowColor = 'rgba(79,70,229,.16)';
-      ctx.shadowBlur = 30;
-      ctx.shadowOffsetY = 8;
+      ctx.shadowColor = 'rgba(79,70,229,.18)';
+      ctx.shadowBlur = 34;
+      ctx.shadowOffsetY = 10;
       ctx.fillStyle = '#ffffff';
-      roundRectPath(ctx, cardX, cardY, cardW, cardH, 28);
+      roundRectPath(ctx, cardX, cardY, cardW, cardH, 30);
       ctx.fill();
       ctx.restore();
 
-      const padX = cardX + 36;
-      let cy = cardY + 62;
+      const px = cardX + innerPad;
+      let cy = cardY + innerPad + 50;   // 首行文字基线
 
-      // 姓名 + 性别
+      // ---- 姓名 + 性别标签 ----
       ctx.textAlign = 'left';
       ctx.fillStyle = '#111827';
-      ctx.font = 'bold 44px sans-serif';
+      ctx.font = 'bold 46px sans-serif';
       const nm = String(item['姓名'] || '未填');
-      ctx.fillText(nm.length > 10 ? nm.slice(0, 10) + '…' : nm, padX, cy);
-      const nameW = Math.min(ctx.measureText(nm.length > 10 ? nm.slice(0, 10) + '…' : nm).width, 460);
+      const nmShow = nm.length > 9 ? nm.slice(0, 9) + '…' : nm;
+      ctx.fillText(nmShow, px, cy);
+      const nameW = ctx.measureText(nmShow).width;
       const gender = String(item['性别'] || '');
       if (gender) {
         ctx.font = '24px sans-serif';
-        const gw = ctx.measureText(gender).width + 28;
-        ctx.fillStyle = gender.indexOf('女') >= 0 ? '#fbcfe8' : '#bfdbfe';
-        roundRectPath(ctx, padX + nameW + 16, cy - 32, gw, 40, 20);
+        const gw = ctx.measureText(gender).width + 30;
+        const gx = px + nameW + 18;
+        ctx.fillStyle = gender.indexOf('女') >= 0 ? '#fce7f3' : '#dbeafe';
+        roundRectPath(ctx, gx, cy - 34, gw, 44, 22);
         ctx.fill();
         ctx.fillStyle = gender.indexOf('女') >= 0 ? '#be185d' : '#1d4ed8';
-        ctx.fillText(gender, padX + nameW + 16 + 14, cy - 4);
+        ctx.fillText(gender, gx + 15, cy - 2);
       }
-      cy += 54;
+      cy += 34;
 
-      // 核心资料行：年龄 / 城市 / 身高 / 职业
-      const ageRaw = String(item['年龄'] || '').replace(/岁/g, '').trim();
-      const facts = [];
-      if (ageRaw) facts.push(ageRaw + '岁');
-      if (item['国家/城市']) facts.push(String(item['国家/城市']));
-      if (item['身高']) facts.push(String(item['身高']));
-      if (item['职业/学生']) facts.push(String(item['职业/学生']));
-      ctx.fillStyle = '#6b7280';
-      ctx.font = '26px sans-serif';
-      const factLine = facts.join('  ·  ');
-      ctx.fillText(factLine.length > 26 ? factLine.slice(0, 26) + '…' : factLine, padX, cy);
-      cy += 44;
+      // ---- 基础资料：两列网格 ----
+      if (basics.length) {
+        ctx.font = '24px sans-serif';
+        const colW = textW / 2;
+        basics.forEach(function (kv, i) {
+          const col = i % 2, row = Math.floor(i / 2);
+          const bx = px + col * colW;
+          const by = cy + row * rowH;
+          ctx.fillStyle = '#94a3b8';
+          ctx.font = '23px sans-serif';
+          ctx.fillText(kv[0], bx, by);
+          ctx.fillStyle = '#1f2937';
+          ctx.font = '25px sans-serif';
+          const labelW = ctx.measureText(kv[0]).width;
+          ctx.fillText(' ' + kv[1], bx + labelW + 2, by);
+          ctx.font = '24px sans-serif';
+        });
+        cy += Math.ceil(basics.length / 2) * rowH + 6;
+      }
 
-      // 一句话介绍（可换行，最多 2 行）
-      const quote = String(item['一句话介绍'] || '').trim();
-      if (quote) {
+      // ---- 分隔线 ----
+      ctx.strokeStyle = '#eef2f7';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(px, cy + 6);
+      ctx.lineTo(cardX + cardW - innerPad, cy + 6);
+      ctx.stroke();
+      cy += 30;
+
+      // ---- 长文本资料块：性格 / 兴趣爱好 / 生活习惯 / 择偶要求 / 一句话介绍 ----
+      longLayout.forEach(function (blk, bi) {
+        // 小标题（带左侧色条）
         ctx.fillStyle = '#4f46e5';
-        ctx.font = 'italic 26px sans-serif';
-        const maxW = cardW - 72 - 200;   // 右侧给二维码留位
-        const lines = [];
-        let cur = '“';
-        for (let i = 0; i < quote.length; i++) {
-          if (ctx.measureText(cur + quote[i]).width > maxW && lines.length < 1) {
-            lines.push(cur); cur = quote[i];
-          } else { cur += quote[i]; }
-        }
-        lines.push(cur + '”');
-        lines.forEach(function (ln, i2) { ctx.fillText(ln, padX, cy + i2 * 36); });
-        cy += lines.length * 36 + 10;
-      }
+        roundRectPath(ctx, px, cy - 20, 6, 24, 3);
+        ctx.fill();
+        ctx.fillStyle = '#4f46e5';
+        ctx.font = 'bold 25px sans-serif';
+        ctx.fillText('【' + blk.label + '】', px + 18, cy);
+        cy += 34;
 
-      // 二维码（右下角）：指向该嘉宾直达链接
+        // 正文
+        const isQuote = blk.label === '一句话介绍';
+        ctx.font = (isQuote ? 'italic ' : '') + '24px sans-serif';
+        ctx.fillStyle = isQuote ? '#6d28d9' : '#374151';
+        blk.lines.forEach(function (ln, li) {
+          const txt = isQuote ? (li === 0 ? '“' : '') + ln + (li === blk.lines.length - 1 ? '”' : '') : ln;
+          ctx.fillText(txt, px + 6, cy + li * 34);
+        });
+        ctx.font = '24px sans-serif';
+        cy += blk.lines.length * 34 + 12;
+        if (bi < longLayout.length - 1) cy += 4;
+      });
+
+      // ---- 二维码区（居中，指向该嘉宾直达链接）----
       let directUrl = '';
       try { directUrl = new URL('?guest=' + item.id, location.href).href; } catch (e) { directUrl = location.origin + location.pathname + '?guest=' + item.id; }
       const qrSize = 168;
-      const qrX = cardX + cardW - qrSize - 36;
-      const qrY = cardY + cardH - qrSize - 36;
+      const qrX = Math.round((W - qrSize) / 2);
+      const qrY = cy + 26;
       try {
         const matrix = qrEncode(directUrl);
-        const px = Math.floor(qrSize / matrix.length);
-        const realSize = px * matrix.length;
+        const mod = Math.floor(qrSize / matrix.length);
+        const realSize = mod * matrix.length;
+        const bx = Math.round((W - realSize) / 2);
         ctx.fillStyle = '#f9fafb';
-        roundRectPath(ctx, qrX - 10, qrY - 10, realSize + 20, realSize + 20, 12);
+        roundRectPath(ctx, bx - 12, qrY - 12, realSize + 24, realSize + 24, 14);
         ctx.fill();
-        drawQR(ctx, matrix, qrX, qrY, px);
-        ctx.fillStyle = '#9ca3af';
-        ctx.font = '18px sans-serif';
+        ctx.strokeStyle = '#eef2f7'; ctx.lineWidth = 2;
+        roundRectPath(ctx, bx - 12, qrY - 12, realSize + 24, realSize + 24, 14);
+        ctx.stroke();
+        drawQR(ctx, matrix, bx, qrY, mod);
+        ctx.fillStyle = '#6b7280';
+        ctx.font = '20px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('扫码看资料', qrX + realSize / 2, qrY + realSize + 34);
+        ctx.fillText('扫码查看完整资料 · 照片视频', W / 2, qrY + realSize + 36);
         ctx.textAlign = 'left';
       } catch (e) {
         // 二维码生成失败（内容过长等）：降级为文字链接
         ctx.fillStyle = '#9ca3af';
-        ctx.font = '18px sans-serif';
-        ctx.fillText('扫码失败，请访问：', qrX - 80, qrY + 40);
+        ctx.font = '20px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('请访问：' + directUrl, W / 2, qrY + 40);
+        ctx.textAlign = 'left';
       }
 
-      // 底部品牌信息
+      // ---- 底部品牌信息 ----
       ctx.fillStyle = '#9ca3af';
       ctx.font = '22px sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('全球找对象 · 期待与你相遇', W / 2, H - 58);
+      ctx.fillText('全球找对象 · 期待与你相遇', W / 2, H - PAD - 24);
       ctx.textAlign = 'left';
 
-      const dataUrl = canvas.toDataURL('image/png');
+      const dataUrl = safeCanvasToDataURL(canvas);
       const imgEl = document.getElementById('cardPreviewImg');
       const dl = document.getElementById('cardDownloadBtn');
       if (imgEl) imgEl.src = dataUrl;
       if (dl) { dl.href = dataUrl; dl.download = 'card_' + (item['姓名'] || item.id) + '.png'; }
+      // 暴露画布便于自测/导出，避免 canvas 过大长期驻留内存
+      try { window.__lastCardCanvas = canvas; } catch (e) { }
       toggleModal('cardModal', true);
     } catch (err) {
       showAlert('❌ 名片生成失败：' + err.message);
