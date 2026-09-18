@@ -48,6 +48,11 @@
       padding: 24px 16px 80px;
       line-height: 1.5;
     }
+    /* 首屏防闪：仅「首次访问且无玻璃状态缓存」时挂上，短暂遮住页面（背景色与站点一致，不突兀），
+       等真实玻璃开关到达（或 600ms 兜底超时）后淡入。有缓存时不会触发，故正常访问无任何延迟。 */
+    body.glass-boot { visibility: hidden; }
+    body.glass-boot-ready { visibility: visible; animation: glassBootIn .28s ease both; }
+    @keyframes glassBootIn { from { opacity: .35; } to { opacity: 1; } }
     @media (max-width: 768px) { body { padding: 16px 12px 72px; } }
     .container { max-width: 1100px; margin: 0 auto; }
 
@@ -1711,6 +1716,57 @@
 </head>
 <body>
 
+<!-- 首屏玻璃拟态预置脚本（必须最早执行）：
+     本站样式是「服务端下发 glassMode 后再由 JS 加 body.glass-mode」，
+     原来要等 data.json 拉取完成才生效，导致打开网站先闪现一段「无玻璃」样式再跳成玻璃（FOUC 闪烁）。
+     这里在首次绘制前，用上一次缓存的开关状态同步把 class 挂上，做到「首屏即玻璃」；
+     等真实数据到达后由 applyGlassMode() 校正，若非玻璃模式再移除，避免误判。 -->
+<script>
+(function () {
+  var THEMES = ['default', 'aurora', 'sunset', 'forest', 'cyber', 'invincible'];
+  var COLORS = { default: '#eef2ff', aurora: '#e0f2fe', sunset: '#fff7ed', forest: '#f0fdf4', cyber: '#ecfeff', invincible: '#f1f5f9' };
+  var cached = null;
+  try { cached = localStorage.getItem('glass_mode_cache'); } catch (e) {}
+  var b = document.body;
+  if (!b) return;
+
+  // 有缓存：立即按缓存套用，首屏直接是对的样式（无闪烁）
+  if (cached === '1' || cached === '0') {
+    var theme = 'default';
+    try { theme = localStorage.getItem('glass_theme_cache'); } catch (e) {}
+    if (THEMES.indexOf(theme) < 0) theme = 'default';
+    if (cached === '1') {
+      b.classList.add('glass-mode');
+      b.classList.add('glass-theme-' + theme);
+      var meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) meta.setAttribute('content', COLORS[theme] || '#eef2ff');
+    }
+    return;
+  }
+
+  // 无缓存（首次访问）：无法预知玻璃状态，直接显示会闪一下。
+  // 这里给 body 加一个短暂遮罩，等真实数据到达（applyGlassMode 会调 __glassBootDone）
+  // 或 600ms 兜底超时后再淡入，兼顾「不闪」与「绝不白屏」。
+  b.classList.add('glass-boot');
+  window.__glassBootTimer = setTimeout(function () { window.__glassBootDone && window.__glassBootDone(); }, 600);
+})();
+
+// 预置脚本定义的收尾函数：真实玻璃状态确定后（或超时）淡入页面
+window.__glassBootDone = function () {
+  try {
+    // 用 != null 判断（而非真值判断）：定时器 id 在部分环境下可能为 0，
+    // 用 if (id) 会漏清，导致兜底回调仍会在超时后跑一次。
+    if (window.__glassBootTimer != null) { clearTimeout(window.__glassBootTimer); window.__glassBootTimer = null; }
+    var b = document.body;
+    if (!b || !b.classList.contains('glass-boot')) return;
+    b.classList.remove('glass-boot');
+    b.classList.add('glass-boot-ready');
+    // 淡入结束后清理，避免残留 transition 影响后续交互
+    setTimeout(function () { try { b.classList.remove('glass-boot-ready'); } catch (e) {} }, 320);
+  } catch (e) {}
+};
+</script>
+
 <!-- 玻璃拟态背景层（仅管理员开启后显示） -->
 <div id="glassBg" aria-hidden="true">
   <div class="glass-blob b1"></div>
@@ -3025,8 +3081,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.9.45';
+  const APP_VERSION = '6.9.46';
   const CHANGELOG = [
+    { v: '6.9.46', d: '2026-09-18', note: '修复<b>打开网站先闪一下「无玻璃」再变玻璃</b>的问题（FOUC）：玻璃拟态原本要等 data.json 拉取完成才由 JS 给 body 加 <b>glass-mode</b>，所以首屏必然先渲染成普通样式、再跳成玻璃。现在在 &lt;body&gt; 最顶部加了一段<b>同步预置脚本</b>：① 把上次的玻璃开关与风格缓存到 localStorage，下次打开时在<b>首次绘制之前</b>就把 class 挂好，做到「首屏即玻璃」，且同步好手机地址栏主题色；② 首次访问（无缓存）时用一层与站点同色的极短遮罩 + 淡入过渡，等真实状态确定或 600ms 兜底后淡入，既不闪烁也不会白屏', type: 'fix' },
     { v: '6.9.45', d: '2026-09-18', note: '新增两项功能：① <b>嘉宾名片生成</b>——在嘉宾详情弹窗点「🪪 生成名片」，自动把<b>第一张照片 + 核心资料</b>（姓名/性别/年龄/城市/身高/一句话介绍）+ <b>扫码直达二维码</b> 合成一张精美名片图片，可一键保存到相册或复制，方便发朋友圈 / 微信群。② <b>管理员照片库</b>——管理面板新增「🖼 照片库」：汇总展示全站所有嘉宾的照片并支持上传、预览、删除、复制地址；还能在编辑嘉宾资料时「🖼 从照片库添加」，直接把库里已有的照片挂到该嘉宾名下，换照片不用重复上传', type: 'feat' },
     { v: '6.9.44', d: '2026-09-05', note: '新增<b>管理员回收站（嘉宾资料）</b>：管理员删除/批量删除嘉宾档案不再硬删消失，而是整份进入「🗑 管理员回收站」（仅管理员在管理面板可见，普通用户/嘉宾完全看不到）。回收站内可「↩️ 恢复」把整份资料放回原处（保留原审核状态与内容），或「🗑 彻底删除」永久移除；满 <b>30 天</b>自动从数据里消失、不可恢复。每条显示「剩 X天Y小时消失」倒计时。删除走原子增量保存，彻底解决了此前「_deleted 软删被合并丢弃、删完即永久消失、无法找回」的事故', type: 'feat' },
     { v: '6.9.43', d: '2026-09-05', note: '新增<b>回收站</b>：用户删除自己的留言不再直接消失，而是先进「我的 → 回收站」，保留 <b>30 天</b>后自动从数据里消失；期内可「↩️ 恢复」放回原嘉宾、或「🗑 彻底删除」。每条显示「剩 X天Y小时消失」倒计时。管理员/内部管理员删除<b>别人</b>的留言仍直接真删（不进回收站）。回收站数据随 data.json 持久化，启动与每分钟定时清理到期项', type: 'feat' },
@@ -4231,6 +4288,12 @@
     const on = isGlassMode();
     document.body.classList.toggle('glass-mode', on);
     applyGlassTheme();
+    // 缓存开关与风格到 localStorage：下次打开时可被 <body> 顶部的预置脚本
+    // 在首次绘制前同步读取，实现「首屏即玻璃」，消除先无玻璃再变玻璃的闪烁（FOUC）。
+    try {
+      localStorage.setItem('glass_mode_cache', on ? '1' : '0');
+      localStorage.setItem('glass_theme_cache', currentGlassTheme());
+    } catch (e) {}
     // theme-color 跟着变，手机浏览器地址栏颜色才不会跟玻璃主题打架
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.setAttribute('content', on ? (GLASS_THEME_COLORS[currentGlassTheme()] || '#eef2ff') : '#4f46e5');
@@ -4239,6 +4302,8 @@
       btn.classList.toggle('on', on);
       btn.textContent = on ? '🪟 玻璃拟态：开' : '🪟 玻璃拟态：关';
     }
+    // 真实状态已确定：解除首屏遮罩，页面淡入（首次访问无缓存时用；有缓存时早已是正确样式）
+    if (typeof window.__glassBootDone === 'function') window.__glassBootDone();
     applyUpdateMode();
   }
 
