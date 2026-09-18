@@ -1265,6 +1265,12 @@
   ],
   "adminLogs": [
     {
+      "time": 1789753930913,
+      "actor": "超级管理员",
+      "op": "运维",
+      "desc": "关闭网站更新模式"
+    },
+    {
       "time": 1789751275447,
       "actor": "超级管理员",
       "op": "运维",
@@ -2324,7 +2330,7 @@
     }
   ],
   "glassTheme": "cyber",
-  "updateMode": true,
+  "updateMode": false,
   "codes": [
     {
       "code": "DUXP-K222-D2BU",
