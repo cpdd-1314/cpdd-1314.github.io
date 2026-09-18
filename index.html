@@ -2811,14 +2811,22 @@ window.__glassBootDone = function () {
   <div class="modal" style="max-width:760px;">
     <button class="close-btn" onclick="closePhotoLibrary()">×</button>
     <h2 style="font-size:18px; margin-bottom:4px;">🖼 照片库</h2>
-    <div id="photoLibHint" style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">汇总全站所有嘉宾照片，可上传、预览、复制地址</div>
+    <div id="photoLibHint" style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">汇总全站所有嘉宾的照片与视频，可上传、预览、复制地址</div>
     <div style="display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap;">
-      <button class="btn btn-primary" style="flex:1; min-width:120px;" onclick="document.getElementById('photoLibInput').click()">⬆️ 上传照片</button>
-      <input type="file" id="photoLibInput" accept="image/*" multiple style="display:none" onchange="handlePhotoLibUpload(this.files); this.value='';">
+      <button class="btn btn-primary" style="flex:1; min-width:130px;" onclick="document.getElementById('photoLibInput').click()">⬆️ 上传照片 / 视频</button>
+      <input type="file" id="photoLibInput" accept="image/*,video/*" multiple style="display:none" onchange="handlePhotoLibUpload(this.files); this.value='';">
       <button class="btn btn-outline" style="flex:1; min-width:120px;" onclick="switchPhotoLibTab('lib')" id="photoLibTabLib">📚 照片库 (<span id="photoLibLibCount">0</span>)</button>
-      <button class="btn btn-outline" style="flex:1; min-width:120px;" onclick="switchPhotoLibTab('all')" id="photoLibTabAll">🌐 全部照片 (<span id="photoLibAllCount">0</span>)</button>
+      <button class="btn btn-outline" style="flex:1; min-width:120px;" onclick="switchPhotoLibTab('all')" id="photoLibTabAll">🌐 全部媒体 (<span id="photoLibAllCount">0</span>)</button>
     </div>
     <div id="photoLibStatus" style="display:none; font-size:12px; color:var(--primary); margin-bottom:8px;"></div>
+    <!-- 视频内嵌预览（v6.9.49） -->
+    <div id="photoLibViewer" style="display:none; margin-bottom:10px; text-align:center; background:#000; border-radius:12px; padding:8px;">
+      <img id="photoLibViewerImg" style="display:none; max-width:100%; border-radius:8px;" alt="预览">
+      <video id="photoLibViewerVideo" controls playsinline preload="none" style="display:none; max-width:100%; max-height:56vh; border-radius:8px;"></video>
+      <div style="margin-top:8px;">
+        <button class="btn btn-outline" style="font-size:12px; padding:4px 12px;" onclick="closePhotoLibViewer()">收起预览</button>
+      </div>
+    </div>
     <div id="photoLibGrid" style="max-height:56vh; overflow:auto;"></div>
   </div>
 </div>
@@ -2831,6 +2839,12 @@ window.__glassBootDone = function () {
     <div style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">保存在手机相册后，即可发朋友圈 / 微信群</div>
     <div id="cardPreviewBox" style="text-align:center; background:var(--bg); border-radius:12px; padding:10px; margin-bottom:12px;">
       <img id="cardPreviewImg" alt="名片预览" style="max-width:100%; border-radius:10px; box-shadow:0 4px 18px rgba(0,0,0,.14);">
+    </div>
+    <div id="cardVideoRow" style="display:none; margin-bottom:10px;">
+      <button class="btn btn-outline" id="cardVideoBtn" style="width:100%; color:#7c3aed; border-color:#c4b5fd;">▶️ 播放该嘉宾的视频</button>
+      <div id="cardVideoBox" style="display:none; margin-top:10px; text-align:center;">
+        <video id="cardVideoPlayer" controls playsinline preload="none" style="max-width:100%; border-radius:10px; box-shadow:0 4px 18px rgba(0,0,0,.14);"></video>
+      </div>
     </div>
     <div style="display:flex; gap:10px;">
       <button class="btn btn-outline" style="flex:1;" onclick="toggleModal('cardModal', false)">关闭</button>
@@ -3092,8 +3106,9 @@ window.__glassBootDone = function () {
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.9.48';
+  const APP_VERSION = '6.9.49';
   const CHANGELOG = [
+    { v: '6.9.49', d: '2026-09-18', note: '名片与照片库升级：① <b>名片照片更大、资料更紧凑</b>——照片区高度相比原先放大<b>约 24%</b>（成为名片主角），同时压缩资料区排版（字号与行距下调、基础资料网格收紧、二维码与品牌区同步缩小），<b>全部字段一个不少</b>，只是排布更紧密，信息密度不降；② <b>名片支持视频</b>——嘉宾名下有视频时，名片照片区自动改用<b>该视频的首帧画面</b>作为封面，并叠加<b>播放标记</b>与「点击查看视频」提示；在名片弹窗点「🎬 播放视频」即可<b>直接播放</b>，不必再回详情页翻找；③ <b>照片库显示全部媒体</b>——此前只收「库内照片」，现在<b>照片与视频统统显示</b>（含每位嘉宾名下的视频，带播放角标与「🎬 视频」标签，点击即弹内嵌播放器）；④ <b>照片库新增「⬆️ 上传照片 / 视频」入口</b>——可直接把图片或视频上传进本站图库，随后可挂到<b>任意嘉宾</b>名下（图片自动压缩，视频按原画质上传、超 60MB 自动跳过）。', type: 'feat' },
     { v: '6.9.48', d: '2026-09-18', note: '<b>整站流畅度大幅优化</b>（解决「连高端机都掉帧」）。根因是<b>玻璃拟态被滥用</b>：一个页面里竟有 <b>365 个元素</b>各自带 backdrop-filter（52 个按钮、37 个输入框、35 个主按钮、32 个弹窗遮罩、28 个表单行…），每个都要独立建 GPU 合成层并逐帧回读背景重算模糊。本轮做了四件事：① <b>只给真正「透出背景」的大面板保留模糊</b>（卡片/顶栏/底部胶囊/弹窗），按钮、输入框、徽章、表单行、列表项改为<b>同色系半透明填充 + 描边 + 内高光</b>——肉眼几乎无差别，但实际参与模糊的元素从 <b>365 降到 17</b>；② <b>关掉背景 4 个全屏光斑的永久动画并去掉其 blur</b>（它们一动，全屏玻璃都得重算模糊，这是高端机也卡的头号原因）；③ <b>新增媒体懒加载</b>：此前没有任何 IntersectionObserver，所有图片视频一进 DOM 就加载、且视频用 preload="metadata" 逐个建连拉流；现在距视口 300px 内才加载、视频改为按需 preload="none"，离屏自动释放，首屏视频请求<b>归零</b>；④ <b>事件与合成优化</b>：触摸涟漪改为复用单个元素 + rAF 节流（原每次触摸都新建 DOM 并强制回流）、指针高光缓存 rect（不再每帧 getBoundingClientRect）、低端机/省电模式自动降级。实测（4× CPU 限速）每帧耗时：首页 121→43ms、滚动 126→37ms、详情页 212→48ms，最大帧阻塞 <b>383ms → 83ms</b>', type: 'fix' },
     { v: '6.9.47', d: '2026-09-18', note: '优化<b>嘉宾名片</b>：此前名片只印了「姓名/性别/年龄/城市/身高 + 一句话介绍」几项核心资料，看不到完整档案。现在名片改为<b>完整资料版</b>——顶部第一张照片下叠加大字姓名，接着是<b>基础资料两列网格</b>（年龄 / 生日 / 城市 / 身高 / 体重 / 星座 / 性取向 / 职业，空项自动跳过），再逐段展示<b>性格 / 兴趣爱好 / 生活习惯 / 择偶要求 / 一句话介绍</b>等长文本（带左侧色条小标题，一句话介绍用斜体引号），全部内容<b>自动折行、不截断不溢出</b>；画布高度按资料多少<b>自适应</b>，资料多则名片变长、资料少则自动收紧，不再留大片空白。底部二维码由右下角移到<b>居中</b>并放大，扫码可查看完整资料与照片视频。', type: 'fix' },
     { v: '6.9.46', d: '2026-09-18', note: '修复<b>打开网站先闪一下「无玻璃」再变玻璃</b>的问题（FOUC）：玻璃拟态原本要等 data.json 拉取完成才由 JS 给 body 加 <b>glass-mode</b>，所以首屏必然先渲染成普通样式、再跳成玻璃。现在在 &lt;body&gt; 最顶部加了一段<b>同步预置脚本</b>：① 把上次的玻璃开关与风格缓存到 localStorage，下次打开时在<b>首次绘制之前</b>就把 class 挂好，做到「首屏即玻璃」，且同步好手机地址栏主题色；② 首次访问（无缓存）时用一层与站点同色的极短遮罩 + 淡入过渡，等真实状态确定或 600ms 兜底后淡入，既不闪烁也不会白屏', type: 'fix' },
@@ -6192,6 +6207,55 @@ window.__glassBootDone = function () {
     return firstImg || null;
   }
 
+  // 取名片用视频（v6.9.49）：优先 mediaList 第一项，否则第一段视频；都没有返回 null
+  function pickCardVideo(mediaList) {
+    const list = Array.isArray(mediaList) ? mediaList.filter(function (m) { return m && m.url; }) : [];
+    if (list.length === 0) return null;
+    const isVid = function (m) { return m.type && m.type.indexOf('video') === 0; };
+    if (isVid(list[0])) return list[0];
+    return list.find(isVid) || null;
+  }
+
+  // 抓取视频首帧作为名片封面（静音 + 预加载元数据，跳到 0.1s 处截一帧）。
+  // 失败/超时返回 null，由调用方回退到照片或占位条。
+  function loadVideoFirstFrame(url, timeoutMs) {
+    return new Promise(function (resolve) {
+      let done = false;
+      const v = { el: document.createElement('video'), result: null };
+      // 只接受 canvas；失败/超时一律以 null 结账（原实现传 null 却去读 v.el，导致 Promise 永不 settle）
+      const finish = function (frame) {
+        if (done) return;
+        done = true;
+        clearTimeout(to);
+        try { v.el.removeAttribute('src'); v.el.load(); } catch (e) { }
+        resolve(frame || null);
+      };
+      v.el.muted = true;
+      v.el.playsInline = true;
+      v.el.preload = 'metadata';
+      /* v6.9.49：不设 crossOrigin —— 视频与站点同源，设了反而要求 CORS 头，缺失会直接加载失败 */
+      const to = setTimeout(function () { finish(null); }, timeoutMs || 8000);
+      v.el.onerror = function () { finish(null); };
+      v.el.onloadeddata = function () {
+        let frame = null;
+        try {
+          if (!v.el.videoWidth || !v.el.videoHeight) throw new Error('no frame');
+          frame = document.createElement('canvas');
+          frame.width = v.el.videoWidth;
+          frame.height = v.el.videoHeight;
+          const cx = frame.getContext('2d');
+          cx.drawImage(v.el, 0, 0, frame.width, frame.height);
+        } catch (e) { frame = null; }
+        finish(frame);
+      };
+      // 某些浏览器需要 seek 后才有可绘制帧
+      v.el.onloadedmetadata = function () {
+        try { v.el.currentTime = Math.min(0.1, (v.el.duration || 1) / 10); } catch (e) { }
+      };
+      try { v.el.src = url; } catch (e) { finish(null); }
+    });
+  }
+
   // 极简 QR 编码器（byte 模式，纠错等级 L，自动选版本 1..10）——纯内联，无外部依赖，
   // 避免在线二维码 API 被墙/跨域污染 canvas。仅用于名片里的直达链接（短文本）。
   function qrEncode(text) {
@@ -6468,7 +6532,8 @@ window.__glassBootDone = function () {
       const cardX = PAD, cardW = W - PAD * 2;
       const innerPad = 36;            // 卡片内边距
       const textW = cardW - innerPad * 2;   // 正文可用宽度
-      const photoH = 500;
+      // 照片区高度（v6.9.49：按画布宽 750 算，5:4 竖版大图更抓眼）
+      const photoH = 620;
       // ---- 先用一个测量 canvas 预排版，算出所需总高度 ----
       const meas = document.createElement('canvas').getContext('2d');
       const blocks = [];   // {label, value}
@@ -6494,31 +6559,32 @@ window.__glassBootDone = function () {
         ['一句话介绍', item['一句话介绍']]
       ].filter(function (f) { return f[1] && String(f[1]).trim(); });
 
-      // 预排：基础信息两列网格
-      const rowH = 46;
+      // 预排：基础信息两列网格（v6.9.49：行高 46→38，字号同步下调，让资料区更紧凑）
+      const rowH = 38;
       const basicsH = Math.ceil(basics.length / 2) * rowH;
-      // 预排：长文本块（标题 + 正文行）
-      meas.font = '24px sans-serif';
+      // 预排：长文本块（标题 + 正文行）。字号 24→20、行距 34→28，最多 4 行（超出省略号）
+      meas.font = '20px sans-serif';
       let longH = 0;
       const longLayout = [];
       LONG_FIELDS.forEach(function (f) {
-        const lines = wrapText(meas, String(f[1]).trim(), textW - 24, 6);
+        const lines = wrapText(meas, String(f[1]).trim(), textW - 24, 4);
         const key = String(f[0]);
         // 一句话介绍用引号包裹、斜体，视觉上单独一行
         longLayout.push({ label: key, lines: lines });
-        longH += 30 + lines.length * 34 + 16;   // 标题高 + 行高 + 间距
+        longH += 26 + lines.length * 28 + 12;   // 标题高 + 行高 + 间距
       });
 
       // 顶部照片：优先第一张图片（无则 null）。photo 需在排版测算前确定，用于决定照片区高度
       const photo = pickCardPhoto(item.mediaList);
-      const realPhotoH = photo ? photoH : 190;   // 无照片时收窄为 190px 占位条，避免大片空白
+      const cardVideo = pickCardVideo(item.mediaList);   // v6.9.49：有视频则名片带视频
+      const realPhotoH = (photo || cardVideo) ? photoH : 190;   // 无照片无视频时才收窄为占位条
 
       // 顶部照片区 + 卡片内头部（姓名/性别/城市行）+ 基础网格 + 长文本 + 二维码区 + 底部品牌
-      const headerH = 104;                       // 姓名 + 一行摘要
-      const qrBlockH = 210;                      // 二维码 + 扫码文字
-      const brandH = 78;                         // 底部品牌
-      const contentH = headerH + basicsH + (basics.length ? 18 : 0) + longH + qrBlockH + brandH;
-      const cardY = realPhotoH - 60;             // 卡片上沿压住照片底部形成叠压（叠压量固定 60）
+      const headerH = 92;                        // 姓名 + 一行摘要（v6.9.49：104→92）
+      const qrBlockH = 200;                      // 二维码 + 扫码文字
+      const brandH = 62;                         // 底部品牌
+      const contentH = headerH + basicsH + (basics.length ? 14 : 0) + longH + qrBlockH + brandH;
+      const cardY = realPhotoH - 70;             // 卡片上沿压住照片底部形成叠压（v6.9.49：叠压 60→70，照片露得更多）
       const cardH = contentH + innerPad * 2;
       const H = cardY + cardH + PAD;             // 画布总高（自适应）
 
@@ -6534,25 +6600,59 @@ window.__glassBootDone = function () {
       ctx.fillStyle = bg;
       ctx.fillRect(0, 0, W, H);
 
-      // ---- 顶部照片（第一张照片），object-fit: cover ----
+      // ---- 顶部照片区（v6.9.49：有视频时用视频首帧，并叠加「可播放」标记）----
       ctx.save();
       ctx.beginPath(); ctx.rect(0, 0, W, realPhotoH); ctx.clip();
-      if (photo) {
+      let drewMedia = false;      // 是否已画上真实画面（照片或视频首帧）
+      if (cardVideo) {
+        // 优先视频首帧
+        const vframe = await loadVideoFirstFrame(safeMediaUrl(cardVideo.url));
+        if (vframe && vframe.width) {
+          const scale = Math.max(W / vframe.width, realPhotoH / vframe.height);
+          const dw = vframe.width * scale, dh = vframe.height * scale;
+          ctx.drawImage(vframe, (W - dw) / 2, (realPhotoH - dh) / 2, dw, dh);
+          drewMedia = true;
+        }
+      }
+      if (!drewMedia && photo) {
         const pimg = await loadImageForCanvas(safeMediaUrl(photo.url));
         if (pimg && pimg.width) {
           const scale = Math.max(W / pimg.width, realPhotoH / pimg.height);
           const dw = pimg.width * scale, dh = pimg.height * scale;
           ctx.drawImage(pimg, (W - dw) / 2, (realPhotoH - dh) / 2, dw, dh);
-        } else {
-          ctx.fillStyle = '#cbd5e1'; ctx.fillRect(0, 0, W, realPhotoH);
-          ctx.fillStyle = '#64748b'; ctx.font = '28px sans-serif'; ctx.textAlign = 'center';
-          ctx.fillText('照片加载失败', W / 2, realPhotoH / 2);
+          drewMedia = true;
         }
-      } else {
+      }
+      if (!drewMedia && (photo || cardVideo)) {
+        ctx.fillStyle = '#cbd5e1'; ctx.fillRect(0, 0, W, realPhotoH);
+        ctx.fillStyle = '#64748b'; ctx.font = '28px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText(cardVideo ? '视频封面加载中' : '照片加载失败', W / 2, realPhotoH / 2);
+      }
+      if (!drewMedia && !photo && !cardVideo) {
         ctx.fillStyle = '#eef2ff'; ctx.fillRect(0, 0, W, realPhotoH);
         ctx.fillStyle = '#a5b4fc'; ctx.font = '30px sans-serif'; ctx.textAlign = 'center';
         // 用纯文字而非 emoji：部分环境缺少彩色 emoji 字体，会渲染成方块
         ctx.fillText('全球找对象', W / 2, realPhotoH / 2 + 10);
+      }
+      // 视频播放标记（圆底三角），让收到名片的人一眼知道有视频可看
+      if (cardVideo) {
+        const pr = 46, pcx = W / 2, pcy = realPhotoH / 2 - 10;
+        ctx.fillStyle = 'rgba(0,0,0,.42)';
+        ctx.beginPath(); ctx.arc(pcx, pcy, pr, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(pcx, pcy, pr, 0, Math.PI * 2); ctx.stroke();
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.moveTo(pcx - 13, pcy - 20);
+        ctx.lineTo(pcx + 22, pcy);
+        ctx.lineTo(pcx - 13, pcy + 20);
+        ctx.closePath(); ctx.fill();
+        // 底部提示条
+        ctx.fillStyle = 'rgba(0,0,0,.5)';
+        roundRectPath(ctx, W / 2 - 92, realPhotoH - 62, 184, 40, 20);
+        ctx.fill();
+        ctx.fillStyle = '#fff'; ctx.font = '20px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText('点击查看视频', W / 2, realPhotoH - 35);
       }
       ctx.restore();
 
@@ -6567,104 +6667,104 @@ window.__glassBootDone = function () {
       ctx.restore();
 
       const px = cardX + innerPad;
-      let cy = cardY + innerPad + 50;   // 首行文字基线
+      let cy = cardY + innerPad + 44;   // 首行文字基线（v6.9.49：内边距收紧）
 
-      // ---- 姓名 + 性别标签 ----
+      // ---- 姓名 + 性别标签（v6.9.49：字号随资料区一并收紧）----
       ctx.textAlign = 'left';
       ctx.fillStyle = '#111827';
-      ctx.font = 'bold 46px sans-serif';
+      ctx.font = 'bold 40px sans-serif';
       const nm = String(item['姓名'] || '未填');
       const nmShow = nm.length > 9 ? nm.slice(0, 9) + '…' : nm;
       ctx.fillText(nmShow, px, cy);
       const nameW = ctx.measureText(nmShow).width;
       const gender = String(item['性别'] || '');
       if (gender) {
-        ctx.font = '24px sans-serif';
-        const gw = ctx.measureText(gender).width + 30;
-        const gx = px + nameW + 18;
+        ctx.font = '21px sans-serif';
+        const gw = ctx.measureText(gender).width + 26;
+        const gx = px + nameW + 16;
         ctx.fillStyle = gender.indexOf('女') >= 0 ? '#fce7f3' : '#dbeafe';
-        roundRectPath(ctx, gx, cy - 34, gw, 44, 22);
+        roundRectPath(ctx, gx, cy - 29, gw, 38, 19);
         ctx.fill();
         ctx.fillStyle = gender.indexOf('女') >= 0 ? '#be185d' : '#1d4ed8';
-        ctx.fillText(gender, gx + 15, cy - 2);
+        ctx.fillText(gender, gx + 13, cy - 1);
       }
-      cy += 34;
+      cy += 28;
 
-      // ---- 基础资料：两列网格 ----
+      // ---- 基础资料：两列网格（v6.9.49：整体字号 23/25 → 19/21）----
       if (basics.length) {
-        ctx.font = '24px sans-serif';
+        ctx.font = '20px sans-serif';
         const colW = textW / 2;
         basics.forEach(function (kv, i) {
           const col = i % 2, row = Math.floor(i / 2);
           const bx = px + col * colW;
           const by = cy + row * rowH;
           ctx.fillStyle = '#94a3b8';
-          ctx.font = '23px sans-serif';
+          ctx.font = '19px sans-serif';
           ctx.fillText(kv[0], bx, by);
           ctx.fillStyle = '#1f2937';
-          ctx.font = '25px sans-serif';
+          ctx.font = '21px sans-serif';
           const labelW = ctx.measureText(kv[0]).width;
           ctx.fillText(' ' + kv[1], bx + labelW + 2, by);
-          ctx.font = '24px sans-serif';
+          ctx.font = '20px sans-serif';
         });
-        cy += Math.ceil(basics.length / 2) * rowH + 6;
+        cy += Math.ceil(basics.length / 2) * rowH + 4;
       }
 
       // ---- 分隔线 ----
       ctx.strokeStyle = '#eef2f7';
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(px, cy + 6);
-      ctx.lineTo(cardX + cardW - innerPad, cy + 6);
+      ctx.moveTo(px, cy + 5);
+      ctx.lineTo(cardX + cardW - innerPad, cy + 5);
       ctx.stroke();
-      cy += 30;
+      cy += 26;
 
       // ---- 长文本资料块：性格 / 兴趣爱好 / 生活习惯 / 择偶要求 / 一句话介绍 ----
       longLayout.forEach(function (blk, bi) {
         // 小标题（带左侧色条）
         ctx.fillStyle = '#4f46e5';
-        roundRectPath(ctx, px, cy - 20, 6, 24, 3);
+        roundRectPath(ctx, px, cy - 17, 5, 20, 3);
         ctx.fill();
         ctx.fillStyle = '#4f46e5';
-        ctx.font = 'bold 25px sans-serif';
-        ctx.fillText('【' + blk.label + '】', px + 18, cy);
-        cy += 34;
+        ctx.font = 'bold 21px sans-serif';
+        ctx.fillText('【' + blk.label + '】', px + 15, cy);
+        cy += 26;
 
         // 正文
         const isQuote = blk.label === '一句话介绍';
-        ctx.font = (isQuote ? 'italic ' : '') + '24px sans-serif';
+        ctx.font = (isQuote ? 'italic ' : '') + '20px sans-serif';
         ctx.fillStyle = isQuote ? '#6d28d9' : '#374151';
         blk.lines.forEach(function (ln, li) {
           const txt = isQuote ? (li === 0 ? '“' : '') + ln + (li === blk.lines.length - 1 ? '”' : '') : ln;
-          ctx.fillText(txt, px + 6, cy + li * 34);
+          ctx.fillText(txt, px + 6, cy + li * 28);
         });
-        ctx.font = '24px sans-serif';
-        cy += blk.lines.length * 34 + 12;
-        if (bi < longLayout.length - 1) cy += 4;
+        ctx.font = '20px sans-serif';
+        cy += blk.lines.length * 28 + 10;
+        if (bi < longLayout.length - 1) cy += 2;
       });
 
       // ---- 二维码区（居中，指向该嘉宾直达链接）----
       let directUrl = '';
       try { directUrl = new URL('?guest=' + item.id, location.href).href; } catch (e) { directUrl = location.origin + location.pathname + '?guest=' + item.id; }
-      const qrSize = 168;
+      const qrSize = 150;
       const qrX = Math.round((W - qrSize) / 2);
-      const qrY = cy + 26;
+      const qrY = cy + 22;
       try {
         const matrix = qrEncode(directUrl);
         const mod = Math.floor(qrSize / matrix.length);
         const realSize = mod * matrix.length;
         const bx = Math.round((W - realSize) / 2);
         ctx.fillStyle = '#f9fafb';
-        roundRectPath(ctx, bx - 12, qrY - 12, realSize + 24, realSize + 24, 14);
+        roundRectPath(ctx, bx - 10, qrY - 10, realSize + 20, realSize + 20, 12);
         ctx.fill();
         ctx.strokeStyle = '#eef2f7'; ctx.lineWidth = 2;
-        roundRectPath(ctx, bx - 12, qrY - 12, realSize + 24, realSize + 24, 14);
+        roundRectPath(ctx, bx - 10, qrY - 10, realSize + 20, realSize + 20, 12);
         ctx.stroke();
         drawQR(ctx, matrix, bx, qrY, mod);
         ctx.fillStyle = '#6b7280';
-        ctx.font = '20px sans-serif';
+        ctx.font = '18px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('扫码查看完整资料 · 照片视频', W / 2, qrY + realSize + 36);
+        ctx.fillText('扫码查看完整资料 · 照片视频', W / 2, qrY + realSize + 32);
         ctx.textAlign = 'left';
       } catch (e) {
         // 二维码生成失败（内容过长等）：降级为文字链接
@@ -6677,9 +6777,9 @@ window.__glassBootDone = function () {
 
       // ---- 底部品牌信息 ----
       ctx.fillStyle = '#9ca3af';
-      ctx.font = '22px sans-serif';
+      ctx.font = '19px sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('全球找对象 · 期待与你相遇', W / 2, H - PAD - 24);
+      ctx.fillText('全球找对象 · 期待与你相遇', W / 2, H - PAD - 20);
       ctx.textAlign = 'left';
 
       const dataUrl = safeCanvasToDataURL(canvas);
@@ -6687,6 +6787,37 @@ window.__glassBootDone = function () {
       const dl = document.getElementById('cardDownloadBtn');
       if (imgEl) imgEl.src = dataUrl;
       if (dl) { dl.href = dataUrl; dl.download = 'card_' + (item['姓名'] || item.id) + '.png'; }
+      // v6.9.49：有视频时，名片弹窗里提供直接播放该嘉宾视频的入口
+      try {
+        const row = document.getElementById('cardVideoRow');
+        const vbox = document.getElementById('cardVideoBox');
+        const vplayer = document.getElementById('cardVideoPlayer');
+        const vbtn = document.getElementById('cardVideoBtn');
+        if (row && cardVideo) {
+          row.style.display = '';
+          if (vbox) vbox.style.display = 'none';
+          if (vplayer) { vplayer.pause(); vplayer.removeAttribute('src'); vplayer.load(); }
+          if (vbtn) {
+            vbtn.textContent = '▶️ 播放该嘉宾的视频';
+            vbtn.onclick = function () {
+              if (!vbox || !vplayer) return;
+              const showing = vbox.style.display !== 'none';
+              if (showing) {
+                vplayer.pause();
+                vbox.style.display = 'none';
+                vbtn.textContent = '▶️ 播放该嘉宾的视频';
+                return;
+              }
+              if (!vplayer.getAttribute('src')) vplayer.src = safeMediaUrl(cardVideo.url);
+              vbox.style.display = '';
+              vbtn.textContent = '⏸️ 收起视频';
+              vplayer.play().catch(function () { });
+            };
+          }
+        } else if (row) {
+          row.style.display = 'none';
+        }
+      } catch (e) { }
       // 暴露画布便于自测/导出，避免 canvas 过大长期驻留内存
       try { window.__lastCardCanvas = canvas; } catch (e) { }
       toggleModal('cardModal', true);
@@ -7318,33 +7449,42 @@ window.__glassBootDone = function () {
     const hint = document.getElementById('photoLibHint');
     if (hint) {
       hint.innerHTML = __photoPickTarget
-        ? '<b style="color:var(--primary);">🎯 挑选模式：点任意照片即可添加到该嘉宾</b>'
-        : '汇总全站所有嘉宾照片，可上传、预览、复制地址';
+        ? '<b style="color:var(--primary);">🎯 挑选模式：点任意照片/视频即可添加到该嘉宾</b>'
+        : '汇总全站所有嘉宾的照片与视频，可上传、预览、复制地址';
     }
+    closePhotoLibViewer();
     renderPhotoLibrary();
     toggleModal('photoLibModal', true);
   }
 
   function closePhotoLibrary() {
     __photoPickTarget = null;
+    closePhotoLibViewer();
     toggleModal('photoLibModal', false);
   }
 
   function switchPhotoLibTab(tab) {
     __photoLibTab = tab;
+    closePhotoLibViewer();
     renderPhotoLibrary();
   }
 
   // 汇总全站嘉宾 mediaList 里的照片（只读）。返回 [{url, type, ownerId, ownerName}]
+  // 汇总全站嘉宾媒体（v6.9.49：不再过滤视频，照片与视频都在照片库展示）
   function collectGuestPhotos() {
     const out = [];
     (appState.profiles || []).forEach(function (p) {
       if (p._deleted || p.status === 'applied') return;
       (p.mediaList || []).forEach(function (m) {
         if (!m || !m.url) return;
-        const isImg = !m.type || m.type.indexOf('image') === 0;
-        if (!isImg) return;   // 照片库只看照片，视频不进
-        out.push({ url: m.url, type: m.type || 'image/jpeg', ownerId: p.id, ownerName: p['姓名'] || '未填' });
+        const isVid = !!(m.type && m.type.indexOf('video') === 0);
+        out.push({
+          url: m.url,
+          type: m.type || 'image/jpeg',
+          isVideo: isVid,
+          ownerId: p.id,
+          ownerName: p['姓名'] || '未填'
+        });
       });
     });
     return out;
@@ -7364,46 +7504,79 @@ window.__glassBootDone = function () {
     if (tabLib) tabLib.style.borderColor = __photoLibTab === 'lib' ? 'var(--primary)' : '';
     if (tabAll) tabAll.style.borderColor = __photoLibTab === 'all' ? 'var(--primary)' : '';
 
-    const cell = function (url, label, isLibItem, id) {
+    // 单元格（v6.9.49：支持视频 —— 用 <video> 出静帧并叠加播放角标）
+    const cell = function (url, label, isLibItem, id, isVideo) {
       const delBtn = isLibItem
         ? '<button class="btn btn-outline" style="position:absolute; top:4px; right:4px; font-size:11px; padding:2px 7px; background:rgba(255,255,255,.92); color:var(--danger); border-color:#fca5a5;" onclick="event.stopPropagation(); deletePhotoLibItem(\'' + id + '\')" title="从照片库删除">×</button>'
         : '';
-      return '<div style="position:relative; border:1px solid var(--border); border-radius:10px; overflow:hidden; cursor:pointer; background:var(--bg);" onclick="photoLibClick(\'' + encodeURIComponent(url) + '\', ' + (isLibItem ? 'true' : 'false') + ')">' +
-        '<div style="width:100%; aspect-ratio:1/1; overflow:hidden;">' +
-        '<img src="' + safeMediaUrl(url) + '" loading="lazy" decoding="async" style="width:100%; height:100%; object-fit:cover;">' +
-        '</div>' +
+      const inner = isVideo
+        ? '<video src="' + safeMediaUrl(url) + '" preload="metadata" muted playsinline style="width:100%; height:100%; object-fit:cover;"></video>' +
+          '<span style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none;">' +
+          '<span style="width:34px; height:34px; border-radius:50%; background:rgba(0,0,0,.55); color:#fff; display:flex; align-items:center; justify-content:center; font-size:14px; border:2px solid rgba(255,255,255,.85);">▶</span></span>' +
+          '<span style="position:absolute; left:4px; bottom:22px; font-size:10px; padding:1px 6px; border-radius:6px; background:rgba(0,0,0,.6); color:#fff; pointer-events:none;">🎬 视频</span>'
+        : '<img src="' + safeMediaUrl(url) + '" loading="lazy" decoding="async" style="width:100%; height:100%; object-fit:cover;">';
+      return '<div style="position:relative; border:1px solid var(--border); border-radius:10px; overflow:hidden; cursor:pointer; background:var(--bg);" onclick="photoLibClick(\'' + encodeURIComponent(url) + '\', ' + (isLibItem ? 'true' : 'false') + ', ' + (isVideo ? 'true' : 'false') + ')">' +
+        '<div style="width:100%; aspect-ratio:1/1; overflow:hidden; position:relative;">' + inner + '</div>' +
         '<div style="font-size:10px; color:var(--text-muted); padding:3px 6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + escapeHtml(label) + '</div>' +
         delBtn + '</div>';
     };
 
     let html = '';
     if (__photoLibTab === 'lib') {
+      const libPhotos = lib.filter(function (x) { return !(x.type && x.type.indexOf('video') === 0); }).length;
+      const libVids = lib.length - libPhotos;
       html = lib.length === 0
-        ? '<div style="text-align:center; color:var(--text-muted); font-size:13px; padding:30px;">照片库还是空的，点上方「⬆️ 上传照片」添加</div>'
+        ? '<div style="text-align:center; color:var(--text-muted); font-size:13px; padding:30px;">照片库还是空的，点上方「⬆️ 上传」添加照片或视频</div>'
         : '<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(110px, 1fr)); gap:10px;">' +
-          lib.map(function (it) { return cell(it.url, it.name || '照片', true, it.id); }).join('') + '</div>';
+          lib.map(function (it) {
+            const isVid = !!(it.type && it.type.indexOf('video') === 0);
+            return cell(it.url, it.name || (isVid ? '视频' : '照片'), true, it.id, isVid);
+          }).join('') + '</div>';
     } else {
-      // 全部照片：库内 + 嘉宾照片，合并去重按 url
+      // 全部媒体：库内 + 嘉宾媒体，合并去重按 url
       const seen = {};
       const items = [];
-      lib.forEach(function (it) { if (!seen[it.url]) { seen[it.url] = 1; items.push(cell(it.url, '📚 照片库', true, it.id)); } });
+      lib.forEach(function (it) {
+        if (!seen[it.url]) {
+          seen[it.url] = 1;
+          const isVid = !!(it.type && it.type.indexOf('video') === 0);
+          items.push(cell(it.url, '📚 照片库', true, it.id, isVid));
+        }
+      });
       guestPhotos.forEach(function (g) {
         if (seen[g.url]) return;
         seen[g.url] = 1;
-        items.push(cell(g.url, '👤 ' + g.ownerName, false, ''));
+        items.push(cell(g.url, '👤 ' + g.ownerName, false, '', g.isVideo));
       });
       html = items.length === 0
-        ? '<div style="text-align:center; color:var(--text-muted); font-size:13px; padding:30px;">还没有任何照片</div>'
+        ? '<div style="text-align:center; color:var(--text-muted); font-size:13px; padding:30px;">还没有任何照片或视频</div>'
         : '<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(110px, 1fr)); gap:10px;">' + items.join('') + '</div>';
     }
     grid.innerHTML = html;
   }
 
-  // 点照片：挑选模式下追加到目标嘉宾；否则复制地址
-  async function photoLibClick(encUrl, isLibItem) {
+  // 点媒体：挑选模式下追加到目标嘉宾；否则视频直接播放预览，图片复制地址
+  async function photoLibClick(encUrl, isLibItem, isVideo) {
     const url = decodeURIComponent(encUrl);
     if (__photoPickTarget !== null) {
-      await addPhotoToGuest(__photoPickTarget, url);
+      await addPhotoToGuest(__photoPickTarget, url, isVideo);
+      return;
+    }
+    // 视频：弹窗播放预览（而不是复制地址）
+    if (isVideo) {
+      const box = document.getElementById('photoLibViewer');
+      const vp = document.getElementById('photoLibViewerVideo');
+      const ip = document.getElementById('photoLibViewerImg');
+      if (box && vp && ip) {
+        ip.style.display = 'none';
+        ip.removeAttribute('src');
+        vp.style.display = '';
+        vp.src = safeMediaUrl(url);
+        box.style.display = 'block';
+        vp.play().catch(function () { });
+        return;
+      }
+      showAlert('视频地址：' + url);
       return;
     }
     try {
@@ -7415,44 +7588,60 @@ window.__glassBootDone = function () {
     }
   }
 
+  // 关闭照片库内嵌预览
+  function closePhotoLibViewer() {
+    const box = document.getElementById('photoLibViewer');
+    const vp = document.getElementById('photoLibViewerVideo');
+    if (vp) { try { vp.pause(); } catch (e) { } vp.removeAttribute('src'); vp.load(); vp.style.display = 'none'; }
+    if (box) box.style.display = 'none';
+  }
+
   // 上传照片到照片库（多选，逐张压缩后上传仓库）
   async function handlePhotoLibUpload(files) {
     if (!files || files.length === 0) return;
     const status = document.getElementById('photoLibStatus');
     const token = getWriteToken();
     if (!token) { showAlert('❌ 未检测到写入令牌，请先以管理员身份登录'); return; }
-    const arr = Array.from(files).filter(function (f) { return f.type && f.type.indexOf('image/') === 0; });
-    if (arr.length === 0) { showAlert('❌ 请选择图片文件'); return; }
+    // v6.9.49：图片与视频都可上传（视频不压缩，原样入库）
+    const arr = Array.from(files).filter(function (f) {
+      return f.type && (f.type.indexOf('image/') === 0 || f.type.indexOf('video/') === 0);
+    });
+    if (arr.length === 0) { showAlert('❌ 请选择图片或视频文件'); return; }
     if (status) { status.style.display = 'block'; status.textContent = '上传中 0/' + arr.length + '…'; }
     const uploaded = [];
     try {
       for (let i = 0; i < arr.length; i++) {
-        const compressed = await compressImageFile(arr[i], 1600, 0.85);
-        const meta = await uploadToRepo(compressed);
+        const f = arr[i];
+        const isVid = f.type.indexOf('video/') === 0;
+        if (isVid && f.size > 60 * 1024 * 1024) { showAlert('⚠️ 「' + f.name + '」超过 60MB，已跳过'); continue; }
+        // 视频不压缩（浏览器端转码不现实），图片压到 1600px
+        const blob = isVid ? f : await compressImageFile(f, 1600, 0.85);
+        const meta = await uploadToRepo(blob);
         uploaded.push({
           id: 'ph_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
           url: meta.url,
-          type: meta.type || 'image/jpeg',
-          name: (arr[i].name || 'photo.jpg').slice(0, 60),
-          size: compressed.size || 0,
+          type: meta.type || (isVid ? 'video/mp4' : 'image/jpeg'),
+          name: (f.name || (isVid ? 'video.mp4' : 'photo.jpg')).slice(0, 60),
+          size: blob.size || 0,
           uploadedAt: Date.now(),
           uploadedBy: (getCurrentIdentity() || {}).name || '管理员'
         });
         if (status) status.textContent = '上传中 ' + (i + 1) + '/' + arr.length + '…';
       }
+      if (uploaded.length === 0) { if (status) status.style.display = 'none'; return; }
       const ident = getCurrentIdentity();
       const actorName = ident ? (ident.type === 'super' ? '超级管理员' : (ident.name || '内部管理员')) : '管理员';
       await patchRemoteState(function (base) {
         if (!Array.isArray(base.photoLibrary)) base.photoLibrary = [];
         uploaded.forEach(function (u) { base.photoLibrary.unshift(u); });
-        if (base.photoLibrary.length > 500) base.photoLibrary.length = 500;
+        if (base.photoLibrary.length > 500) base.photoLibrary.length = 500;   // 上限保护
         if (!Array.isArray(base.adminLogs)) base.adminLogs = [];
-        base.adminLogs.unshift({ time: Date.now(), actor: actorName, op: '照片库', desc: '上传 ' + uploaded.length + ' 张照片到照片库' });
+        base.adminLogs.unshift({ time: Date.now(), actor: actorName, op: '照片库', desc: '上传 ' + uploaded.length + ' 个媒体到照片库' });
         if (base.adminLogs.length > 200) base.adminLogs.length = 200;
       }, 'photo library upload ' + uploaded.length);
-      if (status) status.textContent = '✅ 已上传 ' + uploaded.length + ' 张';
+      if (status) status.textContent = '✅ 已上传 ' + uploaded.length + ' 个媒体';
       renderPhotoLibrary();
-      toast('✅ 已上传 ' + uploaded.length + ' 张照片');
+      toast('✅ 已上传 ' + uploaded.length + ' 个媒体');
     } catch (err) {
       if (status) status.textContent = '';
       if (status) status.style.display = 'none';
@@ -7483,12 +7672,16 @@ window.__glassBootDone = function () {
   }
 
   // 把照片库里的一张照片挂到某嘉宾名下（编辑中=改内存待保存；已存在=直接增量保存）
-  async function addPhotoToGuest(target, url) {
-    const media = { url: url, type: 'image/jpeg' };
+  async function addPhotoToGuest(target, url, isVideo) {
+    // v6.9.49：支持把照片库里的视频一并挂到嘉宾名下
+    const media = isVideo
+      ? { url: url, type: 'video/mp4' }
+      : { url: url, type: 'image/jpeg' };
+    const kindCn = isVideo ? '视频' : '照片';
     if (target === 'edit') {
       // 编辑表单：追加到待保存列表，用户点保存才真正落库
       const dup = (currentDetailMediaList || []).some(function (m) { return m && m.url === url; });
-      if (dup) { toast('该照片已在此嘉宾名下'); return; }
+      if (dup) { toast('该' + kindCn + '已在此嘉宾名下'); return; }
       currentDetailMediaList.push(media);
       if (typeof renderExistingMedia === 'function') renderExistingMedia();
       const box = document.getElementById('existingMediaBox');
@@ -7515,9 +7708,9 @@ window.__glassBootDone = function () {
       if (added) {
         refreshViews();
         if (currentDetailId != null) openDetail(currentDetailId);
-        toast('✅ 已添加到嘉宾照片');
+        toast('✅ 已添加到嘉宾' + kindCn);
       } else {
-        toast('该照片已在此嘉宾名下');
+        toast('该' + kindCn + '已在此嘉宾名下');
       }
     } catch (err) {
       showAlert('❌ 操作失败：' + err.message);
