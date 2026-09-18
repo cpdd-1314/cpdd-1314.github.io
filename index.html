@@ -1986,6 +1986,7 @@
         <button class="btn btn-outline admin-only" onclick="openSubmitLinkModal()">📨 投稿链接</button>
         <button class="btn btn-outline admin-only" onclick="openRedeemAdminModal()">🎟️ 兑换码管理</button>
         <button class="btn btn-outline admin-only" onclick="openRedemptionsAdminModal()">💰 兑换记录</button>
+        <button class="btn btn-outline admin-only" onclick="openPhotoLibrary()">🖼 照片库</button>
         <button class="btn btn-outline admin-only" id="glassModeBtn" onclick="toggleGlassMode()">🪟 玻璃拟态：关</button>
         <button class="btn btn-outline admin-only" id="updateModeBtn" onclick="toggleUpdateMode()">🚀 更新模式：关</button>
         <div class="admin-only" style="margin-top:2px;">
@@ -2626,6 +2627,7 @@
           <label>➕ 添加照片/视频（可多选，可多次添加）</label>
           <input type="file" id="mediaInput" accept="image/*,video/*" multiple>
           <div class="file-hint">上传前会<b>自动压缩</b>：图片转 JPEG、视频转码缩小，20MB 的视频可压到 2~5MB，仓库放得下、加载也快。<b>新增档案时第一张自动成为封面</b>，之后随时可换。</div>
+          <button type="button" class="btn btn-outline admin-only" style="margin-top:8px; font-size:12px;" onclick="openPhotoLibrary('edit')">🖼 从照片库添加</button>
         </div>
         <div class="form-group full" id="existingMediaBox" style="display:none;">
           <label>已上传的照片/视频 —— 点「设为封面」换主照片，× 移除</label>
@@ -2734,6 +2736,40 @@
       <button class="btn btn-danger" id="guestSelDeleteBtn" style="flex:1;" onclick="deleteSelectedGuests()">🗑 删除选中</button>
       <button class="btn btn-primary" style="flex:1;" onclick="clearGuestSelect(); toggleModal('guestSelModal', false);">🧹 清空全部选择</button>
     </div>
+  </div>
+</div>
+
+<!-- 管理员照片库：汇总全站嘉宾照片 + 库内上传照片，可预览/删除/复制地址；挑选模式下可给指定嘉宾追加照片 -->
+<div class="modal-overlay" id="photoLibModal" onclick="handleOverlayClick(event, 'photoLibModal')">
+  <div class="modal" style="max-width:760px;">
+    <button class="close-btn" onclick="closePhotoLibrary()">×</button>
+    <h2 style="font-size:18px; margin-bottom:4px;">🖼 照片库</h2>
+    <div id="photoLibHint" style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">汇总全站所有嘉宾照片，可上传、预览、复制地址</div>
+    <div style="display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap;">
+      <button class="btn btn-primary" style="flex:1; min-width:120px;" onclick="document.getElementById('photoLibInput').click()">⬆️ 上传照片</button>
+      <input type="file" id="photoLibInput" accept="image/*" multiple style="display:none" onchange="handlePhotoLibUpload(this.files); this.value='';">
+      <button class="btn btn-outline" style="flex:1; min-width:120px;" onclick="switchPhotoLibTab('lib')" id="photoLibTabLib">📚 照片库 (<span id="photoLibLibCount">0</span>)</button>
+      <button class="btn btn-outline" style="flex:1; min-width:120px;" onclick="switchPhotoLibTab('all')" id="photoLibTabAll">🌐 全部照片 (<span id="photoLibAllCount">0</span>)</button>
+    </div>
+    <div id="photoLibStatus" style="display:none; font-size:12px; color:var(--primary); margin-bottom:8px;"></div>
+    <div id="photoLibGrid" style="max-height:56vh; overflow:auto;"></div>
+  </div>
+</div>
+
+<!-- 名片预览：Canvas 合成的名片图片，可保存/复制 -->
+<div class="modal-overlay" id="cardModal" onclick="handleOverlayClick(event, 'cardModal')">
+  <div class="modal" style="max-width:420px;">
+    <button class="close-btn" onclick="toggleModal('cardModal', false)">×</button>
+    <h2 style="font-size:18px; margin-bottom:4px;">🪪 嘉宾名片</h2>
+    <div style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">保存在手机相册后，即可发朋友圈 / 微信群</div>
+    <div id="cardPreviewBox" style="text-align:center; background:var(--bg); border-radius:12px; padding:10px; margin-bottom:12px;">
+      <img id="cardPreviewImg" alt="名片预览" style="max-width:100%; border-radius:10px; box-shadow:0 4px 18px rgba(0,0,0,.14);">
+    </div>
+    <div style="display:flex; gap:10px;">
+      <button class="btn btn-outline" style="flex:1;" onclick="toggleModal('cardModal', false)">关闭</button>
+      <a class="btn btn-primary" id="cardDownloadBtn" style="flex:1; text-align:center; text-decoration:none;" download="guest-card.png">⬇️ 保存图片</a>
+    </div>
+    <div style="font-size:11px; color:var(--text-muted); margin-top:8px; text-align:center;">手机端也可长按上方图片选择「保存图片」</div>
   </div>
 </div>
 
@@ -2989,8 +3025,9 @@
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.9.44';
+  const APP_VERSION = '6.9.45';
   const CHANGELOG = [
+    { v: '6.9.45', d: '2026-09-18', note: '新增两项功能：① <b>嘉宾名片生成</b>——在嘉宾详情弹窗点「🪪 生成名片」，自动把<b>第一张照片 + 核心资料</b>（姓名/性别/年龄/城市/身高/一句话介绍）+ <b>扫码直达二维码</b> 合成一张精美名片图片，可一键保存到相册或复制，方便发朋友圈 / 微信群。② <b>管理员照片库</b>——管理面板新增「🖼 照片库」：汇总展示全站所有嘉宾的照片并支持上传、预览、删除、复制地址；还能在编辑嘉宾资料时「🖼 从照片库添加」，直接把库里已有的照片挂到该嘉宾名下，换照片不用重复上传', type: 'feat' },
     { v: '6.9.44', d: '2026-09-05', note: '新增<b>管理员回收站（嘉宾资料）</b>：管理员删除/批量删除嘉宾档案不再硬删消失，而是整份进入「🗑 管理员回收站」（仅管理员在管理面板可见，普通用户/嘉宾完全看不到）。回收站内可「↩️ 恢复」把整份资料放回原处（保留原审核状态与内容），或「🗑 彻底删除」永久移除；满 <b>30 天</b>自动从数据里消失、不可恢复。每条显示「剩 X天Y小时消失」倒计时。删除走原子增量保存，彻底解决了此前「_deleted 软删被合并丢弃、删完即永久消失、无法找回」的事故', type: 'feat' },
     { v: '6.9.43', d: '2026-09-05', note: '新增<b>回收站</b>：用户删除自己的留言不再直接消失，而是先进「我的 → 回收站」，保留 <b>30 天</b>后自动从数据里消失；期内可「↩️ 恢复」放回原嘉宾、或「🗑 彻底删除」。每条显示「剩 X天Y小时消失」倒计时。管理员/内部管理员删除<b>别人</b>的留言仍直接真删（不进回收站）。回收站数据随 data.json 持久化，启动与每分钟定时清理到期项', type: 'feat' },
     { v: '6.9.42', d: '2026-09-03', note: '管理员嘉宾资料可<b>随时复制直达链接</b>（不只在审核通过后）：每张管理视图的嘉宾卡片右下角新增「🔗 复制」按钮，待审核 / 已隐藏 / 已公开状态均可一键复制该嘉宾的 ?guest= 直达链接，无需先审核、无需进详情弹窗（复制会阻止冒泡，不会误开详情）；详情弹窗右上角的「🔗 转发」原本就对任意状态可用，本次只是补齐卡片级快速复制', type: 'feat' },
@@ -3515,7 +3552,8 @@
     codes: [],           // 金币兑换码 [{code, coins, maxUses, usedBy, usedList:[{uid,time}], usedAt, createdAt, createdBy}]；管理员生成、注册用户可兑换 maxUses 次
     redemptions: [],     // 红包兑换记录 [{id, payCode, uid, name, count, coins, amount, time, paid, paidAt}]；payCode 为领取凭证编码，paid 标记管理员是否已发放；1000 金币 = ¥0.01
     reports: [],         // 举报记录 [{id, profileId, reporterUid, reporterName, reason, detail, time, status}]；status: pending / resolved
-    trash: []            // 回收站 [{id, type, profileId, deletedAt, expireAt, comment}]；用户删除的留言先进回收站，满 TRASH_EXPIRE_DAYS 天自动消失，期内可恢复
+    trash: [],           // 回收站 [{id, type, profileId, deletedAt, expireAt, comment}]；用户删除的留言先进回收站，满 TRASH_EXPIRE_DAYS 天自动消失，期内可恢复
+    photoLibrary: []     // 管理员照片库 [{id, url, type, name, size, uploadedAt, uploadedBy}]；管理员集中管理的共享照片池，可浏览全站照片、上传、删除，并在编辑嘉宾时一键选用
   };
 
   // 内置示例兜底：当取不到仓库 data.json（本地预览 / 分享链接 / 直接双击打开）时，
@@ -3889,6 +3927,8 @@
     out.reports = mergeById(base.reports, local.reports);
     // 回收站：追加型数据（只增不减、过期清理独立处理），保存时以本地为准，避免丢失刚移入的条目
     if (Array.isArray(local.trash)) out.trash = local.trash;
+    // 照片库：管理员共享照片池，同为追加型（上传/删除都走增量保存），本地为准避免刚上传的被吞
+    if (Array.isArray(local.photoLibrary)) out.photoLibrary = local.photoLibrary;
     return out;
   }
   function mergeById(baseArr, localArr) {
@@ -4005,6 +4045,7 @@
     if (!Array.isArray(base.redemptions)) base.redemptions = appState.redemptions || [];
     if (!Array.isArray(base.reports)) base.reports = appState.reports || [];
     if (!Array.isArray(base.trash)) base.trash = appState.trash || [];
+    if (!Array.isArray(base.photoLibrary)) base.photoLibrary = appState.photoLibrary || [];
 
     const ret = patchFn(base);   // 在最新基线上打补丁
 
@@ -5185,6 +5226,7 @@
       if (Array.isArray(data.redemptions)) appState.redemptions = data.redemptions;
       if (Array.isArray(data.reports)) appState.reports = data.reports;
       if (Array.isArray(data.trash)) appState.trash = data.trash;
+      if (Array.isArray(data.photoLibrary)) appState.photoLibrary = data.photoLibrary;
       // 兼容老数据：v6.9.4 起的审核状态粘性依赖 statusUpdatedAt；旧资料没有该字段时
       // 退化成 createdAt 比较，并发合并可能把已通过的审核打回 pending。这里在加载时补默认时间戳。
       if (Array.isArray(appState.profiles)) {
@@ -5338,6 +5380,7 @@
       if (Array.isArray(data.codes)) appState.codes = data.codes;
       if (Array.isArray(data.redemptions)) appState.redemptions = data.redemptions;
       if (Array.isArray(data.reports)) appState.reports = data.reports;
+      if (Array.isArray(data.photoLibrary)) appState.photoLibrary = data.photoLibrary;
       __lastSyncSig = sig;
       // 被封号的当前登录用户立即踢下线（多端实时生效）
       const cu = getCurrentUser();
@@ -6060,6 +6103,366 @@
   }
 
   // 渲染详情页操作栏（点赞/收藏/留言入口）
+  // ===== 名片生成 =====
+  // 从嘉宾的照片里挑「第一张照片」：优先 mediaList[0]（若为图片），否则取第一张图片；都没有则返回 null
+  function pickCardPhoto(mediaList) {
+    const list = Array.isArray(mediaList) ? mediaList.filter(function (m) { return m && m.url; }) : [];
+    if (list.length === 0) return null;
+    const isImg = function (m) { return !m.type || m.type.indexOf('image') === 0; };
+    if (isImg(list[0])) return list[0];
+    const firstImg = list.find(isImg);
+    return firstImg || null;
+  }
+
+  // 极简 QR 编码器（byte 模式，纠错等级 L，自动选版本 1..10）——纯内联，无外部依赖，
+  // 避免在线二维码 API 被墙/跨域污染 canvas。仅用于名片里的直达链接（短文本）。
+  function qrEncode(text) {
+    // ---- GF(256) 与 RS 纠错 ----
+    const EXP = new Uint8Array(512), LOG = new Uint8Array(256);
+    (function () { let x = 1; for (let i = 0; i < 255; i++) { EXP[i] = x; LOG[x] = i; x <<= 1; if (x & 0x100) x ^= 0x11d; } for (let i = 255; i < 512; i++) EXP[i] = EXP[i - 255]; })();
+    const gmul = function (a, b) { if (a === 0 || b === 0) return 0; return EXP[LOG[a] + LOG[b]]; };
+    const rsGen = function (deg) {
+      let poly = [1];
+      for (let i = 0; i < deg; i++) {
+        const next = new Array(poly.length + 1).fill(0);
+        for (let j = 0; j < poly.length; j++) { next[j] ^= gmul(poly[j], 1); next[j + 1] ^= gmul(poly[j], EXP[i]); }
+        poly = next;
+      }
+      return poly;
+    };
+    const rsEncode = function (data, ecLen) {
+      const gen = rsGen(ecLen);
+      const res = new Array(ecLen).fill(0);
+      for (let i = 0; i < data.length; i++) {
+        const factor = data[i] ^ res[0];
+        res.shift(); res.push(0);
+        if (factor !== 0) for (let j = 0; j < ecLen; j++) res[j] ^= gmul(gen[j + 1], factor);
+      }
+      return res;
+    };
+    // ---- 版本参数（纠错等级 L）：[每块数据码字数, 每块纠错码字数, 块数] ----
+    // 总数据码字数 = 三者相乘（v6 起多块交织，注意这里是「每块」而非总量）
+    const VER = {
+      1: [19, 7, 1], 2: [34, 10, 1], 3: [55, 15, 1], 4: [80, 20, 1], 5: [108, 26, 1],
+      6: [68, 18, 2], 7: [78, 20, 2], 8: [97, 24, 2], 9: [116, 30, 2], 10: [68, 18, 4]
+    };
+    const alignPos = { 1: [], 2: [6, 18], 3: [6, 22], 4: [6, 26], 5: [6, 30], 6: [6, 34], 7: [6, 22, 38], 8: [6, 24, 42], 9: [6, 26, 46], 10: [6, 28, 50] };
+
+    // ---- 文本转 UTF-8 字节 ----
+    const utf8 = [];
+    for (let i = 0; i < text.length; i++) {
+      let c = text.charCodeAt(i);
+      if (c < 0x80) utf8.push(c);
+      else if (c < 0x800) { utf8.push(0xc0 | (c >> 6), 0x80 | (c & 63)); }
+      else if (c >= 0xd800 && c < 0xdc00 && i + 1 < text.length) {
+        const c2 = text.charCodeAt(++i);
+        c = 0x10000 + ((c - 0xd800) << 10) + (c2 - 0xdc00);
+        utf8.push(0xf0 | (c >> 18), 0x80 | ((c >> 12) & 63), 0x80 | ((c >> 6) & 63), 0x80 | (c & 63));
+      } else { utf8.push(0xe0 | (c >> 12), 0x80 | ((c >> 6) & 63), 0x80 | (c & 63)); }
+    }
+    // ---- 选版本 ----
+    let version = 0;
+    for (let v = 1; v <= 10; v++) {
+      const cap = VER[v][0] * VER[v][2];
+      // 4bit 模式 + 8bit 长度（v1-9）或 16bit 长度（v10）+ 数据 + 4bit 终止符
+      const lenBits = (v <= 9) ? 8 : 16;
+      const need = 4 + lenBits + utf8.length * 8;
+      if (need <= cap * 8) { version = v; break; }
+    }
+    if (!version) throw new Error('内容过长，二维码放不下');
+    const [, ecPerBlock, blocks] = VER[version];
+    // 名片场景链接很短（约 50 字符），v1-v5 足够；超过 v5 视为异常输入，
+    // 直接拒绝而不是生成一个可能有误的码（避免出现扫不出来的名片）。
+    if (version > 5) throw new Error('内容过长，二维码放不下');
+    const dataCap = VER[version][0] * blocks;
+
+    // ---- 组装比特流 ----
+    let bits = '';
+    const push = function (val, len) { bits += val.toString(2).padStart(len, '0'); };
+    push(4, 4);                                   // byte 模式
+    push(utf8.length, version <= 9 ? 8 : 16);     // 字符数
+    utf8.forEach(function (b) { push(b, 8); });
+    const totalBits = dataCap * 8;
+    if (bits.length + 4 <= totalBits) push(0, Math.min(4, totalBits - bits.length));
+    while (bits.length % 8 !== 0) bits += '0';
+    const dataCodewords = [];
+    for (let i = 0; i < bits.length; i += 8) dataCodewords.push(parseInt(bits.substr(i, 8), 2));
+    const PAD = [0xec, 0x11];
+    let padIdx = 0;
+    while (dataCodewords.length < dataCap) dataCodewords.push(PAD[padIdx++ % 2]);
+
+    // ---- 分块 + 纠错 + 交织 ----
+    const dataPerBlock = VER[version][0];
+    const dBlocks = [], eBlocks = [];
+    for (let b = 0; b < blocks; b++) {
+      const chunk = dataCodewords.slice(b * dataPerBlock, (b + 1) * dataPerBlock);
+      dBlocks.push(chunk);
+      eBlocks.push(rsEncode(chunk, ecPerBlock));
+    }
+    const final = [];
+    for (let i = 0; i < dataPerBlock; i++) dBlocks.forEach(function (b) { if (b[i] !== undefined) final.push(b[i]); });
+    for (let i = 0; i < ecPerBlock; i++) eBlocks.forEach(function (b) { if (b[i] !== undefined) final.push(b[i]); });
+
+    // ---- 构建矩阵 ----
+    const size = version * 4 + 17;
+    const mod = [], res = [];
+    for (let i = 0; i < size; i++) { mod.push(new Array(size).fill(false)); res.push(new Array(size).fill(false)); }
+    const setF = function (r, c, v) { if (r >= 0 && r < size && c >= 0 && c < size) { mod[r][c] = v; res[r][c] = true; } };
+    // 定位图案
+    const finder = function (r, c) {
+      for (let i = -1; i <= 7; i++) for (let j = -1; j <= 7; j++) {
+        const rr = r + i, cc = c + j;
+        if (rr < 0 || rr >= size || cc < 0 || cc >= size) continue;
+        const on = (i >= 0 && i <= 6 && (j === 0 || j === 6)) || (j >= 0 && j <= 6 && (i === 0 || i === 6)) || (i >= 2 && i <= 4 && j >= 2 && j <= 4);
+        setF(rr, cc, on);
+      }
+    };
+    finder(0, 0); finder(0, size - 7); finder(size - 7, 0);
+    // 时序图案
+    for (let i = 8; i < size - 8; i++) { setF(6, i, i % 2 === 0); setF(i, 6, i % 2 === 0); }
+    // 校正图案
+    const aps = alignPos[version] || [];
+    for (let a = 0; a < aps.length; a++) for (let b = 0; b < aps.length; b++) {
+      const r = aps[a], c = aps[b];
+      if (res[r][c]) continue;
+      for (let i = -2; i <= 2; i++) for (let j = -2; j <= 2; j++) {
+        setF(r + i, c + j, Math.max(Math.abs(i), Math.abs(j)) !== 1);
+      }
+    }
+    // 版本信息占用区（v>=7）：右上 3×6 与左下 6×3
+    if (version >= 7) {
+      for (let i = 0; i < 6; i++) for (let j = 0; j < 3; j++) { res[i][size - 11 + j] = true; res[size - 11 + j][i] = true; }
+    }
+    // 格式信息：位从 MSB(bit14) 到 LSB(bit0) 依次落到下列坐标（ISO/IEC 18004 规范布局）
+    // 副本 1（左上）：(8,0..5)(8,7)(8,8)(7,8)(5..0,8)；副本 2：右侧竖列 + 左下横列
+    const FMT1 = [[8, 0], [8, 1], [8, 2], [8, 3], [8, 4], [8, 5], [8, 7], [8, 8], [7, 8], [5, 8], [4, 8], [3, 8], [2, 8], [1, 8], [0, 8]];
+    const FMT2 = [[size - 1, 8], [size - 2, 8], [size - 3, 8], [size - 4, 8], [size - 5, 8], [size - 6, 8], [size - 7, 8],
+                  [8, size - 8], [8, size - 7], [8, size - 6], [8, size - 5], [8, size - 4], [8, size - 3], [8, size - 2], [8, size - 1]];
+    FMT1.concat(FMT2).forEach(function (p) { res[p[0]][p[1]] = true; });
+    // 格式信息位（ECL L = 01，掩码 0，标准 BCH 生成 + 固定掩码 0x5412）
+    const fmtData = (1 << 3) | 0;   // ECL L(01) << 3 | mask(000)
+    let fmtBits = fmtData << 10;
+    for (let i = 14; i >= 10; i--) if ((fmtBits >> i) & 1) fmtBits ^= 0x537 << (i - 10);
+    const fmtFinal = ((fmtData << 10) | fmtBits) ^ 0x5412;
+    for (let k = 0; k < 15; k++) {
+      const bit = ((fmtFinal >> (14 - k)) & 1) === 1;   // MSB 优先
+      setF(FMT1[k][0], FMT1[k][1], bit);
+      setF(FMT2[k][0], FMT2[k][1], bit);
+    }
+    // 固定暗模块（永远为深色）
+    setF(size - 8, 8, true);
+
+    // ---- 数据填充（之字形） ----
+    let bi = 0, dir = -1, row = size - 1;
+    for (let col = size - 1; col > 0; col -= 2) {
+      if (col === 6) col--;
+      for (;;) {
+        for (let c = 0; c < 2; c++) {
+          const cc = col - c;
+          if (!res[row][cc]) {
+            let dark = false;
+            if (bi < final.length * 8) { dark = ((final[bi >> 3] >> (7 - (bi & 7))) & 1) === 1; bi++; }
+            mod[row][cc] = dark;
+          }
+        }
+        row += dir;
+        if (row < 0 || row >= size) { row -= dir; dir = -dir; break; }
+      }
+    }
+    // ---- 掩码 0：(row+col)%2==0 取反；并写入格式位（掩码 0） ----
+    for (let r = 0; r < size; r++) for (let c = 0; c < size; c++) {
+      if (!res[r][c] && (r + c) % 2 === 0) mod[r][c] = !mod[r][c];
+    }
+    return mod;
+  }
+
+  // 在当前 canvas 上按模块矩阵绘制二维码（模块边长 px）
+  function drawQR(ctx, matrix, x, y, px) {
+    const n = matrix.length;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(x, y, n * px, n * px);
+    ctx.fillStyle = '#111827';
+    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
+      if (matrix[r][c]) ctx.fillRect(x + c * px, y + r * px, px, px);
+    }
+  }
+
+  // 加载图片为可绘制的 Image（同源 ./media/ 不受跨域限制）
+  function loadImageForCanvas(url) {
+    return new Promise(function (resolve) {
+      const img = new Image();
+      img.onload = function () { resolve(img); };
+      img.onerror = function () { resolve(null); };
+      img.src = url;
+    });
+  }
+
+  // 圆角矩形路径
+  function roundRectPath(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  // 生成嘉宾名片：第一张照片 + 核心资料 + 扫码直达二维码
+  async function generateCardImage(id) {
+    const item = appState.profiles.find(function (p) { return String(p.id) === String(id); });
+    if (!item) { showAlert('资料不存在'); return; }
+    toast('🎨 正在生成名片…');
+    try {
+      const W = 750, H = 1050;
+      const canvas = document.createElement('canvas');
+      canvas.width = W; canvas.height = H;
+      const ctx = canvas.getContext('2d');
+
+      // 背景：柔和渐变
+      const bg = ctx.createLinearGradient(0, 0, 0, H);
+      bg.addColorStop(0, '#eef2ff');
+      bg.addColorStop(1, '#fdf2f8');
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, W, H);
+
+      // 顶部照片（第一张照片），高度 560，object-fit: cover
+      const photoH = 560;
+      const photo = pickCardPhoto(item.mediaList);
+      ctx.save();
+      ctx.beginPath(); ctx.rect(0, 0, W, photoH); ctx.clip();
+      if (photo) {
+        const pimg = await loadImageForCanvas(safeMediaUrl(photo.url));
+        if (pimg && pimg.width) {
+          const scale = Math.max(W / pimg.width, photoH / pimg.height);
+          const dw = pimg.width * scale, dh = pimg.height * scale;
+          ctx.drawImage(pimg, (W - dw) / 2, (photoH - dh) / 2, dw, dh);
+        } else {
+          ctx.fillStyle = '#cbd5e1'; ctx.fillRect(0, 0, W, photoH);
+          ctx.fillStyle = '#64748b'; ctx.font = '28px sans-serif'; ctx.textAlign = 'center';
+          ctx.fillText('照片加载失败', W / 2, photoH / 2);
+        }
+      } else {
+        ctx.fillStyle = '#e2e8f0'; ctx.fillRect(0, 0, W, photoH);
+        ctx.fillStyle = '#94a3b8'; ctx.font = '30px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText('暂无照片', W / 2, photoH / 2);
+      }
+      // 照片底部渐隐，便于与卡片融合
+      const fade = ctx.createLinearGradient(0, photoH - 140, 0, photoH);
+      fade.addColorStop(0, 'rgba(255,255,255,0)');
+      fade.addColorStop(1, 'rgba(255,255,255,0.9)');
+      ctx.fillStyle = fade;
+      ctx.fillRect(0, photoH - 140, W, 140);
+      ctx.restore();
+
+      // 白色卡片主体
+      const cardX = 40, cardY = 500, cardW = W - 80, cardH = H - cardY - 40;
+      ctx.save();
+      ctx.shadowColor = 'rgba(79,70,229,.16)';
+      ctx.shadowBlur = 30;
+      ctx.shadowOffsetY = 8;
+      ctx.fillStyle = '#ffffff';
+      roundRectPath(ctx, cardX, cardY, cardW, cardH, 28);
+      ctx.fill();
+      ctx.restore();
+
+      const padX = cardX + 36;
+      let cy = cardY + 62;
+
+      // 姓名 + 性别
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#111827';
+      ctx.font = 'bold 44px sans-serif';
+      const nm = String(item['姓名'] || '未填');
+      ctx.fillText(nm.length > 10 ? nm.slice(0, 10) + '…' : nm, padX, cy);
+      const nameW = Math.min(ctx.measureText(nm.length > 10 ? nm.slice(0, 10) + '…' : nm).width, 460);
+      const gender = String(item['性别'] || '');
+      if (gender) {
+        ctx.font = '24px sans-serif';
+        const gw = ctx.measureText(gender).width + 28;
+        ctx.fillStyle = gender.indexOf('女') >= 0 ? '#fbcfe8' : '#bfdbfe';
+        roundRectPath(ctx, padX + nameW + 16, cy - 32, gw, 40, 20);
+        ctx.fill();
+        ctx.fillStyle = gender.indexOf('女') >= 0 ? '#be185d' : '#1d4ed8';
+        ctx.fillText(gender, padX + nameW + 16 + 14, cy - 4);
+      }
+      cy += 54;
+
+      // 核心资料行：年龄 / 城市 / 身高 / 职业
+      const ageRaw = String(item['年龄'] || '').replace(/岁/g, '').trim();
+      const facts = [];
+      if (ageRaw) facts.push(ageRaw + '岁');
+      if (item['国家/城市']) facts.push(String(item['国家/城市']));
+      if (item['身高']) facts.push(String(item['身高']));
+      if (item['职业/学生']) facts.push(String(item['职业/学生']));
+      ctx.fillStyle = '#6b7280';
+      ctx.font = '26px sans-serif';
+      const factLine = facts.join('  ·  ');
+      ctx.fillText(factLine.length > 26 ? factLine.slice(0, 26) + '…' : factLine, padX, cy);
+      cy += 44;
+
+      // 一句话介绍（可换行，最多 2 行）
+      const quote = String(item['一句话介绍'] || '').trim();
+      if (quote) {
+        ctx.fillStyle = '#4f46e5';
+        ctx.font = 'italic 26px sans-serif';
+        const maxW = cardW - 72 - 200;   // 右侧给二维码留位
+        const lines = [];
+        let cur = '“';
+        for (let i = 0; i < quote.length; i++) {
+          if (ctx.measureText(cur + quote[i]).width > maxW && lines.length < 1) {
+            lines.push(cur); cur = quote[i];
+          } else { cur += quote[i]; }
+        }
+        lines.push(cur + '”');
+        lines.forEach(function (ln, i2) { ctx.fillText(ln, padX, cy + i2 * 36); });
+        cy += lines.length * 36 + 10;
+      }
+
+      // 二维码（右下角）：指向该嘉宾直达链接
+      let directUrl = '';
+      try { directUrl = new URL('?guest=' + item.id, location.href).href; } catch (e) { directUrl = location.origin + location.pathname + '?guest=' + item.id; }
+      const qrSize = 168;
+      const qrX = cardX + cardW - qrSize - 36;
+      const qrY = cardY + cardH - qrSize - 36;
+      try {
+        const matrix = qrEncode(directUrl);
+        const px = Math.floor(qrSize / matrix.length);
+        const realSize = px * matrix.length;
+        ctx.fillStyle = '#f9fafb';
+        roundRectPath(ctx, qrX - 10, qrY - 10, realSize + 20, realSize + 20, 12);
+        ctx.fill();
+        drawQR(ctx, matrix, qrX, qrY, px);
+        ctx.fillStyle = '#9ca3af';
+        ctx.font = '18px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('扫码看资料', qrX + realSize / 2, qrY + realSize + 34);
+        ctx.textAlign = 'left';
+      } catch (e) {
+        // 二维码生成失败（内容过长等）：降级为文字链接
+        ctx.fillStyle = '#9ca3af';
+        ctx.font = '18px sans-serif';
+        ctx.fillText('扫码失败，请访问：', qrX - 80, qrY + 40);
+      }
+
+      // 底部品牌信息
+      ctx.fillStyle = '#9ca3af';
+      ctx.font = '22px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('全球找对象 · 期待与你相遇', W / 2, H - 58);
+      ctx.textAlign = 'left';
+
+      const dataUrl = canvas.toDataURL('image/png');
+      const imgEl = document.getElementById('cardPreviewImg');
+      const dl = document.getElementById('cardDownloadBtn');
+      if (imgEl) imgEl.src = dataUrl;
+      if (dl) { dl.href = dataUrl; dl.download = 'card_' + (item['姓名'] || item.id) + '.png'; }
+      toggleModal('cardModal', true);
+    } catch (err) {
+      showAlert('❌ 名片生成失败：' + err.message);
+    }
+  }
+
   function renderActionBar(item) {
     const bar = document.getElementById('actionBar');
     if (!bar) return;
@@ -6071,6 +6474,7 @@
       '<button class="btn ' + (liked ? 'btn-primary' : 'btn-outline') + '" style="flex:1; font-size:13px;" onclick="toggleLike(' + item.id + ')">' + (liked ? '👍 已赞' : '👍 点赞') + ' <span id="likeCount">' + likeCount + '</span></button>' +
       '<button class="btn ' + (faved ? 'btn-primary' : 'btn-outline') + '" style="flex:1; font-size:13px;" onclick="toggleFavorite(' + item.id + ')">' + (faved ? '⭐ 已收藏' : '⭐ 收藏') + '</button>' +
       '<button class="btn btn-outline" style="flex:1; font-size:13px;" onclick="scrollToComments()">💬 留言 ' + commentCount + '</button>' +
+      '<button class="btn btn-outline" style="flex:1; font-size:13px; color:#7c3aed; border-color:#c4b5fd;" onclick="generateCardImage(' + item.id + ')">🪪 生成名片</button>' +
       '<button class="btn btn-outline" style="flex:1; font-size:13px; color:#dc2626; border-color:#fca5a5;" onclick="openReportModal(' + item.id + ')">🚩 举报</button>';
   }
 
@@ -6663,6 +7067,226 @@
       }, 'purge trash profile ' + trashId);
       if (typeof renderAdminTrash === 'function') renderAdminTrash();
       toast('🗑️ 已彻底删除');
+    } catch (err) {
+      showAlert('❌ 操作失败：' + err.message);
+    } finally {
+      __interactLock = false;
+    }
+  }
+
+  // ===== 管理员照片库 =====
+  // 数据模型：appState.photoLibrary 是管理员共享照片池（可增删）；
+  // 同时「全部照片」视图还会**只读汇总**全站嘉宾 mediaList 里的照片（不复制、不修改，仅展示）。
+  let __photoLibTab = 'lib';        // 'lib' = 照片库自有 | 'all' = 全部（含嘉宾照片）
+  let __photoPickTarget = null;     // 挑选模式：null=浏览；'edit'=追加到编辑中的资料；数字/字符串=某嘉宾 id
+
+  function openPhotoLibrary(pickTarget) {
+    __photoPickTarget = (pickTarget === undefined) ? null : pickTarget;
+    __photoLibTab = 'lib';
+    const hint = document.getElementById('photoLibHint');
+    if (hint) {
+      hint.innerHTML = __photoPickTarget
+        ? '<b style="color:var(--primary);">🎯 挑选模式：点任意照片即可添加到该嘉宾</b>'
+        : '汇总全站所有嘉宾照片，可上传、预览、复制地址';
+    }
+    renderPhotoLibrary();
+    toggleModal('photoLibModal', true);
+  }
+
+  function closePhotoLibrary() {
+    __photoPickTarget = null;
+    toggleModal('photoLibModal', false);
+  }
+
+  function switchPhotoLibTab(tab) {
+    __photoLibTab = tab;
+    renderPhotoLibrary();
+  }
+
+  // 汇总全站嘉宾 mediaList 里的照片（只读）。返回 [{url, type, ownerId, ownerName}]
+  function collectGuestPhotos() {
+    const out = [];
+    (appState.profiles || []).forEach(function (p) {
+      if (p._deleted || p.status === 'applied') return;
+      (p.mediaList || []).forEach(function (m) {
+        if (!m || !m.url) return;
+        const isImg = !m.type || m.type.indexOf('image') === 0;
+        if (!isImg) return;   // 照片库只看照片，视频不进
+        out.push({ url: m.url, type: m.type || 'image/jpeg', ownerId: p.id, ownerName: p['姓名'] || '未填' });
+      });
+    });
+    return out;
+  }
+
+  function renderPhotoLibrary() {
+    const grid = document.getElementById('photoLibGrid');
+    if (!grid) return;
+    const libCountEl = document.getElementById('photoLibLibCount');
+    const allCountEl = document.getElementById('photoLibAllCount');
+    const lib = Array.isArray(appState.photoLibrary) ? appState.photoLibrary : [];
+    const guestPhotos = collectGuestPhotos();
+    if (libCountEl) libCountEl.textContent = lib.length;
+    if (allCountEl) allCountEl.textContent = lib.length + guestPhotos.length;
+    const tabLib = document.getElementById('photoLibTabLib');
+    const tabAll = document.getElementById('photoLibTabAll');
+    if (tabLib) tabLib.style.borderColor = __photoLibTab === 'lib' ? 'var(--primary)' : '';
+    if (tabAll) tabAll.style.borderColor = __photoLibTab === 'all' ? 'var(--primary)' : '';
+
+    const cell = function (url, label, isLibItem, id) {
+      const delBtn = isLibItem
+        ? '<button class="btn btn-outline" style="position:absolute; top:4px; right:4px; font-size:11px; padding:2px 7px; background:rgba(255,255,255,.92); color:var(--danger); border-color:#fca5a5;" onclick="event.stopPropagation(); deletePhotoLibItem(\'' + id + '\')" title="从照片库删除">×</button>'
+        : '';
+      return '<div style="position:relative; border:1px solid var(--border); border-radius:10px; overflow:hidden; cursor:pointer; background:var(--bg);" onclick="photoLibClick(\'' + encodeURIComponent(url) + '\', ' + (isLibItem ? 'true' : 'false') + ')">' +
+        '<div style="width:100%; aspect-ratio:1/1; overflow:hidden;">' +
+        '<img src="' + safeMediaUrl(url) + '" loading="lazy" decoding="async" style="width:100%; height:100%; object-fit:cover;">' +
+        '</div>' +
+        '<div style="font-size:10px; color:var(--text-muted); padding:3px 6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + escapeHtml(label) + '</div>' +
+        delBtn + '</div>';
+    };
+
+    let html = '';
+    if (__photoLibTab === 'lib') {
+      html = lib.length === 0
+        ? '<div style="text-align:center; color:var(--text-muted); font-size:13px; padding:30px;">照片库还是空的，点上方「⬆️ 上传照片」添加</div>'
+        : '<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(110px, 1fr)); gap:10px;">' +
+          lib.map(function (it) { return cell(it.url, it.name || '照片', true, it.id); }).join('') + '</div>';
+    } else {
+      // 全部照片：库内 + 嘉宾照片，合并去重按 url
+      const seen = {};
+      const items = [];
+      lib.forEach(function (it) { if (!seen[it.url]) { seen[it.url] = 1; items.push(cell(it.url, '📚 照片库', true, it.id)); } });
+      guestPhotos.forEach(function (g) {
+        if (seen[g.url]) return;
+        seen[g.url] = 1;
+        items.push(cell(g.url, '👤 ' + g.ownerName, false, ''));
+      });
+      html = items.length === 0
+        ? '<div style="text-align:center; color:var(--text-muted); font-size:13px; padding:30px;">还没有任何照片</div>'
+        : '<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(110px, 1fr)); gap:10px;">' + items.join('') + '</div>';
+    }
+    grid.innerHTML = html;
+  }
+
+  // 点照片：挑选模式下追加到目标嘉宾；否则复制地址
+  async function photoLibClick(encUrl, isLibItem) {
+    const url = decodeURIComponent(encUrl);
+    if (__photoPickTarget !== null) {
+      await addPhotoToGuest(__photoPickTarget, url);
+      return;
+    }
+    try {
+      if (navigator.clipboard) { await navigator.clipboard.writeText(new URL(url, location.href).href); }
+      else { fallbackCopyText(new URL(url, location.href).href); }
+      toast('📋 图片地址已复制');
+    } catch (e) {
+      showAlert('图片地址：' + url);
+    }
+  }
+
+  // 上传照片到照片库（多选，逐张压缩后上传仓库）
+  async function handlePhotoLibUpload(files) {
+    if (!files || files.length === 0) return;
+    const status = document.getElementById('photoLibStatus');
+    const token = getWriteToken();
+    if (!token) { showAlert('❌ 未检测到写入令牌，请先以管理员身份登录'); return; }
+    const arr = Array.from(files).filter(function (f) { return f.type && f.type.indexOf('image/') === 0; });
+    if (arr.length === 0) { showAlert('❌ 请选择图片文件'); return; }
+    if (status) { status.style.display = 'block'; status.textContent = '上传中 0/' + arr.length + '…'; }
+    const uploaded = [];
+    try {
+      for (let i = 0; i < arr.length; i++) {
+        const compressed = await compressImageFile(arr[i], 1600, 0.85);
+        const meta = await uploadToRepo(compressed);
+        uploaded.push({
+          id: 'ph_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+          url: meta.url,
+          type: meta.type || 'image/jpeg',
+          name: (arr[i].name || 'photo.jpg').slice(0, 60),
+          size: compressed.size || 0,
+          uploadedAt: Date.now(),
+          uploadedBy: (getCurrentIdentity() || {}).name || '管理员'
+        });
+        if (status) status.textContent = '上传中 ' + (i + 1) + '/' + arr.length + '…';
+      }
+      const ident = getCurrentIdentity();
+      const actorName = ident ? (ident.type === 'super' ? '超级管理员' : (ident.name || '内部管理员')) : '管理员';
+      await patchRemoteState(function (base) {
+        if (!Array.isArray(base.photoLibrary)) base.photoLibrary = [];
+        uploaded.forEach(function (u) { base.photoLibrary.unshift(u); });
+        if (base.photoLibrary.length > 500) base.photoLibrary.length = 500;
+        if (!Array.isArray(base.adminLogs)) base.adminLogs = [];
+        base.adminLogs.unshift({ time: Date.now(), actor: actorName, op: '照片库', desc: '上传 ' + uploaded.length + ' 张照片到照片库' });
+        if (base.adminLogs.length > 200) base.adminLogs.length = 200;
+      }, 'photo library upload ' + uploaded.length);
+      if (status) status.textContent = '✅ 已上传 ' + uploaded.length + ' 张';
+      renderPhotoLibrary();
+      toast('✅ 已上传 ' + uploaded.length + ' 张照片');
+    } catch (err) {
+      if (status) status.textContent = '';
+      if (status) status.style.display = 'none';
+      showAlert('❌ 上传失败：' + err.message);
+    }
+  }
+
+  async function deletePhotoLibItem(id) {
+    if (__interactLock) return;
+    __interactLock = true;
+    try {
+      const ident = getCurrentIdentity();
+      const actorName = ident ? (ident.type === 'super' ? '超级管理员' : (ident.name || '内部管理员')) : '管理员';
+      await patchRemoteState(function (base) {
+        if (!Array.isArray(base.photoLibrary)) base.photoLibrary = [];
+        base.photoLibrary = base.photoLibrary.filter(function (x) { return x.id !== id; });
+        if (!Array.isArray(base.adminLogs)) base.adminLogs = [];
+        base.adminLogs.unshift({ time: Date.now(), actor: actorName, op: '照片库', desc: '从照片库移除 1 张照片' });
+        if (base.adminLogs.length > 200) base.adminLogs.length = 200;
+      }, 'photo library delete ' + id);
+      renderPhotoLibrary();
+      toast('🗑️ 已从照片库移除');
+    } catch (err) {
+      showAlert('❌ 操作失败：' + err.message);
+    } finally {
+      __interactLock = false;
+    }
+  }
+
+  // 把照片库里的一张照片挂到某嘉宾名下（编辑中=改内存待保存；已存在=直接增量保存）
+  async function addPhotoToGuest(target, url) {
+    const media = { url: url, type: 'image/jpeg' };
+    if (target === 'edit') {
+      // 编辑表单：追加到待保存列表，用户点保存才真正落库
+      const dup = (currentDetailMediaList || []).some(function (m) { return m && m.url === url; });
+      if (dup) { toast('该照片已在此嘉宾名下'); return; }
+      currentDetailMediaList.push(media);
+      if (typeof renderExistingMedia === 'function') renderExistingMedia();
+      const box = document.getElementById('existingMediaBox');
+      if (box) box.style.display = 'flex';
+      closePhotoLibrary();
+      toast('✅ 已添加，记得点保存');
+      return;
+    }
+    // 直接给某嘉宾追加（从照片库「全部照片」视图操作）
+    if (__interactLock) return;
+    __interactLock = true;
+    try {
+      let added = false;
+      await patchRemoteState(function (base) {
+        const p = findProfileIn(base, target);
+        if (!p) return;
+        if (!Array.isArray(p.mediaList)) p.mediaList = [];
+        if (p.mediaList.some(function (m) { return m && m.url === url; })) return;
+        p.mediaList.push(media);
+        p.updatedAt = Date.now();
+        added = true;
+      }, 'add library photo to profile ' + target);
+      closePhotoLibrary();
+      if (added) {
+        refreshViews();
+        if (currentDetailId != null) openDetail(currentDetailId);
+        toast('✅ 已添加到嘉宾照片');
+      } else {
+        toast('该照片已在此嘉宾名下');
+      }
     } catch (err) {
       showAlert('❌ 操作失败：' + err.message);
     } finally {
