@@ -2,7 +2,7 @@
   "wechat": {
     "id": "xiaomaomiii777",
     "qr": "./media/1787335501942_13291.png",
-    "groupQr": "./media/1789823016681_mmqrcode1789822987388.jpg",
+    "groupQr": "./media/1789823282147_mmqrcode1789822987388.jpg",
     "sponsor": {
       "enabled": true,
       "text": "虽然网站是免费试用，但是作者得付费大家可以通过赞助帮作者,谢谢支持！",
@@ -1265,7 +1265,7 @@
   ],
   "adminLogs": [
     {
-      "time": 1789823019052,
+      "time": 1789823283835,
       "actor": "超级管理员",
       "op": "配置",
       "desc": "更新微信名片及群二维码，启用赞助"
