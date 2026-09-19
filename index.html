@@ -2811,12 +2811,13 @@ window.__glassBootDone = function () {
   <div class="modal" style="max-width:760px;">
     <button class="close-btn" onclick="closePhotoLibrary()">×</button>
     <h2 style="font-size:18px; margin-bottom:4px;">🖼 照片库</h2>
-    <div id="photoLibHint" style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">汇总全站所有嘉宾的照片与视频，可上传、预览、复制地址</div>
+    <div id="photoLibHint" style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">汇总全站嘉宾的媒体与仓库里的全部文件，可上传、预览、复制地址</div>
     <div style="display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap;">
       <button class="btn btn-primary" style="flex:1; min-width:130px;" onclick="document.getElementById('photoLibInput').click()">⬆️ 上传照片 / 视频</button>
       <input type="file" id="photoLibInput" accept="image/*,video/*" multiple style="display:none" onchange="handlePhotoLibUpload(this.files); this.value='';">
       <button class="btn btn-outline" style="flex:1; min-width:120px;" onclick="switchPhotoLibTab('lib')" id="photoLibTabLib">📚 照片库 (<span id="photoLibLibCount">0</span>)</button>
       <button class="btn btn-outline" style="flex:1; min-width:120px;" onclick="switchPhotoLibTab('all')" id="photoLibTabAll">🌐 全部媒体 (<span id="photoLibAllCount">0</span>)</button>
+      <button class="btn btn-outline" style="flex:1; min-width:120px;" onclick="switchPhotoLibTab('repo')" id="photoLibTabRepo">📁 仓库全部文件 (<span id="photoLibRepoCount">0</span>)</button>
     </div>
     <div id="photoLibStatus" style="display:none; font-size:12px; color:var(--primary); margin-bottom:8px;"></div>
     <!-- 视频内嵌预览（v6.9.49） -->
@@ -2850,6 +2851,8 @@ window.__glassBootDone = function () {
       <button class="btn btn-outline" style="flex:1;" onclick="toggleModal('cardModal', false)">关闭</button>
       <a class="btn btn-primary" id="cardDownloadBtn" style="flex:1; text-align:center; text-decoration:none;" download="guest-card.png">⬇️ 保存图片</a>
     </div>
+    <!-- 导出视频（v6.9.50）：不支持录制的浏览器会自动隐藏此按钮 -->
+    <button class="btn btn-outline" id="cardVideoExportBtn" style="width:100%; margin-top:10px; color:#7c3aed; border-color:#c4b5fd; display:none;" onclick="generateCardVideo()">🎬 导出视频（mp4）</button>
     <div style="font-size:11px; color:var(--text-muted); margin-top:8px; text-align:center;">手机端也可长按上方图片选择「保存图片」</div>
   </div>
 </div>
@@ -3056,6 +3059,21 @@ window.__glassBootDone = function () {
     toggleModal('customDialog', true);
   }
 
+  // 同 confirmAction，但消息按 HTML 渲染（需要加粗/换行/红字警告时用）。
+  // 调用方必须自行转义其中的用户数据，避免 XSS。
+  function confirmActionHtml(html, onConfirm, title) {
+    resetDialogStyle();
+    __customOnConfirm = onConfirm;
+    const titleEl = document.getElementById('customDialogTitle');
+    titleEl.textContent = title || '确认操作';
+    titleEl.style.color = 'var(--text)';
+    document.getElementById('customDialogMsg').innerHTML = html;
+    document.getElementById('customDialogBtns').innerHTML =
+      '<button class="btn btn-outline" style="flex:1;" onclick="closeCustomDialog()">取消</button>' +
+      '<button class="btn btn-primary" style="flex:1; background:var(--danger);" onclick="customConfirmOk()">确定</button>';
+    toggleModal('customDialog', true);
+  }
+
   function customConfirmOk() {
     const fn = __customOnConfirm;   // 先保存回调（closeCustomDialog 会清空它）
     __customOnConfirm = null;
@@ -3106,8 +3124,9 @@ window.__glassBootDone = function () {
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.9.49';
+  const APP_VERSION = '6.9.50';
   const CHANGELOG = [
+    { v: '6.9.50', d: '2026-09-19', note: '照片库补齐 + 名片可导出视频：① <b>照片库新增「📁 仓库全部文件」页签</b>——此前照片库只显示「被嘉宾资料引用了的」媒体（30 个），而仓库 <code>media/</code> 目录里其实躺着 <b>89 个文件</b>，多出来的是历史遗留的<b>孤儿文件</b>（上传过但资料已删、或从未保存成功）。现在可直接看到仓库里的<b>每一个文件</b>，含大小、格式，无人引用的已自动排到最前，方便集中清理；② <b>仓库文件可直接删除</b>——仅<b>超级管理员</b>可操作，删除前弹窗<b>明确告知该文件正被几份嘉宾资料引用</b>（列出姓名），避免误删导致资料坏图；③ <b>名片支持导出视频</b>——名片弹窗新增「🎬 导出视频」，把名片录成 4 秒的<b>轻微推近 + 淡入</b>动效视频，优先输出 <b>MP4</b>（微信、朋友圈、抖音都能直接发）；iPhone 上走系统分享面板可直接存相册，不支持的浏览器会自动隐藏该按钮。', type: 'feat' },
     { v: '6.9.49', d: '2026-09-18', note: '名片与照片库升级：① <b>名片照片更大、资料更紧凑</b>——照片区高度相比原先放大<b>约 24%</b>（成为名片主角），同时压缩资料区排版（字号与行距下调、基础资料网格收紧、二维码与品牌区同步缩小），<b>全部字段一个不少</b>，只是排布更紧密，信息密度不降；② <b>名片支持视频</b>——嘉宾名下有视频时，名片照片区自动改用<b>该视频的首帧画面</b>作为封面，并叠加<b>播放标记</b>与「点击查看视频」提示；在名片弹窗点「🎬 播放视频」即可<b>直接播放</b>，不必再回详情页翻找；③ <b>照片库显示全部媒体</b>——此前只收「库内照片」，现在<b>照片与视频统统显示</b>（含每位嘉宾名下的视频，带播放角标与「🎬 视频」标签，点击即弹内嵌播放器）；④ <b>照片库新增「⬆️ 上传照片 / 视频」入口</b>——可直接把图片或视频上传进本站图库，随后可挂到<b>任意嘉宾</b>名下（图片自动压缩，视频按原画质上传、超 60MB 自动跳过）。', type: 'feat' },
     { v: '6.9.48', d: '2026-09-18', note: '<b>整站流畅度大幅优化</b>（解决「连高端机都掉帧」）。根因是<b>玻璃拟态被滥用</b>：一个页面里竟有 <b>365 个元素</b>各自带 backdrop-filter（52 个按钮、37 个输入框、35 个主按钮、32 个弹窗遮罩、28 个表单行…），每个都要独立建 GPU 合成层并逐帧回读背景重算模糊。本轮做了四件事：① <b>只给真正「透出背景」的大面板保留模糊</b>（卡片/顶栏/底部胶囊/弹窗），按钮、输入框、徽章、表单行、列表项改为<b>同色系半透明填充 + 描边 + 内高光</b>——肉眼几乎无差别，但实际参与模糊的元素从 <b>365 降到 17</b>；② <b>关掉背景 4 个全屏光斑的永久动画并去掉其 blur</b>（它们一动，全屏玻璃都得重算模糊，这是高端机也卡的头号原因）；③ <b>新增媒体懒加载</b>：此前没有任何 IntersectionObserver，所有图片视频一进 DOM 就加载、且视频用 preload="metadata" 逐个建连拉流；现在距视口 300px 内才加载、视频改为按需 preload="none"，离屏自动释放，首屏视频请求<b>归零</b>；④ <b>事件与合成优化</b>：触摸涟漪改为复用单个元素 + rAF 节流（原每次触摸都新建 DOM 并强制回流）、指针高光缓存 rect（不再每帧 getBoundingClientRect）、低端机/省电模式自动降级。实测（4× CPU 限速）每帧耗时：首页 121→43ms、滚动 126→37ms、详情页 212→48ms，最大帧阻塞 <b>383ms → 83ms</b>', type: 'fix' },
     { v: '6.9.47', d: '2026-09-18', note: '优化<b>嘉宾名片</b>：此前名片只印了「姓名/性别/年龄/城市/身高 + 一句话介绍」几项核心资料，看不到完整档案。现在名片改为<b>完整资料版</b>——顶部第一张照片下叠加大字姓名，接着是<b>基础资料两列网格</b>（年龄 / 生日 / 城市 / 身高 / 体重 / 星座 / 性取向 / 职业，空项自动跳过），再逐段展示<b>性格 / 兴趣爱好 / 生活习惯 / 择偶要求 / 一句话介绍</b>等长文本（带左侧色条小标题，一句话介绍用斜体引号），全部内容<b>自动折行、不截断不溢出</b>；画布高度按资料多少<b>自适应</b>，资料多则名片变长、资料少则自动收紧，不再留大片空白。底部二维码由右下角移到<b>居中</b>并放大，扫码可查看完整资料与照片视频。', type: 'fix' },
@@ -3934,6 +3953,49 @@ window.__glassBootDone = function () {
     }
     const dataType = file.type || (file.name.toLowerCase().endsWith('.mp4') ? 'video/mp4' : 'image/jpeg');
     return { url: './media/' + safeName, type: dataType };
+  }
+
+  // ===== 仓库 media/ 目录读写（v6.9.50）=====
+  // 列 media/ 目录下「真实存在」的全部文件。这与 data.json 里的引用是两套东西：
+  // 前者是仓库里实实在在的文件，后者只是嘉宾资料挂上去的引用。历史遗留的孤儿文件
+  // （上传了但资料已删/从未保存成功）只会出现在这里，不会出现在嘉宾资料里。
+  // 注：GitHub 单次最多返回 1000 条，当前目录远小于该上限；若将来超过需改用分页。
+  async function listRepoMedia() {
+    const token = getWriteToken();
+    const res = await fetch(`${API}/media`, { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || ('读取目录失败 HTTP ' + res.status));
+    }
+    const arr = await res.json();
+    if (!Array.isArray(arr)) return [];
+    return arr.filter(function (x) { return x && x.type === 'file' && x.name !== '.gitkeep'; }).map(function (x) {
+      return {
+        name: x.name,
+        path: x.path,
+        sha: x.sha,                       // 删除时必须回传，否则 422
+        size: x.size || 0,
+        url: './media/' + x.name,
+        isVideo: /\.(mp4|webm|mov|m4v)$/i.test(x.name)
+      };
+    });
+  }
+
+  // 删除仓库里的一个文件。GitHub 的删除接口必须带文件当前的 blob sha（来自 listRepoMedia），
+  // 若期间该文件被改动过会返回 409，调用方需提示用户刷新后重试。
+  async function deleteRepoFile(path, sha, commitMsg) {
+    const token = getWriteToken();
+    if (!token) throw new Error('未检测到写入令牌');
+    const res = await fetch(`${API}/${path}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: commitMsg || ('delete ' + path), sha: sha })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || ('删除失败 HTTP ' + res.status));
+    }
+    return true;
   }
 
   async function saveToGitHub() {
@@ -6787,6 +6849,11 @@ window.__glassBootDone = function () {
       const dl = document.getElementById('cardDownloadBtn');
       if (imgEl) imgEl.src = dataUrl;
       if (dl) { dl.href = dataUrl; dl.download = 'card_' + (item['姓名'] || item.id) + '.png'; }
+      // v6.9.50：能力支持时才显示「导出视频」按钮（不支持则完全不出现，避免点了没反应的挫败感）
+      try {
+        const vbtn = document.getElementById('cardVideoExportBtn');
+        if (vbtn) vbtn.style.display = canExportCardVideo() ? 'block' : 'none';
+      } catch (e) { }
       // v6.9.49：有视频时，名片弹窗里提供直接播放该嘉宾视频的入口
       try {
         const row = document.getElementById('cardVideoRow');
@@ -6819,10 +6886,137 @@ window.__glassBootDone = function () {
         }
       } catch (e) { }
       // 暴露画布便于自测/导出，避免 canvas 过大长期驻留内存
-      try { window.__lastCardCanvas = canvas; } catch (e) { }
+      try { window.__lastCardCanvas = canvas; window.__lastCardName = item['姓名'] || item.id; } catch (e) { }
       toggleModal('cardModal', true);
     } catch (err) {
       showAlert('❌ 名片生成失败：' + err.message);
+    }
+  }
+
+  // ===== 名片导出视频（v6.9.50）=====
+  // 把 canvas 合成动画用 MediaRecorder 录成视频文件。
+  // 关键决策：优先 mp4 —— Safari 只支持 MP4/H.264（无 VP8/VP9 编码器授权），
+  // 而 MP4 恰好也是微信/朋友圈/抖音都能直接发的格式；WebM 仅作为安卓 Chrome 的兜底。
+  function canExportCardVideo() {
+    try {
+      if (!window.MediaRecorder || !HTMLCanvasElement.prototype.captureStream) return false;
+      return ['video/mp4;codecs=avc1.42E01E', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm']
+        .some(function (m) { return MediaRecorder.isTypeSupported(m); });
+    } catch (e) { return false; }
+  }
+
+  // 保存 Blob 到本地。移动端差异很大：iOS Safari 对 blob: + <a download> 支持不佳，
+  // 但支持 navigator.share({files}) —— 这是 iPhone 上把视频存相册/发微信最顺的路径。
+  async function saveBlobFile(blob, filename) {
+    const file = (typeof File !== 'undefined')
+      ? new File([blob], filename, { type: blob.type })
+      : null;
+    if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], title: filename });
+        return 'shared';
+      } catch (e) {
+        // 用户取消分享 → 不报错，继续走下载兜底
+        if (e && e.name === 'AbortError') return 'cancelled';
+      }
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function () {
+      try { document.body.removeChild(a); } catch (e) { }
+      URL.revokeObjectURL(url);
+    }, 2000);
+    return 'downloaded';
+  }
+
+  let __cardVideoBusy = false;
+
+  // 基于「当前已生成的名片画布」录制一段带轻微动效的视频
+  async function generateCardVideo() {
+    if (__cardVideoBusy) return;
+    const src = window.__lastCardCanvas;
+    if (!src || !src.width || !src.height) { showAlert('请先生成名片，再导出视频'); return; }
+    if (!canExportCardVideo()) {
+      showAlert('当前浏览器不支持视频导出。\n\niPhone 需 iOS 14.5 及以上；你也可以直接「⬇️ 保存图片」，或长按名片图片保存。');
+      return;
+    }
+    const btn = document.getElementById('cardVideoExportBtn');
+    const oldText = btn ? btn.textContent : '';
+    __cardVideoBusy = true;
+    if (btn) { btn.textContent = '⏳ 生成中…'; btn.style.pointerEvents = 'none'; btn.style.opacity = '.6'; }
+    try {
+      const W = src.width, H = src.height;
+      const canvas = document.createElement('canvas');
+      canvas.width = W; canvas.height = H;
+      const ctx = canvas.getContext('2d');
+      const stream = canvas.captureStream(30);
+      const mimeCandidates = ['video/mp4;codecs=avc1.42E01E', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm'];
+      const mimeType = mimeCandidates.find(function (m) { return MediaRecorder.isTypeSupported(m); });
+      if (!mimeType) throw new Error('当前浏览器不支持任何可用的视频编码格式');
+
+      // 画布很大（750×1400+），码率给足以免糊；1280×720 的 4Mbps 经验值按像素数线性放大
+      const bitrate = Math.min(12000000, Math.round(W * H * 4.5));
+      // 编码器对尺寸有偶数要求，避免某些安卓机型直接报错
+      if (canvas.width % 2) canvas.width = W - 1;
+      if (canvas.height % 2) canvas.height = H - 1;
+
+      const rec = new MediaRecorder(stream, { mimeType: mimeType, videoBitsPerSecond: bitrate });
+      const chunks = [];
+      rec.ondataavailable = function (e) { if (e.data && e.data.size > 0) chunks.push(e.data); };
+
+      const DURATION = 4000;         // 4 秒：足够看完资料，又不至于文件过大
+      const start = performance.now();
+      let ended = false;
+      const stopRec = function () { if (!ended) { ended = true; if (rec.state !== 'inactive') rec.stop(); } };
+
+      // 逐帧重绘名片 + 轻微动效：整体极缓慢推近，底部品牌文案呼吸
+      const drawLoop = function (now) {
+        if (ended) return;
+        const t = Math.min(1, (now - start) / DURATION);
+        const zoom = 1 + 0.02 * t;                       // 1.00 → 1.02 的轻微推近
+        const dw = canvas.width * zoom, dh = canvas.height * zoom;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(src, (canvas.width - dw) / 2, (canvas.height - dh) / 2, dw, dh);
+        // 开头 400ms 淡入，避免第一帧突兀
+        if (t * DURATION < 400) {
+          const a = (t * DURATION) / 400;
+          ctx.globalAlpha = 1 - a;
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.globalAlpha = 1;
+        }
+        if (now - start < DURATION) requestAnimationFrame(drawLoop);
+        else stopRec();
+      };
+
+      await new Promise(function (resolve, reject) {
+        rec.onstop = resolve;
+        rec.onerror = reject;
+        rec.start(500);
+        requestAnimationFrame(drawLoop);
+        setTimeout(stopRec, DURATION + 8000);   // 兜底
+      });
+
+      const blob = new Blob(chunks, { type: mimeType });
+      try { stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) { }
+      if (!blob || blob.size === 0) throw new Error('录制失败，未产生任何数据（可能是浏览器限制）');
+
+      const isMp4 = mimeType.indexOf('mp4') >= 0;
+      const ext = isMp4 ? '.mp4' : '.webm';
+      const name = 'card_' + (window.__lastCardName ? String(window.__lastCardName).replace(/[^\w\u4e00-\u9fa5]/g, '') : 'guest') + '_' + Date.now() + ext;
+      const how = await saveBlobFile(blob, name);
+      if (how === 'shared') showToast('✅ 已生成视频，请选择保存到相册或发送给朋友');
+      else if (how === 'downloaded') showToast('✅ 视频已生成（' + (blob.size / 1048576).toFixed(1) + 'MB，' + ext.replace('.', '').toUpperCase() + '）');
+    } catch (err) {
+      showAlert('❌ 视频导出失败：' + err.message + '\n\n可先用「⬇️ 保存图片」，或换用安卓手机 / 电脑 Chrome 再试。');
+    } finally {
+      __cardVideoBusy = false;
+      if (btn) { btn.textContent = oldText; btn.style.pointerEvents = ''; btn.style.opacity = ''; }
     }
   }
 
@@ -7440,8 +7634,13 @@ window.__glassBootDone = function () {
   // ===== 管理员照片库 =====
   // 数据模型：appState.photoLibrary 是管理员共享照片池（可增删）；
   // 同时「全部照片」视图还会**只读汇总**全站嘉宾 mediaList 里的照片（不复制、不修改，仅展示）。
-  let __photoLibTab = 'lib';        // 'lib' = 照片库自有 | 'all' = 全部（含嘉宾照片）
+  let __photoLibTab = 'lib';        // 'lib' = 照片库自有 | 'all' = 全部（含嘉宾照片）| 'repo' = 仓库实际文件
   let __photoPickTarget = null;     // 挑选模式：null=浏览；'edit'=追加到编辑中的资料；数字/字符串=某嘉宾 id
+  // 仓库 media/ 文件列表是「只读派生数据」，用内存缓存即可，**不落 data.json**，
+  // 因此无需在 appState / patchRemoteState / mergeStateSafe / loadData 各处登记字段。
+  let __repoMediaCache = null;      // [{name,path,sha,size,url,isVideo}] 或 null=未加载
+  let __repoMediaAt = 0;            // 缓存时间戳，超过 60s 视为过期
+  let __repoMediaBusy = false;      // 防止并发拉取
 
   function openPhotoLibrary(pickTarget) {
     __photoPickTarget = (pickTarget === undefined) ? null : pickTarget;
@@ -7450,7 +7649,7 @@ window.__glassBootDone = function () {
     if (hint) {
       hint.innerHTML = __photoPickTarget
         ? '<b style="color:var(--primary);">🎯 挑选模式：点任意照片/视频即可添加到该嘉宾</b>'
-        : '汇总全站所有嘉宾的照片与视频，可上传、预览、复制地址';
+        : '汇总全站嘉宾的媒体与仓库里的全部文件，可上传、预览、复制地址';
     }
     closePhotoLibViewer();
     renderPhotoLibrary();
@@ -7466,6 +7665,28 @@ window.__glassBootDone = function () {
   function switchPhotoLibTab(tab) {
     __photoLibTab = tab;
     closePhotoLibViewer();
+    if (tab === 'repo') { loadRepoMediaIntoLibrary(false); return; }
+    renderPhotoLibrary();
+  }
+
+  // 拉取仓库 media/ 文件列表并渲染。force=true 忽略缓存强制刷新。
+  async function loadRepoMediaIntoLibrary(force) {
+    const grid = document.getElementById('photoLibGrid');
+    const fresh = __repoMediaCache && (Date.now() - __repoMediaAt < 60000);
+    if (!force && fresh) { renderPhotoLibrary(); return; }
+    if (__repoMediaBusy) return;
+    __repoMediaBusy = true;
+    if (grid) grid.innerHTML = '<div style="text-align:center; color:var(--text-muted); font-size:13px; padding:30px;">⏳ 正在读取仓库文件…</div>';
+    try {
+      __repoMediaCache = await listRepoMedia();
+      __repoMediaAt = Date.now();
+    } catch (err) {
+      if (grid) grid.innerHTML = '<div style="text-align:center; color:var(--danger); font-size:13px; padding:30px;">读取失败：' +
+        escapeHtml(err.message) + '<br><br><button class="btn btn-outline" style="font-size:12px;" onclick="loadRepoMediaIntoLibrary(true)">重试</button></div>';
+      __repoMediaBusy = false;
+      return;
+    }
+    __repoMediaBusy = false;
     renderPhotoLibrary();
   }
 
@@ -7495,19 +7716,24 @@ window.__glassBootDone = function () {
     if (!grid) return;
     const libCountEl = document.getElementById('photoLibLibCount');
     const allCountEl = document.getElementById('photoLibAllCount');
+    const repoCountEl = document.getElementById('photoLibRepoCount');
     const lib = Array.isArray(appState.photoLibrary) ? appState.photoLibrary : [];
     const guestPhotos = collectGuestPhotos();
     if (libCountEl) libCountEl.textContent = lib.length;
     if (allCountEl) allCountEl.textContent = lib.length + guestPhotos.length;
+    if (repoCountEl) repoCountEl.textContent = (__repoMediaCache || []).length;
     const tabLib = document.getElementById('photoLibTabLib');
     const tabAll = document.getElementById('photoLibTabAll');
+    const tabRepo = document.getElementById('photoLibTabRepo');
     if (tabLib) tabLib.style.borderColor = __photoLibTab === 'lib' ? 'var(--primary)' : '';
     if (tabAll) tabAll.style.borderColor = __photoLibTab === 'all' ? 'var(--primary)' : '';
+    if (tabRepo) tabRepo.style.borderColor = __photoLibTab === 'repo' ? 'var(--primary)' : '';
 
     // 单元格（v6.9.49：支持视频 —— 用 <video> 出静帧并叠加播放角标）
-    const cell = function (url, label, isLibItem, id, isVideo) {
-      const delBtn = isLibItem
-        ? '<button class="btn btn-outline" style="position:absolute; top:4px; right:4px; font-size:11px; padding:2px 7px; background:rgba(255,255,255,.92); color:var(--danger); border-color:#fca5a5;" onclick="event.stopPropagation(); deletePhotoLibItem(\'' + id + '\')" title="从照片库删除">×</button>'
+    // v6.9.50：删除按钮改由 delCall 直接给出完整 onclick 调用串，以区分「删照片库条目」与「删仓库文件」
+    const cell = function (url, label, isLibItem, id, isVideo, delCall) {
+      const delBtn = delCall
+        ? '<button class="btn btn-outline" style="position:absolute; top:4px; right:4px; font-size:11px; padding:2px 7px; background:rgba(255,255,255,.92); color:var(--danger); border-color:#fca5a5;" onclick="event.stopPropagation(); ' + delCall + '" title="删除">×</button>'
         : '';
       const inner = isVideo
         ? '<video src="' + safeMediaUrl(url) + '" preload="metadata" muted playsinline style="width:100%; height:100%; object-fit:cover;"></video>' +
@@ -7523,15 +7749,50 @@ window.__glassBootDone = function () {
 
     let html = '';
     if (__photoLibTab === 'lib') {
-      const libPhotos = lib.filter(function (x) { return !(x.type && x.type.indexOf('video') === 0); }).length;
-      const libVids = lib.length - libPhotos;
       html = lib.length === 0
         ? '<div style="text-align:center; color:var(--text-muted); font-size:13px; padding:30px;">照片库还是空的，点上方「⬆️ 上传」添加照片或视频</div>'
         : '<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(110px, 1fr)); gap:10px;">' +
           lib.map(function (it) {
             const isVid = !!(it.type && it.type.indexOf('video') === 0);
-            return cell(it.url, it.name || (isVid ? '视频' : '照片'), true, it.id, isVid);
+            return cell(it.url, it.name || (isVid ? '视频' : '照片'), true, it.id, isVid,
+              "deletePhotoLibItem('" + it.id + "')");
           }).join('') + '</div>';
+    } else if (__photoLibTab === 'repo') {
+      // 仓库 media/ 目录里的真实文件（含无人在用的历史遗留文件）。
+      // 只有超管才渲染删除按钮，且删除前会二次确认并告知被引用情况。
+      const repo = __repoMediaCache;
+      if (!repo) {
+        html = '<div style="text-align:center; color:var(--text-muted); font-size:13px; padding:30px;">⏳ 正在读取仓库文件…</div>';
+      } else if (repo.length === 0) {
+        html = '<div style="text-align:center; color:var(--text-muted); font-size:13px; padding:30px;">仓库 media 目录里还没有文件</div>';
+      } else {
+        const canDel = isSuper();
+        // 先按「是否被引用」排序：被引用的排后面，无人引用的孤儿文件排前面，方便集中清理
+        const usedUrls = {};
+        (appState.profiles || []).forEach(function (p) {
+          if (p._deleted || p.status === 'applied') return;
+          (p.mediaList || []).forEach(function (m) { if (m && m.url) usedUrls[m.url] = 1; });
+        });
+        lib.forEach(function (x) { if (x && x.url) usedUrls[x.url] = 1; });
+        const sorted = repo.slice().sort(function (a, b) {
+          const ua = usedUrls[a.url] ? 1 : 0, ub = usedUrls[b.url] ? 1 : 0;
+          if (ua !== ub) return ua - ub;
+          return a.name < b.name ? -1 : 1;
+        });
+        html = '<div style="font-size:11px; color:var(--text-muted); margin-bottom:8px;">' +
+          '共 ' + repo.length + ' 个文件' +
+          (canDel ? '，无人引用的历史文件已排在最前，可直接清理' : '') + '</div>' +
+          '<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(110px, 1fr)); gap:10px;">' +
+          sorted.map(function (f) {
+            const used = usedUrls[f.url] ? '🔗 ' : '';
+            const shortName = f.name.replace(/^\d+_/, '') || f.name;
+            const label = used + shortName + ' · ' + (f.size >= 1048576 ? (f.size / 1048576).toFixed(1) + 'MB' : Math.max(1, Math.round(f.size / 1024)) + 'KB');
+            const del = canDel
+              ? "deleteRepoMediaFile('" + f.path.replace(/'/g, "\\'") + "','" + f.name.replace(/'/g, "\\'") + "','" + f.sha + "')"
+              : '';
+            return cell(f.url, label, true, '', f.isVideo, del);
+          }).join('') + '</div>';
+      }
     } else {
       // 全部媒体：库内 + 嘉宾媒体，合并去重按 url
       const seen = {};
@@ -7540,13 +7801,13 @@ window.__glassBootDone = function () {
         if (!seen[it.url]) {
           seen[it.url] = 1;
           const isVid = !!(it.type && it.type.indexOf('video') === 0);
-          items.push(cell(it.url, '📚 照片库', true, it.id, isVid));
+          items.push(cell(it.url, '📚 照片库', true, it.id, isVid, "deletePhotoLibItem('" + it.id + "')"));
         }
       });
       guestPhotos.forEach(function (g) {
         if (seen[g.url]) return;
         seen[g.url] = 1;
-        items.push(cell(g.url, '👤 ' + g.ownerName, false, '', g.isVideo));
+        items.push(cell(g.url, '👤 ' + g.ownerName, false, '', g.isVideo, ''));
       });
       html = items.length === 0
         ? '<div style="text-align:center; color:var(--text-muted); font-size:13px; padding:30px;">还没有任何照片或视频</div>'
@@ -7669,6 +7930,60 @@ window.__glassBootDone = function () {
     } finally {
       __interactLock = false;
     }
+  }
+
+  // 删除仓库 media/ 目录里的真实文件（v6.9.50）。
+  // 危险操作，三重保护：① 仅超级管理员可执行；② 二次确认；③ 确认框里明确列出
+  // 该文件正被哪几位嘉宾的资料引用，避免误删造成资料坏图。
+  // 注意：这里只删仓库文件，**不会**自动改动嘉宾 mediaList —— 引用关系交给用户看着警告自行处理。
+  async function deleteRepoMediaFile(path, name, sha) {
+    if (!isSuper()) { showAlert('❌ 仅超级管理员可删除仓库文件'); return; }
+    if (__interactLock) return;
+    const url = './media/' + name;
+    // 统计引用：嘉宾资料 + 照片库条目
+    const refs = (appState.profiles || []).filter(function (p) {
+      if (p._deleted || p.status === 'applied') return false;
+      return (p.mediaList || []).some(function (m) { return m && m.url === url; });
+    });
+    const inLib = (appState.photoLibrary || []).some(function (x) { return x && x.url === url; });
+    let msg = '确定要删除仓库文件「<b>' + escapeHtml(name) + '</b>」吗？此操作会从网站仓库中永久移除该文件。';
+    if (refs.length) {
+      const names = refs.slice(0, 5).map(function (p) { return escapeHtml(p['姓名'] || String(p.id)); }).join('、');
+      msg += '<div style="margin-top:10px; padding:10px; border-radius:10px; background:#fef2f2; color:#b91c1c; font-size:12px;">' +
+        '⚠️ 该文件正被 <b>' + refs.length + '</b> 份嘉宾资料引用（' + names + (refs.length > 5 ? ' 等' : '') +
+        '），删除后这些资料的照片/视频将<b>无法显示</b>！</div>';
+    } else if (inLib) {
+      msg += '<div style="margin-top:10px; font-size:12px; color:var(--text-muted);">该文件在照片库中还挂着一条记录，将一并移除。</div>';
+    } else {
+      msg += '<div style="margin-top:10px; padding:10px; border-radius:10px; background:#f0fdf4; color:#15803d; font-size:12px;">' +
+        '✅ 该文件没有被任何资料引用（历史遗留文件），删除不会影响任何嘉宾。</div>';
+    }
+    confirmActionHtml(msg, async function () {
+      __interactLock = true;
+      try {
+        await deleteRepoFile(path, sha, 'delete media ' + name);
+        if (inLib) {
+          const ident = getCurrentIdentity();
+          const actorName = ident ? (ident.type === 'super' ? '超级管理员' : (ident.name || '内部管理员')) : '管理员';
+          await patchRemoteState(function (base) {
+            if (!Array.isArray(base.photoLibrary)) base.photoLibrary = [];
+            base.photoLibrary = base.photoLibrary.filter(function (x) { return !x || x.url !== url; });
+            if (!Array.isArray(base.adminLogs)) base.adminLogs = [];
+            base.adminLogs.unshift({ time: Date.now(), actor: actorName, op: '照片库', desc: '删除仓库文件 ' + name });
+            if (base.adminLogs.length > 200) base.adminLogs.length = 200;
+          }, 'delete repo media ' + name);
+        }
+        // 失效缓存并就地移除该条，避免整目录重拉
+        if (__repoMediaCache) __repoMediaCache = __repoMediaCache.filter(function (f) { return f.path !== path; });
+        __repoMediaAt = Date.now();
+        renderPhotoLibrary();
+        showToast('🗑️ 已删除仓库文件');
+      } catch (err) {
+        showAlert('❌ 删除失败：' + err.message + '\n\n若提示 sha 不匹配，说明该文件已被改动，请点「📁 仓库全部文件」页签重新加载后再试。');
+      } finally {
+        __interactLock = false;
+      }
+    }, '确认删除仓库文件');
   }
 
   // 把照片库里的一张照片挂到某嘉宾名下（编辑中=改内存待保存；已存在=直接增量保存）
