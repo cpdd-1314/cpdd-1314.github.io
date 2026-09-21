@@ -11,6 +11,9 @@
   <link rel="icon" type="image/png" sizes="180x180" href="apple-touch-icon.png">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <meta name="theme-color" content="#4f46e5">
+  <!-- PWA 清单：iOS/Safari「添加到主屏幕」后才会解锁 Web Push 通知，
+       所以这个 manifest 是「系统通知」在 iPhone 上能用的前提之一。 -->
+  <link rel="manifest" href="manifest.json">
 
   <!-- 搜索与分享信息 -->
   <meta name="description" content="全球找对象 —— 面向全球华人的公开交友资料展示平台。真人照片视频、城市筛选、条件说清、人工审核，加微信或进群直接联系。">
@@ -1807,6 +1810,8 @@ window.__glassBootDone = function () {
     </div>
   </header>
 
+  <div id="noticeBannerHost"></div>
+
   <div class="toolbar">
     <div class="toolbar-left">
       <div class="filters">
@@ -1915,6 +1920,7 @@ window.__glassBootDone = function () {
   </div>
   <div id="inboxList"></div>
   <!-- 站内通知：与登录态无关，记录「收到了什么」+「什么被改了/更新了」 -->
+  <div id="noticeBannerHost"></div>
   <div id="noticeListWrap" style="display:none;">
     <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px; flex-wrap:wrap;">
       <span id="noticeHint" style="font-size:12px; color:var(--text-muted); flex:1; min-width:140px; line-height:1.6;"></span>
@@ -1941,6 +1947,20 @@ window.__glassBootDone = function () {
   </div>
   <div id="profileLoggedIn" style="display:none;">
     <div id="profileHeader"></div>
+    <!-- 通知中心入口：让用户随时能找到「谁注册了/谁投稿了/什么被改了」 -->
+    <div class="profile-section" style="display:flex; align-items:center; justify-content:space-between; gap:10px; cursor:pointer;" onclick="switchTab('inbox'); switchInboxTab('notice');">
+      <div style="display:flex; align-items:center; gap:10px; min-width:0;">
+        <span style="font-size:20px;">🔔</span>
+        <div style="min-width:0;">
+          <div style="font-weight:700; font-size:13px;">通知中心</div>
+          <div id="profileNoticeHint" style="font-size:11.5px; color:var(--text-muted); line-height:1.5;">谁注册了、谁投稿了、什么被改了</div>
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
+        <span id="profileNoticeBadge" style="display:none; background:#ef4444; color:#fff; font-size:10px; padding:1px 7px; border-radius:9px;">0</span>
+        <span style="color:var(--text-muted); font-size:16px;">›</span>
+      </div>
+    </div>
     <div class="profile-section" id="coinSection" style="display:flex; align-items:center; justify-content:space-between; gap:10px; background:linear-gradient(135deg, rgba(245,158,11,.12), rgba(236,72,153,.10)); border-color:rgba(245,158,11,.35);">
       <div>
         <div style="font-size:12px; color:var(--text-muted);">我的金币</div>
@@ -3139,8 +3159,9 @@ window.__glassBootDone = function () {
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.9.51';
+  const APP_VERSION = '6.9.52';
   const CHANGELOG = [
+    { v: '6.9.52', d: '2026-09-21', note: '通知引导（讲清「微信里为什么开不了」）：① <b>认环境，不再甩一个点了必然失败的开关</b>——通知能力在<b>微信内置浏览器</b>和 <b>iPhone 的 Safari 标签页</b>里是被平台砍掉的（不是本站的 bug），此前「通知设置」在这两种环境里也照样显示授权开关，用户点了没反应、也不知道为什么。现在会先识别环境，再给出<b>能走通的那条路</b>：微信内提示「点右上角 ⋯ → 在浏览器中打开」并给<b>一键复制网址</b>；iPhone 上提示先<b>添加到主屏幕</b>，并提供<b>「怎么看添加到主屏幕」的分步图解</b>；② <b>新增「推荐开启通知」引导条</b>——首页与收件箱顶部会出现一条卡片，说明「别错过新的缘分和更新」，可直接<b>一键开启</b>、也可「不再提示」（记住后不再打扰；一旦开启成功或已授权，引导条自动消失）；③ <b>「我的」页新增「🔔 通知中心」入口</b>——实时显示未读条数，一眼看到有没有新动静，点进去直达站内通知页签；④ <b>站内通知改为「永远可用」的兜底</b>——设置弹窗里把它单独列在最上方并标注「已开启」，无论系统通知能不能用，谁注册了 / 谁投稿了 / 什么被改了都照常记录；⑤ 配套新增 <b>PWA 清单</b>（manifest.json），这是 iPhone 上系统通知能生效的前提。', type: 'feat' },
     { v: '6.9.51', d: '2026-09-21', note: '名片视频 + 站内通知中心：① <b>「导出视频」现在真的会带上嘉宾视频</b>——此前导出只是把静态名片做了一个 4 秒推近动效，嘉宾的视频压根没进去；现在会<b>真正播放嘉宾的视频</b>并逐帧合进同一段片子（前 4 秒名片动效 → 接着播放视频，带轻微推近与「🎬 嘉宾视频」角标），一路录成<b>一个完整的 MP4</b>；实测 3.997 秒 120 帧、时长与内容都正确。顺带修掉一个会让人莫名踩坑的 bug：卡片里的图片/视频地址此前用了给 HTML 转义过的版本，赋给 <code>video.src</code> 时 <code>&amp;</code> 会被当成 <code>&amp;amp;</code> 直接 404；② <b>新增「🔔 站内通知」</b>——收件箱里多了第二个页签，把「收到了什么」和「什么被改了 / 更新了」都记成一条条可回看的记录：有人注册 / 投稿待审核 / 资料审核通过 / 资料被修改 / 档案被删除 / 照片库新增 / 有人举报 / 版本更新 / 管理员操作……带未读角标与「全部已读」，点条目可直达对应嘉宾；③ <b>可开启浏览器系统通知</b>——在「🔔 通知设置」里一键授权后，即使页面挂在后台，新动静也会弹系统提醒；通知范围可分「全部事件 / 仅内容相关 / 仅管理员操作」，还能发测试通知验证是否打通。', type: 'feat' },
     { v: '6.9.50', d: '2026-09-19', note: '照片库补齐 + 名片可导出视频：① <b>照片库新增「📁 仓库全部文件」页签</b>——此前照片库只显示「被嘉宾资料引用了的」媒体（30 个），而仓库 <code>media/</code> 目录里其实躺着 <b>89 个文件</b>，多出来的是历史遗留的<b>孤儿文件</b>（上传过但资料已删、或从未保存成功）。现在可直接看到仓库里的<b>每一个文件</b>，含大小、格式，无人引用的已自动排到最前，方便集中清理；② <b>仓库文件可直接删除</b>——仅<b>超级管理员</b>可操作，删除前弹窗<b>明确告知该文件正被几份嘉宾资料引用</b>（列出姓名），避免误删导致资料坏图；③ <b>名片支持导出视频</b>——名片弹窗新增「🎬 导出视频」，把名片录成 4 秒的<b>轻微推近 + 淡入</b>动效视频，优先输出 <b>MP4</b>（微信、朋友圈、抖音都能直接发）；iPhone 上走系统分享面板可直接存相册，不支持的浏览器会自动隐藏该按钮。', type: 'feat' },
     { v: '6.9.49', d: '2026-09-18', note: '名片与照片库升级：① <b>名片照片更大、资料更紧凑</b>——照片区高度相比原先放大<b>约 24%</b>（成为名片主角），同时压缩资料区排版（字号与行距下调、基础资料网格收紧、二维码与品牌区同步缩小），<b>全部字段一个不少</b>，只是排布更紧密，信息密度不降；② <b>名片支持视频</b>——嘉宾名下有视频时，名片照片区自动改用<b>该视频的首帧画面</b>作为封面，并叠加<b>播放标记</b>与「点击查看视频」提示；在名片弹窗点「🎬 播放视频」即可<b>直接播放</b>，不必再回详情页翻找；③ <b>照片库显示全部媒体</b>——此前只收「库内照片」，现在<b>照片与视频统统显示</b>（含每位嘉宾名下的视频，带播放角标与「🎬 视频」标签，点击即弹内嵌播放器）；④ <b>照片库新增「⬆️ 上传照片 / 视频」入口</b>——可直接把图片或视频上传进本站图库，随后可挂到<b>任意嘉宾</b>名下（图片自动压缩，视频按原画质上传、超 60MB 自动跳过）。', type: 'feat' },
@@ -5461,6 +5482,8 @@ window.__glassBootDone = function () {
     } else {
       // home tab：仍然刷新底部 active 状态
       document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.toggle('active', b.dataset.tab === 'home'); });
+      // 首页：首屏稳定后推荐开启通知（关过 / 已开启就不再出现）
+      setTimeout(function () { try { renderNoticeBanner(); } catch (e) { } }, 1200);
     }
     // 恢复滚动位置（图片懒加载会让高度变化，分几次校正到位）
     const sy = window.__restoreScrollY || 0;
@@ -9165,6 +9188,177 @@ window.__glassBootDone = function () {
   };
   let __noticeLocalOn = false;         // 本机是否开启浏览器系统通知
   let __noticeRange = 'all';           // all | audit | admin
+  const NOTICE_BANNER_KEY = 'notice_banner_dismiss';   // 引导条「不再提示」的冷却标记
+  const NOTICE_ASKED_KEY = 'notice_asked';             // 是否已经主动问过一次
+
+  // ===== 运行环境识别 =====
+  // 为什么要认环境：通知能力在「微信内置浏览器」和「iOS Safari 标签页」里是
+  // 被平台层面砍掉的，不是我们代码写错了。识别出来后要给出「能走通的那条路」，
+  // 而不是甩一个点了必然失败的按钮给用户。
+  function isWeChatEnv() {
+    try { return /MicroMessenger/i.test(navigator.userAgent || ''); } catch (e) { return false; }
+  }
+  function isIOS() {
+    try {
+      const ua = navigator.userAgent || '';
+      if (/iPad|iPhone|iPod/.test(ua)) return true;
+      // iPadOS 13+ 伪装成 macOS，靠触点数量兜底识别
+      return /Macintosh/.test(ua) && Number(navigator.maxTouchPoints) > 1;
+    } catch (e) { return false; }
+  }
+  // 是否已经「添加到主屏幕」并以独立应用方式运行（iOS 16.4+ 推送的硬性前提）
+  function isStandalonePWA() {
+    try {
+      if (window.navigator.standalone === true) return true;
+      if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) return true;
+      if (window.matchMedia && window.matchMedia('(display-mode: fullscreen)').matches) return true;
+    } catch (e) { }
+    return false;
+  }
+  function canUseSystemNotice() {
+    try {
+      if (!('Notification' in window)) return false;
+      if (!window.isSecureContext) return false;         // http 下 SW / 通知都不可用
+      if (isWeChatEnv()) return false;                   // 微信内置浏览器不实现 Notification
+      // iOS 的 Web Push 只在「已添加到主屏幕」的 Web App 里开放，Safari 标签页里没有
+      if (isIOS() && !isStandalonePWA()) return false;
+      return true;
+    } catch (e) { return false; }
+  }
+  // 系统通知当前为什么不可用（用于给用户一句能听懂的解释）
+  function systemNoticeBlocker() {
+    if (!('Notification' in window)) return 'unsupported';
+    if (!window.isSecureContext) return 'insecure';
+    if (isWeChatEnv()) return 'wechat';
+    if (isIOS() && !isStandalonePWA()) return 'ios-tab';
+    return '';
+  }
+
+  // 环境相关的文案与按钮：整个通知引导都从这里取，改一处即可
+  function noticeEnvInfo() {
+    const perm = ('Notification' in window) ? Notification.permission : 'unsupported';
+    const blocker = systemNoticeBlocker();
+    const siteUrl = (function () {
+      try { return location.origin + location.pathname; } catch (e) { return ''; }
+    })();
+    if (blocker === 'wechat') {
+      return {
+        key: 'wechat', perm: perm,
+        label: '微信内仅支持站内通知',
+        short: '微信里收不到系统弹窗，但站内通知照常记着',
+        tone: '#f59e0b',
+        detail: '微信内置浏览器没有开放系统的「网页通知」能力，所以在这里点授权也不会有弹窗。'
+          + '想收系统提醒，请点右上角 ⋯ → 在浏览器中打开。',
+        actionLabel: '',
+        siteUrl: siteUrl
+      };
+    }
+    if (blocker === 'ios-tab') {
+      return {
+        key: 'ios-tab', perm: perm,
+        label: 'iPhone 需先添加到主屏幕',
+        short: 'iPhone 上要先「添加到主屏幕」，才能收系统提醒',
+        tone: '#0ea5e9',
+        detail: 'iOS 16.4 起才支持网页推送，但只对「已添加到主屏幕」的网站开放，'
+          + '在 Safari 标签页里无论怎么授权都不会弹。'
+          + '按提示添加到主屏幕后，从桌面图标打开本站，再来这里开启即可。',
+        actionLabel: '📋 复制网址（去 Safari 打开）',
+        siteUrl: siteUrl
+      };
+    }
+    if (blocker === 'unsupported') {
+      return {
+        key: 'unsupported', perm: perm,
+        label: '当前浏览器不支持',
+        short: '这个浏览器不支持系统提醒，站内通知不受影响',
+        tone: '#6b7280',
+        detail: '你正在使用的浏览器没有实现网页通知能力。站内通知仍然照常记录，'
+          + '想收系统提醒可以换 Chrome / Edge / Safari（Safari 需 iOS 16.4+）。',
+        actionLabel: '',
+        siteUrl: siteUrl
+      };
+    }
+    if (blocker === 'insecure') {
+      return {
+        key: 'insecure', perm: perm,
+        label: '需要 HTTPS 环境',
+        short: '当前不是 HTTPS，系统提醒用不了',
+        tone: '#6b7280',
+        detail: '浏览器只在 HTTPS（安全来源）下开放通知与 Service Worker。'
+          + '请通过本站的 https:// 地址访问。',
+        actionLabel: '',
+        siteUrl: siteUrl
+      };
+    }
+    if (perm === 'denied') {
+      return {
+        key: 'denied', perm: perm,
+        label: '已被浏览器拒绝',
+        short: '通知权限被拒了，需要手动改回「允许」',
+        tone: '#ef4444',
+        detail: '你之前拒绝过本站的通知权限，浏览器不会再弹授权框。'
+          + '请点地址栏左侧的 🔒（或 ⓘ）图标 → 通知 → 改为「允许」，然后回到这里刷新。',
+        actionLabel: '',
+        siteUrl: siteUrl
+      };
+    }
+    if (perm === 'granted') {
+      return {
+        key: 'granted', perm: perm,
+        label: '✅ 系统通知可用',
+        short: '系统提醒已就绪，有新动静会弹给你',
+        tone: '#16a34a',
+        detail: '你已经授权本站发系统通知。只要开着下面的开关，即使把页面切到后台，'
+          + '收到新消息或网站有更新时也会弹提醒。',
+        actionLabel: '',
+        siteUrl: siteUrl
+      };
+    }
+    return {
+      key: 'ready', perm: perm,
+      label: '⏳ 可以开启',
+      short: '点一下就能开启系统提醒',
+      tone: 'var(--primary)',
+      detail: '你的浏览器支持系统通知。打开下面的开关并允许授权，'
+        + '之后即使页面切到后台，收到新消息或网站有更新也会弹提醒。',
+      actionLabel: '',
+      siteUrl: siteUrl
+    };
+  }
+
+  // 复制文本：优先用 Clipboard API，失败退回 execCommand
+  // （微信内置浏览器对 Clipboard API 支持有限，所以必须有第二条路）
+  function copyNoticeText(text) {
+    const done = function () { showToast('📋 已复制，粘贴到浏览器打开即可'); };
+    const fail = function () {
+      showAlert('复制失败，请长按网址手动复制：\n\n' + text);
+    };
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(function () { __copyFallback(text) ? done() : fail(); });
+        return;
+      }
+    } catch (e) { }
+    if (__copyFallback(text)) done(); else fail();
+  }
+  function __copyFallback(text) {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.cssText = 'position:fixed; top:-1000px; left:-1000px; opacity:0;';
+      document.body.appendChild(ta);
+      ta.select();
+      ta.setSelectionRange(0, ta.value.length);
+      const ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      return ok;
+    } catch (e) { return false; }
+  }
+  function copyNoticeSiteUrl() {
+    const info = noticeEnvInfo();
+    copyNoticeText(info.siteUrl || 'https://cpdd-1314.github.io/');
+  }
 
   function getNoticeReadId() {
     try { return String(localStorage.getItem(NOTICE_READ_KEY) || ''); } catch (e) { return ''; }
@@ -9350,10 +9544,24 @@ window.__glassBootDone = function () {
 
   function updateNoticeBadge() {
     const el = document.getElementById('noticeBadge');
-    if (!el) return;
     const n = getUnreadNoticeCount();
-    if (n > 0) { el.style.display = 'inline-block'; el.textContent = n > 99 ? '99+' : n; }
-    else el.style.display = 'none';
+    if (el) {
+      if (n > 0) { el.style.display = 'inline-block'; el.textContent = n > 99 ? '99+' : n; }
+      else el.style.display = 'none';
+    }
+    // 「我的」页里的通知中心入口也同步显示未读数
+    const pb = document.getElementById('profileNoticeBadge');
+    if (pb) {
+      if (n > 0) { pb.style.display = 'inline-block'; pb.textContent = n > 99 ? '99+' : n; }
+      else pb.style.display = 'none';
+    }
+    const ph = document.getElementById('profileNoticeHint');
+    if (ph) {
+      const info = noticeEnvInfo();
+      ph.textContent = n > 0
+        ? ('有 ' + n + ' 条未读 · ' + (canUseSystemNotice() ? '系统提醒可用' : info.short))
+        : ('谁注册了、谁投稿了、什么被改了 · ' + (canUseSystemNotice() ? '系统提醒可用' : info.short));
+    }
   }
 
   function renderNoticeList() {
@@ -9493,10 +9701,43 @@ window.__glassBootDone = function () {
   }
 
   function openNoticeSettings() {
-    const perm = ('Notification' in window) ? Notification.permission : 'unsupported';
-    const permText = perm === 'granted' ? '✅ 已授权'
-      : perm === 'denied' ? '❌ 已被浏览器拒绝（点地址栏左侧的锁图标 → 通知 → 改为「允许」）'
-        : perm === 'unsupported' ? '⚠️ 当前浏览器不支持' : '⏳ 未授权，勾选下面的开关即可申请';
+    const info = noticeEnvInfo();
+    const canUse = canUseSystemNotice();
+    const unread = getUnreadNoticeCount();
+
+    // —— 第一部分：站内通知（永远可用，与系统权限无关）——
+    let html = '<div style="text-align:left; font-size:13px; line-height:1.7;">'
+      + '<div style="border:1px solid var(--border); border-radius:12px; padding:11px 13px; margin-bottom:14px; background:rgba(79,70,229,.05);">'
+      + '<div style="font-weight:700; font-size:13px; margin-bottom:3px;">🔔 站内通知 <span style="font-size:11px; font-weight:400; color:#16a34a;">· 已开启</span></div>'
+      + '<div style="font-size:12px; color:var(--text-muted); line-height:1.6;">'
+      + '收件箱 →「站内通知」页签。谁注册了、谁投稿了、资料被审核或被改了、网站更新了，都会留一条记录。'
+      + (unread > 0 ? '<br>当前有 <b style="color:#ef4444;">' + unread + '</b> 条未读。' : '')
+      + '</div></div>';
+
+    // —— 第二部分：系统通知（能不能用取决于环境）——
+    html += '<div style="font-weight:700; font-size:13px; margin-bottom:6px;">💻 浏览器系统通知</div>'
+      + '<div style="border:1px solid ' + info.tone + '; border-radius:12px; padding:11px 13px; margin-bottom:12px;">'
+      + '<div style="font-weight:700; font-size:12px; color:' + info.tone + '; margin-bottom:4px;">' + info.label + '</div>'
+      + '<div style="font-size:12px; color:var(--text-muted); line-height:1.65;">' + info.detail + '</div>';
+
+    if (canUse) {
+      html += '<label style="display:flex; gap:8px; align-items:center; margin-top:10px; font-weight:600; cursor:pointer;">'
+        + '<input type="checkbox" id="noticeLocalOn"' + (noticeOn() ? ' checked' : '') + ' onchange="toggleNoticeLocal(this.checked)">'
+        + '<span style="font-size:12px;">开启系统通知（页面切到后台也能弹）</span></label>';
+    } else {
+      // 不可用时不放一个点了必然失败的开关，只放「能走通的那条路」
+      html += '<div style="font-size:11px; color:var(--text-muted); margin-top:8px; padding-top:8px; border-top:1px dashed var(--border);">'
+        + '站内通知不受影响，下面这些是可选操作：</div>';
+      if (info.key === 'wechat') {
+        html += '<button class="btn btn-outline" style="width:100%; margin-top:8px; font-size:12px;" onclick="copyNoticeSiteUrl()">📋 复制网址（去浏览器打开）</button>';
+      } else if (info.key === 'ios-tab') {
+        html += '<button class="btn btn-outline" style="width:100%; margin-top:8px; font-size:12px;" onclick="copyNoticeSiteUrl()">' + info.actionLabel + '</button>'
+          + '<button class="btn btn-outline" style="width:100%; margin-top:6px; font-size:12px;" onclick="showAddToHomeTutorial()">📲 怎么看「添加到主屏幕」</button>';
+      }
+    }
+    html += '</div>';
+
+    // —— 第三部分：通知范围 ——
     const rows = [
       ['all', '全部事件', '任何动静都通知（推荐给站长）'],
       ['audit', '仅内容相关', '有人投稿 / 审核 / 修改 / 注册'],
@@ -9507,20 +9748,121 @@ window.__glassBootDone = function () {
         + '<input type="radio" name="noticeRange" value="' + r[0] + '"' + (on ? ' checked' : '') + ' onchange="setNoticeRange(this.value)" style="margin-top:3px;">'
         + '<span><b style="font-size:13px;">' + r[1] + '</b><br><span style="font-size:11px; color:var(--text-muted);">' + r[2] + '</span></span></label>';
     }).join('');
+    html += '<div style="font-size:12px; color:var(--text-muted); margin-bottom:6px;">通知范围'
+      + (canUse ? '' : '（只影响系统弹窗，站内通知照收全部）') + '：</div>' + rows;
+
+    if (canUse) {
+      html += '<button class="btn btn-outline" style="width:100%; margin-top:6px; font-size:12px;" onclick="noticeTestPush()">🔔 发送一条测试通知</button>';
+    }
+    html += '</div>';
+
     showAlertHtml(
-      '<div style="text-align:left; font-size:13px; line-height:1.7;">'
-      + '<div style="margin-bottom:10px;">浏览器通知权限：' + permText + '</div>'
-      + '<label style="display:flex; gap:8px; align-items:center; margin-bottom:12px; font-weight:600;">'
-      + '<input type="checkbox" id="noticeLocalOn"' + (noticeOn() ? ' checked' : '') + ' onchange="toggleNoticeLocal(this.checked)">'
-      + '<span>开启浏览器系统通知（页面切到后台也能弹提醒）</span></label>'
-      + '<div style="font-size:12px; color:var(--text-muted); margin-bottom:6px;">通知范围：</div>'
-      + rows
-      + '<button class="btn btn-outline" style="width:100%; margin-top:6px; font-size:12px;" onclick="noticeTestPush()">🔔 发送一条测试通知</button>'
-      + '</div>',
+      html,
       '🔔 通知设置',
       '<button class="btn btn-primary" style="flex:1;" onclick="closeCustomDialog()">完成</button>'
     );
   }
+
+  // iOS 用户最缺的一步：怎么把网站放到主屏幕（iOS 16.4+ 推送的硬前提）
+  function showAddToHomeTutorial() {
+    showAlertHtml(
+      '<div style="text-align:left; font-size:13px; line-height:1.9;">'
+      + '<b>用 Safari 打开本站</b>（不是微信、不是 Chrome）<br>'
+      + '① 点底部中间的 <b>分享</b> 图标 <span style="font-size:15px;">⬆️</span>（一个方框加向上箭头）<br>'
+      + '② 在弹出的菜单里往下滑，找到 <b>「添加到主屏幕」</b><br>'
+      + '③ 右上角点「添加」<br>'
+      + '④ 回到手机桌面，点刚生成的 <b>「全球找对象」</b> 图标打开<br>'
+      + '⑤ 再进「我的 → 🔔 通知设置」，打开系统通知开关<br><br>'
+      + '<span style="font-size:11px; color:var(--text-muted);">必须从桌面图标打开（这时页面是全屏、没有地址栏的），'
+      + '在 Safari 标签页里 iOS 不会给你通知权限。</span>'
+      + '</div>',
+      '📲 添加到主屏幕',
+      '<button class="btn btn-outline" style="flex:1;" onclick="copyNoticeSiteUrl()">📋 复制网址</button>'
+      + '<button class="btn btn-primary" style="flex:1;" onclick="closeCustomDialog()">知道了</button>'
+    );
+  }
+
+  // 首次访问的「推荐开启通知」引导条（可一键开启 / 可永久关掉）
+  function noticeBannerHtml() {
+    const info = noticeEnvInfo();
+    return '<div id="noticeBanner" style="display:flex; gap:10px; align-items:flex-start;'
+      + 'padding:12px 14px; margin-bottom:14px; border-radius:14px;'
+      + 'background:linear-gradient(135deg, rgba(79,70,229,.13), rgba(14,165,233,.11));'
+      + 'border:1px solid rgba(79,70,229,.3);">'
+      + '<span style="font-size:22px; line-height:1.1;">🔔</span>'
+      + '<div style="flex:1; min-width:0;">'
+      + '<div style="font-weight:700; font-size:13px; margin-bottom:2px;">别错过新的缘分和更新</div>'
+      + '<div style="font-size:11.5px; color:var(--text-muted); line-height:1.6;">' + escapeHtml(info.short) + '</div>'
+      + '<div style="display:flex; gap:6px; margin-top:9px; flex-wrap:wrap;">'
+      + '<button class="btn btn-primary" style="font-size:12px; padding:6px 12px;" onclick="bannerEnableNotice()">🔔 开启提醒</button>'
+      + '<button class="btn btn-outline" style="font-size:12px; padding:6px 12px;" onclick="switchTab(\'inbox\'); switchInboxTab(\'notice\');">先看看</button>'
+      + '<button class="btn btn-outline" style="font-size:12px; padding:6px 12px; color:var(--text-muted);" onclick="dismissNoticeBanner(true)">不再提示</button>'
+      + '</div></div></div>';
+  }
+
+  function renderNoticeBanner() {
+    const host = document.getElementById('noticeBannerHost');
+    if (!host) return;
+    let off = false;
+    try { off = localStorage.getItem(NOTICE_BANNER_KEY) === '1'; } catch (e) { }
+    // 已经开着系统通知、或者用户点名不再提示，就不显示
+    if (off || (noticeOn() && Notification && Notification.permission === 'granted')) {
+      host.innerHTML = '';
+      return;
+    }
+    host.innerHTML = noticeBannerHtml();
+  }
+
+  function dismissNoticeBanner(persist) {
+    if (persist) { try { localStorage.setItem(NOTICE_BANNER_KEY, '1'); } catch (e) { } }
+    const host = document.getElementById('noticeBannerHost');
+    if (host) host.innerHTML = '';
+    if (persist) showToast('已关闭提示（随时可在「我的 → 🔔 通知设置」里开启）');
+  }
+
+  // 引导条上的「开启提醒」：能开就直接开，开不了就给针对性的说明
+  function bannerEnableNotice() {
+    const info = noticeEnvInfo();
+    if (canUseSystemNotice()) {
+      toggleNoticeLocal(true);
+      setTimeout(function () {
+        if (noticeOn()) dismissNoticeBanner(false);
+      }, 600);
+      return;
+    }
+    if (info.key === 'wechat') {
+      showAlertHtml(
+        '<div style="text-align:left; font-size:13px; line-height:1.8;">'
+        + '微信内置浏览器没有开放系统的「网页通知」能力，在这里点授权也不会有弹窗。<br><br>'
+        + '<b>想收系统提醒：</b>点右上角 <b>⋯</b> → <b>在浏览器中打开</b>，'
+        + '再用新打开的浏览器页面开启即可。<br><br>'
+        + '<span style="font-size:11px; color:var(--text-muted);">不想折腾也没关系：站内通知照常记录，'
+        + '在「收件箱 → 🔔 站内通知」里随时能看。</span></div>',
+        '🔔 微信里收不到系统通知',
+        '<button class="btn btn-outline" style="flex:1;" onclick="copyNoticeSiteUrl()">📋 复制网址</button>'
+        + '<button class="btn btn-primary" style="flex:1;" onclick="switchTab(\'inbox\'); switchInboxTab(\'notice\'); closeCustomDialog();">看站内通知</button>'
+      );
+      return;
+    }
+    if (info.key === 'ios-tab') {
+      showAlertHtml(
+        '<div style="text-align:left; font-size:13px; line-height:1.8;">'
+        + 'iPhone 上网页推送只对「已添加到主屏幕」的网站开放，Safari 标签页里授权也不会生效。<br><br>'
+        + '按下面的步骤把本站加到主屏幕，再从桌面图标打开，就能开启系统提醒了。</div>',
+        '📲 iPhone 需要先添加主屏幕',
+        '<button class="btn btn-outline" style="flex:1;" onclick="showAddToHomeTutorial()">看步骤</button>'
+        + '<button class="btn btn-primary" style="flex:1;" onclick="copyNoticeSiteUrl()">📋 复制网址</button>'
+      );
+      return;
+    }
+    // 权限被拒 / 不支持 / 非 HTTPS
+    showAlertHtml(
+      '<div style="text-align:left; font-size:13px; line-height:1.8;">' + escapeHtml(info.detail) + '</div>',
+      '🔔 ' + info.label,
+      '<button class="btn btn-primary" style="flex:1;" onclick="closeCustomDialog()">知道了</button>'
+    );
+  }
+
 
   function setNoticeRange(v) {
     __noticeRange = (v === 'admin' || v === 'audit') ? v : 'all';
@@ -9530,18 +9872,28 @@ window.__glassBootDone = function () {
 
   function toggleNoticeLocal(on) {
     const cb = document.getElementById('noticeLocalOn');
+    // 环境不支持时不要走申请流程：那只会白白吃一次用户手势，还拿不到权限
+    if (on && !canUseSystemNotice()) {
+      if (cb) cb.checked = false;
+      bannerEnableNotice();
+      return;
+    }
     if (on) {
       requestNoticePermission().then(function (p) {
         if (p === 'granted') {
           __noticeLocalOn = true;
           try { localStorage.setItem('notice_local_on', '1'); } catch (e) { }
+          try { localStorage.setItem(NOTICE_ASKED_KEY, '1'); } catch (e) { }
           showSystemNotice('🔔 通知已开启', '网站有新动静时会在这里提醒你', 'welcome');
           showToast('✅ 已开启系统通知');
+          dismissNoticeBanner(true);       // 已经开好了就别再劝了
         } else {
           __noticeLocalOn = false;
           try { localStorage.setItem('notice_local_on', '0'); } catch (e) { }
           if (cb) cb.checked = false;
-          showAlert('未能获取通知权限。\n\n若浏览器已拒绝，请点地址栏左侧的🔒图标 → 通知 → 改为「允许」后再试。');
+          const info = noticeEnvInfo();
+          if (p === 'denied') showAlert('未能获取通知权限。\n\n' + info.detail);
+          else showAlert('没有拿到通知权限。\n\n' + info.detail);
         }
       });
     } else {
@@ -9552,11 +9904,19 @@ window.__glassBootDone = function () {
   }
 
   function noticeTestPush() {
-    if (!('Notification' in window)) { showAlert('当前浏览器不支持系统通知'); return; }
+    if (!canUseSystemNotice()) { bannerEnableNotice(); return; }
     if (Notification.permission !== 'granted') {
       requestNoticePermission().then(function (p) {
-        if (p === 'granted') showSystemNotice('🔔 测试通知', '看到这条说明通知已经打通了！', 'test');
-        else showAlert('通知权限未授予，无法发送测试通知。');
+        if (p === 'granted') {
+          __noticeLocalOn = true;
+          try { localStorage.setItem('notice_local_on', '1'); } catch (e) { }
+          const cb = document.getElementById('noticeLocalOn');
+          if (cb) cb.checked = true;
+          showSystemNotice('🔔 测试通知', '看到这条说明通知已经打通了！', 'test');
+        } else {
+          const info = noticeEnvInfo();
+          showAlert('通知权限未授予，无法发送测试通知。\n\n' + info.detail);
+        }
       });
       return;
     }
@@ -9568,6 +9928,11 @@ window.__glassBootDone = function () {
       __noticeLocalOn = localStorage.getItem('notice_local_on') === '1';
       const r = localStorage.getItem('notice_range');
       if (r === 'admin' || r === 'audit' || r === 'all') __noticeRange = r;
+      // 环境本身就不支持时，别让开关停在「开」的假状态上
+      if (__noticeLocalOn && !canUseSystemNotice()) {
+        __noticeLocalOn = false;
+        localStorage.setItem('notice_local_on', '0');
+      }
     } catch (e) { }
   }
 
@@ -9868,12 +10233,18 @@ window.__glassBootDone = function () {
     document.querySelectorAll('.tab-btn').forEach(function(b) {
       b.classList.toggle('active', b.dataset.tab === name);
     });
+    if (name === 'home') {
+      // 首页也做一次通知引导（比收件箱更早被看到），关过就不再出现
+      setTimeout(function () { if (typeof renderNoticeBanner === 'function') renderNoticeBanner(); }, 60);
+    }
     if (name === 'inbox') {
       // 默认停在「互动消息」页签；已经切到「站内通知」时保持不动
       if (typeof switchInboxTab === 'function' && __noticeSubTab === 'notice') switchInboxTab('notice');
       else renderInbox();
+      // 首次进收件箱时推荐开启通知（关过就不再出现）
+      setTimeout(function () { if (typeof renderNoticeBanner === 'function') renderNoticeBanner(); }, 60);
     }
-    if (name === 'profile') renderProfilePage();
+    if (name === 'profile') { renderProfilePage(); if (typeof updateNoticeBadge === 'function') updateNoticeBadge(); }
     if (name === 'publish') renderMyPublished();
     if (name === 'adminlist') renderAdminCards();
     if (name === 'sponsor') renderSponsorPage();
@@ -12006,6 +12377,9 @@ window.__glassBootDone = function () {
   updateVersionWidget();   // 显示版本号 + 按隐藏设置控制可见性
   prefillAdminToken();     // 记住令牌时预填登录框，避免反复粘贴
   initNoticeSettings();    // v6.9.51：恢复本机的通知开关与范围设置
+  // 通知需要 Service Worker 承载（页面切后台也能弹）。
+  // 这里只在「环境本来就支持」时预热注册，不申请权限——权限必须在用户手势里要。
+  try { if (canUseSystemNotice()) ensureNoticeSW(); } catch (e) { }
   loadData();
   startDataSync();         // 启动自动同步，修复多端/多标签页数据不同步
 
