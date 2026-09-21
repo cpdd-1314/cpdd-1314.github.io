@@ -2084,6 +2084,7 @@ window.__glassBootDone = function () {
         <button class="btn btn-outline super-only" onclick="toggleModal('staffAdminModal', true)">👥 内部管理员</button>
         <button class="btn btn-outline super-only" onclick="openAdminLogs()">📋 操作记录</button>
         <button class="btn btn-outline super-only" onclick="openNoticeSettings()">🔔 通知设置</button>
+        <button class="btn btn-outline admin-only" onclick="openAnnounceAdmin()" style="color:#dc2626; border-color:#fca5a5;">📢 发公告</button>
         <button class="btn btn-outline admin-only" onclick="toggleModal('wechatConfigModal', true)">⚙️ 修改微信名片</button>
         <button class="btn btn-outline admin-only" onclick="openSubmitLinkModal()">📨 投稿链接</button>
         <button class="btn btn-outline admin-only" onclick="openRedeemAdminModal()">🎟️ 兑换码管理</button>
@@ -3159,8 +3160,9 @@ window.__glassBootDone = function () {
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.9.52';
+  const APP_VERSION = '6.9.53';
   const CHANGELOG = [
+    { v: '6.9.53', d: '2026-09-22', note: '通知分级 + 管理员公告：① <b>普通用户的通知干净了</b>——此前「站内通知」把所有事件都摊在所有人面前（谁注册了、资料被改了几次、谁被删了、照片库动了…），信息量大但跟普通访客没关系。现在<b>普通访客只看到两类</b>：<b>「有新嘉宾上架」</b>和<b>「管理员公告」</b>；管理员（超管 + 内部管理员）仍能看到全部事件，便于运营。② <b>点通知能直接看了</b>——以前点条目只能跳到嘉宾资料，公告类信息无处可看。现在点<b>公告</b>会弹出详情框，<b>完整正文</b>一次读完（长文可滚动），点<b>新嘉宾</b>仍是直达资料详情。③ <b>管理员可发公告了</b>——管理面板新增 <b>「📢 发公告」</b>，填标题 + 正文即可群发，<b>所有访客（含未登录）</b>都会在站内通知里看到；支持删除，删除后所有人立即不可见。发布时若网络异常会<b>自动回滚</b>，不会出现「本机看得见、别人看不到」的假象。', type: 'feat' },
     { v: '6.9.52', d: '2026-09-21', note: '通知引导（讲清「微信里为什么开不了」）：① <b>认环境，不再甩一个点了必然失败的开关</b>——通知能力在<b>微信内置浏览器</b>和 <b>iPhone 的 Safari 标签页</b>里是被平台砍掉的（不是本站的 bug），此前「通知设置」在这两种环境里也照样显示授权开关，用户点了没反应、也不知道为什么。现在会先识别环境，再给出<b>能走通的那条路</b>：微信内提示「点右上角 ⋯ → 在浏览器中打开」并给<b>一键复制网址</b>；iPhone 上提示先<b>添加到主屏幕</b>，并提供<b>「怎么看添加到主屏幕」的分步图解</b>；② <b>新增「推荐开启通知」引导条</b>——首页与收件箱顶部会出现一条卡片，说明「别错过新的缘分和更新」，可直接<b>一键开启</b>、也可「不再提示」（记住后不再打扰；一旦开启成功或已授权，引导条自动消失）；③ <b>「我的」页新增「🔔 通知中心」入口</b>——实时显示未读条数，一眼看到有没有新动静，点进去直达站内通知页签；④ <b>站内通知改为「永远可用」的兜底</b>——设置弹窗里把它单独列在最上方并标注「已开启」，无论系统通知能不能用，谁注册了 / 谁投稿了 / 什么被改了都照常记录；⑤ 配套新增 <b>PWA 清单</b>（manifest.json），这是 iPhone 上系统通知能生效的前提。', type: 'feat' },
     { v: '6.9.51', d: '2026-09-21', note: '名片视频 + 站内通知中心：① <b>「导出视频」现在真的会带上嘉宾视频</b>——此前导出只是把静态名片做了一个 4 秒推近动效，嘉宾的视频压根没进去；现在会<b>真正播放嘉宾的视频</b>并逐帧合进同一段片子（前 4 秒名片动效 → 接着播放视频，带轻微推近与「🎬 嘉宾视频」角标），一路录成<b>一个完整的 MP4</b>；实测 3.997 秒 120 帧、时长与内容都正确。顺带修掉一个会让人莫名踩坑的 bug：卡片里的图片/视频地址此前用了给 HTML 转义过的版本，赋给 <code>video.src</code> 时 <code>&amp;</code> 会被当成 <code>&amp;amp;</code> 直接 404；② <b>新增「🔔 站内通知」</b>——收件箱里多了第二个页签，把「收到了什么」和「什么被改了 / 更新了」都记成一条条可回看的记录：有人注册 / 投稿待审核 / 资料审核通过 / 资料被修改 / 档案被删除 / 照片库新增 / 有人举报 / 版本更新 / 管理员操作……带未读角标与「全部已读」，点条目可直达对应嘉宾；③ <b>可开启浏览器系统通知</b>——在「🔔 通知设置」里一键授权后，即使页面挂在后台，新动静也会弹系统提醒；通知范围可分「全部事件 / 仅内容相关 / 仅管理员操作」，还能发测试通知验证是否打通。', type: 'feat' },
     { v: '6.9.50', d: '2026-09-19', note: '照片库补齐 + 名片可导出视频：① <b>照片库新增「📁 仓库全部文件」页签</b>——此前照片库只显示「被嘉宾资料引用了的」媒体（30 个），而仓库 <code>media/</code> 目录里其实躺着 <b>89 个文件</b>，多出来的是历史遗留的<b>孤儿文件</b>（上传过但资料已删、或从未保存成功）。现在可直接看到仓库里的<b>每一个文件</b>，含大小、格式，无人引用的已自动排到最前，方便集中清理；② <b>仓库文件可直接删除</b>——仅<b>超级管理员</b>可操作，删除前弹窗<b>明确告知该文件正被几份嘉宾资料引用</b>（列出姓名），避免误删导致资料坏图；③ <b>名片支持导出视频</b>——名片弹窗新增「🎬 导出视频」，把名片录成 4 秒的<b>轻微推近 + 淡入</b>动效视频，优先输出 <b>MP4</b>（微信、朋友圈、抖音都能直接发）；iPhone 上走系统分享面板可直接存相册，不支持的浏览器会自动隐藏该按钮。', type: 'feat' },
@@ -3694,7 +3696,8 @@ window.__glassBootDone = function () {
     redemptions: [],     // 红包兑换记录 [{id, payCode, uid, name, count, coins, amount, time, paid, paidAt}]；payCode 为领取凭证编码，paid 标记管理员是否已发放；1000 金币 = ¥0.01
     reports: [],         // 举报记录 [{id, profileId, reporterUid, reporterName, reason, detail, time, status}]；status: pending / resolved
     trash: [],           // 回收站 [{id, type, profileId, deletedAt, expireAt, comment}]；用户删除的留言先进回收站，满 TRASH_EXPIRE_DAYS 天自动消失，期内可恢复
-    photoLibrary: []     // 管理员照片库 [{id, url, type, name, size, uploadedAt, uploadedBy}]；管理员集中管理的共享照片池，可浏览全站照片、上传、删除，并在编辑嘉宾时一键选用
+    photoLibrary: [],    // 管理员照片库 [{id, url, type, name, size, uploadedAt, uploadedBy}]；管理员集中管理的共享照片池，可浏览全站照片、上传、删除，并在编辑嘉宾时一键选用
+    announcements: []    // 管理员公告 [{id, title, body, time, actor, actorType, pinned}]；面向所有人的站内消息，普通用户在通知中心只看到「新嘉宾上架」和这一条
   };
 
   // 内置示例兜底：当取不到仓库 data.json（本地预览 / 分享链接 / 直接双击打开）时，
@@ -4113,6 +4116,10 @@ window.__glassBootDone = function () {
     if (Array.isArray(local.trash)) out.trash = local.trash;
     // 照片库：管理员共享照片池，同为追加型（上传/删除都走增量保存），本地为准避免刚上传的被吞
     if (Array.isArray(local.photoLibrary)) out.photoLibrary = local.photoLibrary;
+    // 公告：追加型（发布/删除都走 patchRemoteState 增量），本地为准。
+    // ⚠️ 必须登记：saveToGitHub 走的是逐字段白名单合并，漏掉这行会让管理员
+    //    任何一次整体保存（审核 / 生成链接…）把已发布的公告整段抹掉（submitLinks 踩过这个坑）。
+    if (Array.isArray(local.announcements)) out.announcements = local.announcements;
     return out;
   }
   function mergeById(baseArr, localArr) {
@@ -4230,6 +4237,7 @@ window.__glassBootDone = function () {
     if (!Array.isArray(base.reports)) base.reports = appState.reports || [];
     if (!Array.isArray(base.trash)) base.trash = appState.trash || [];
     if (!Array.isArray(base.photoLibrary)) base.photoLibrary = appState.photoLibrary || [];
+    if (!Array.isArray(base.announcements)) base.announcements = appState.announcements || [];
 
     const ret = patchFn(base);   // 在最新基线上打补丁
 
@@ -5419,6 +5427,7 @@ window.__glassBootDone = function () {
       if (Array.isArray(data.reports)) appState.reports = data.reports;
       if (Array.isArray(data.trash)) appState.trash = data.trash;
       if (Array.isArray(data.photoLibrary)) appState.photoLibrary = data.photoLibrary;
+      if (Array.isArray(data.announcements)) appState.announcements = data.announcements;
       // 兼容老数据：v6.9.4 起的审核状态粘性依赖 statusUpdatedAt；旧资料没有该字段时
       // 退化成 createdAt 比较，并发合并可能把已通过的审核打回 pending。这里在加载时补默认时间戳。
       if (Array.isArray(appState.profiles)) {
@@ -5457,11 +5466,7 @@ window.__glassBootDone = function () {
     // v6.9.51：首次拿到数据后建立通知基线（本次不出通知，避免一进来刷一屏历史），
     // 之后每次同步到新数据才会产生「有什么变了」的事件。
     try {
-      const baseForNotice = {
-        profiles: appState.profiles, users: appState.users, staffs: appState.staffs,
-        notifications: appState.notifications, trash: appState.trash, reports: appState.reports,
-        photoLibrary: appState.photoLibrary, adminLogs: appState.adminLogs
-      };
+      const baseForNotice = __noticeSnapshot();
       if (!localStorage.getItem(NOTICE_SIG_KEY)) {
         localStorage.setItem(NOTICE_SIG_KEY, JSON.stringify(baseForNotice));
       }
@@ -5518,16 +5523,30 @@ window.__glassBootDone = function () {
   // 比对，变了就合并重渲染；正在编辑表单时跳过重渲染以免打断输入；封号状态多端实时生效。
   let __syncTimer = null;
   let __lastSyncSig = '';
+
+  // 通知中心的「本次快照」。抽成公用函数的原因：这份指纹是**手列字段**的，
+  // 以前在 baseForNotice 与轮询里各写了一份，新增数据源时极容易只改一处 ——
+  // 漏改的后果是公告 / 新字段在通知里永远不出现。以后新增数据源只改这里。
+  function __noticeSnapshot() {
+    return {
+      profiles: appState.profiles, users: appState.users, staffs: appState.staffs,
+      notifications: appState.notifications, trash: appState.trash, reports: appState.reports,
+      photoLibrary: appState.photoLibrary, adminLogs: appState.adminLogs,
+      announcements: appState.announcements
+    };
+  }
   // 写锁 + 最近保存时间：防止自动同步在「保存的网络请求进行中 / 刚保存完」时，
   // 把 appState 替换成服务端旧副本（GitHub Pages CDN 滞后），导致本地刚做的审核/编辑/生成链接被覆盖写丢。
   let __saving = false;
   let __lastSavedAt = 0;
-  function __syncSignature(d) {
-    // 廉价指纹：对关键数组/标量做紧凑序列化后做简单哈希，足以检测「是否有变化」
+  function __syncSignature(d) {    // 廉价指纹：对关键数组/标量做紧凑序列化后做简单哈希，足以检测「是否有变化」
     try {
       const sig = JSON.stringify([
         d.profiles, d.users, d.staffs, d.submitLinks, d.notifications,
-        d.glassMode, d.glassTheme, d.updateMode, d.wechat, d.version, d.hideVersionInfo, d.nextProfileNo
+        d.glassMode, d.glassTheme, d.updateMode, d.wechat, d.version, d.hideVersionInfo, d.nextProfileNo,
+        // ⚠️ 公告必须进指纹：否则「只发了一条公告」会被判为「数据没变」而直接 return，
+        //    其他设备的轮询永远看不到新公告（这是最隐蔽、后果最严重的一处漏登记）。
+        d.announcements
       ]);
       let h = 0;
       for (let i = 0; i < sig.length; i++) h = (h * 31 + sig.charCodeAt(i)) | 0;
@@ -5588,16 +5607,12 @@ window.__glassBootDone = function () {
       if (Array.isArray(data.redemptions)) appState.redemptions = data.redemptions;
       if (Array.isArray(data.reports)) appState.reports = data.reports;
       if (Array.isArray(data.photoLibrary)) appState.photoLibrary = data.photoLibrary;
+      // 公告：以服务端为权威源（不用 mergeById —— 那样删除会失效，被删的公告会在本地「复活」）
+      if (Array.isArray(data.announcements)) appState.announcements = data.announcements;
       __lastSyncSig = sig;
       // v6.9.51：数据确实变了 → 归纳出「有什么被改了 / 更新了」并刷新通知中心
       try {
-        refreshNoticeCenter({
-          data: {
-            profiles: appState.profiles, users: appState.users, staffs: appState.staffs,
-            notifications: appState.notifications, trash: appState.trash, reports: appState.reports,
-            photoLibrary: appState.photoLibrary, adminLogs: appState.adminLogs
-          }
-        });
+        refreshNoticeCenter({ data: __noticeSnapshot() });
       } catch (e) { }
       // 被封号的当前登录用户立即踢下线（多端实时生效）
       const cu = getCurrentUser();
@@ -9184,8 +9199,21 @@ window.__glassBootDone = function () {
     update: { icon: '🚀', color: '#7c3aed' },
     admin: { icon: '🔧', color: '#0891b2' },
     user: { icon: '👥', color: '#6366f1' },
-    system: { icon: '🔔', color: '#6b7280' }
+    system: { icon: '🔔', color: '#6b7280' },
+    // v6.9.53：给普通用户看的两类。
+    // guest 专指「有新嘉宾上架」（原来的 na 分支），刻意与 profile 区分开 ——
+    // 因为 profile 里还混着 np（待审核）和 ed（资料被改），那两个是管理事件，不该推给普通用户。
+    guest: { icon: '📇', color: '#16a34a' },
+    announcement: { icon: '📢', color: '#dc2626' }
   };
+  // 普通用户可见的 kind 白名单（唯一真值）。
+  // 需求：普通用户只关心「有新嘉宾上架」和「管理员公告」；管理员（超管 + 内部管理员）看全部。
+  const NOTICE_PUBLIC_KINDS = { guest: 1, announcement: 1 };
+  function noticeIsAdminViewer() { return isSuper() || isStaff(); }
+  function noticeVisibleFor(kind) {
+    if (noticeIsAdminViewer()) return true;
+    return !!NOTICE_PUBLIC_KINDS[kind];
+  }
   let __noticeLocalOn = false;         // 本机是否开启浏览器系统通知
   let __noticeRange = 'all';           // all | audit | admin
   const NOTICE_BANNER_KEY = 'notice_banner_dismiss';   // 引导条「不再提示」的冷却标记
@@ -9369,8 +9397,8 @@ window.__glassBootDone = function () {
   }
   function noticeOn() { return __noticeLocalOn; }
   function noticeRangeAllows(kind) {
-    if (__noticeRange === 'admin') return kind === 'admin' || kind === 'update' || kind === 'system';
-    if (__noticeRange === 'audit') return kind === 'profile' || kind === 'review' || kind === 'comment' || kind === 'user';
+    if (__noticeRange === 'admin') return kind === 'admin' || kind === 'update' || kind === 'system' || kind === 'announcement';
+    if (__noticeRange === 'audit') return kind === 'profile' || kind === 'guest' || kind === 'announcement' || kind === 'review' || kind === 'comment' || kind === 'user';
     return true;
   }
 
@@ -9411,6 +9439,17 @@ window.__glassBootDone = function () {
       out.push(__mkNotice('r' + r.id, r.time, 'admin', '🚩',
         '有新举报待处理', (r.reporterName || '有人') + ' 举报了「' + String(r.detail || '').slice(0, 30) + '」', ''));
     });
+    // v6.9.53：管理员公告 —— 面向所有人（含未登录游客），所以放在 if (me) 之外。
+    // 只走这条「无需对比」的派生路径，不进 __diffNotices：公告是全量数据，
+    // 每次拿到快照直接枚举即可，不存在「新增/删除」的对比需求。
+    (d.announcements || []).forEach(function (a) {
+      if (!a || !a.id) return;
+      out.push(__mkNotice('A' + a.id, a.time || 0, 'announcement', '📢',
+        a.title || '管理员公告',
+        // 列表里只放 60 字摘要（压平换行），完整正文交给点击弹窗 —— 否则长公告会撑爆列表
+        String(a.body || '').replace(/\s+/g, ' ').slice(0, 60),
+        '?notice=' + a.id));
+    });
     if (d.version) {
       out.push(__mkNotice('v' + String(d.version), 0, 'system', '⚙️',
         '版本号被管理员调整', '当前显示版本：v' + String(d.version), ''));
@@ -9435,8 +9474,10 @@ window.__glassBootDone = function () {
         out.push(__mkNotice('np' + p.id, p.createdAt || Date.now(), 'profile', '⏳',
           '有新的资料待审核', nm + ' 提交了资料，等待审核', '?guest=' + p.id));
       } else {
-        out.push(__mkNotice('na' + p.id, p.createdAt || Date.now(), 'profile', '📇',
-          '有新的嘉宾资料', nm + ' 的资料已发布', '?guest=' + p.id));
+        // v6.9.53：kind 用 guest（而不是 profile）——这是要推给普通用户的「有新嘉宾上架」。
+        // 上面的 np（待审核）保持 kind=profile，普通用户因此自动看不到，无需额外判断。
+        out.push(__mkNotice('na' + p.id, p.createdAt || Date.now(), 'guest', '📇',
+          '有新嘉宾上架', nm + ' 的资料已发布', '?guest=' + p.id));
       }
     });
 
@@ -9519,6 +9560,15 @@ window.__glassBootDone = function () {
         });
       }
 
+      // v6.9.53：可见性过滤 —— 普通用户只保留「有新嘉宾上架」+「管理员公告」。
+      // ⚠️ 只在这一处过滤（写 window.__noticeItems 之前），让下游四个读同一份列表的地方
+      //    天然保持一致：getUnreadNoticeCount / renderNoticeList / markAllNoticesRead / maybeSystemNotify。
+      //    未读是按「游标 id 在列表中的下标」算的，若只在渲染层过滤，角标会按全量算、
+      //    列表按子集显示 —— 数字对不上，且红点永远清不掉。
+      //    这一步同时还拦住了上面 adminLogs 直接 push 进来的 update（管理操作记录）：
+      //    它不在 __diffNotices 里，光靠源头过滤是拦不住的。
+      list = list.filter(function (n) { return n && noticeVisibleFor(n.kind); });
+
       const seen = {};
       list = list.filter(function (n) {
         if (!n || !n.id || seen[n.id]) return false;
@@ -9527,6 +9577,15 @@ window.__glassBootDone = function () {
       }).sort(function (a, b) { return (b.time || 0) - (a.time || 0); }).slice(0, NOTICE_MAX);
 
       window.__noticeItems = list;
+      // 游标自愈：游标指向的条目已不存在（比如公告被管理员删除）时，别让它悬空 ——
+      // 否则「分界线」落在一条不存在的 id 上，整个列表会被误判为已读。
+      // 这里选择清空游标（= 重新全部未读），宁可多一个红点，也不漏掉新嘉宾。
+      try {
+        const rid = getNoticeReadId();
+        if (rid && list.length && !list.some(function (n) { return String(n.id) === rid; })) {
+          setNoticeReadId('');
+        }
+      } catch (e) { }
       renderNoticeList();
       updateNoticeBadge();
       maybeSystemNotify(list);
@@ -9596,18 +9655,209 @@ window.__glassBootDone = function () {
     }).join('');
   }
 
+  // 点通知条目：统一入口。支持的 link 形态（注意 renderNoticeList 里会对 link 做
+  // replace(/[^?&=#\w.-]/g,'') 净化 —— ':' 不在白名单里，所以链接一律用 ?key=value，
+  // 不能用 '#notice:<id>' 那种带冒号的写法，否则会被净化坏掉）：
+  //   '#admin'            → 跳「我的」页（打开管理面板）
+  //   '?notice=<公告id>'  → 弹公告详情，直接看完整正文
+  //   '?guest=<id|编号>'  → 打开嘉宾资料详情
   function noticeGo(link) {
-    if (link === '#admin') { switchTab('profile'); return; }
+    const raw = String(link || '');
+    if (raw === '#admin') { switchTab('profile'); return; }
+    let p;
+    try { p = new URLSearchParams(raw.replace(/^\?/, '')); } catch (e) { return; }
+
+    // ① 公告：弹详情框看完整正文
+    const anId = p.get('notice');
+    if (anId) { openAnnouncementDetail(anId); return; }
+
+    // ② 嘉宾资料
     try {
-      const g = new URLSearchParams(link.replace(/^\?/, '')).get('guest');
+      const g = p.get('guest');
       if (!g) return;
-      const target = (appState.profiles || []).find(function (p) {
-        return String(p.id) === String(g) || String(p.guestNo || '') === String(g);
+      const target = (appState.profiles || []).find(function (x) {
+        return String(x.id) === String(g) || String(x.guestNo || '') === String(g);
       });
       if (!target) { showAlert('该嘉宾资料已删除'); return; }
       switchTab('home');
       setTimeout(function () { openDetail(target.id); }, 200);
     } catch (e) { }
+  }
+
+  // 公告详情弹窗：直接看完整正文。
+  // ⚠️ title/body/actor 都是管理员输入的自由文本，进 innerHTML 前必须逐字段 escapeHtml；
+  //    换行用 white-space:pre-wrap 保留，不要手拼 <br>（少一次字符串拼 HTML，就少一个 XSS 面）。
+  function openAnnouncementDetail(annId) {
+    const a = (appState.announcements || []).find(function (x) {
+      return x && String(x.id) === String(annId);
+    });
+    if (!a) {
+      showAlertHtml(
+        '<div style="text-align:left; font-size:13px; line-height:1.7;">'
+        + '这条公告已被管理员删除，或链接已失效。</div>',
+        '📢 公告不存在',
+        '<button class="btn btn-primary" style="flex:1;" onclick="closeCustomDialog()">知道了</button>'
+      );
+      return;
+    }
+    const t = a.time ? fmtDateTime(a.time) : '';
+    const html = '<div style="text-align:left; font-size:13px; line-height:1.75;">'
+      + '<div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap; margin-bottom:8px;">'
+      + '<span style="background:#dc2626; color:#fff; font-size:10px; padding:2px 8px; border-radius:10px;">📢 管理员公告</span>'
+      + (t ? '<span style="font-size:11px; color:var(--text-muted);">' + escapeHtml(t) + '</span>' : '')
+      + '</div>'
+      + '<div style="font-weight:700; font-size:15px; margin-bottom:8px; word-break:break-word;">'
+      + escapeHtml(a.title || '公告') + '</div>'
+      + '<div style="white-space:pre-wrap; word-break:break-word; color:var(--text);">'
+      + escapeHtml(a.body || '') + '</div>'
+      + (a.actor ? '<div style="font-size:11px; color:var(--text-muted); margin-top:12px; padding-top:10px; border-top:1px dashed var(--border);">发布者：' + escapeHtml(a.actor) + '</div>' : '')
+      + '</div>';
+    const safeId = String(a.id).replace(/[^\w.-]/g, '');
+    const btns = noticeIsAdminViewer()
+      ? '<button class="btn btn-outline" style="flex:1; color:var(--danger); border-color:#fca5a5;" onclick="deleteAnnouncement(\'' + safeId + '\')">🗑 删除</button>'
+        + '<button class="btn btn-primary" style="flex:1;" onclick="closeCustomDialog()">关闭</button>'
+      : '<button class="btn btn-primary" style="flex:1;" onclick="closeCustomDialog()">知道了</button>';
+    showAlertHtml(html, '📢 公告', btns);
+    __widenAlertDialog();   // 长正文放宽弹窗，否则被 52vh 截断且无法滚动
+  }
+
+  // ===== 管理员公告（v6.9.53）=====
+  // 为什么写回用 patchRemoteState 而不是 saveToGitHub：
+  //   patchRemoteState 会先拉远端最新 data.json，再在「远端基线」上打补丁，
+  //   既不受 mergeStateSafe 的白名单限制，也不会有多人并发互相覆盖 / 409 的问题。
+  //   而公告恰恰是「低频、单人、整体替换」型数据，用增量写最稳。
+  function __newAnnouncementId() {
+    // 只用 [a-z0-9]：这样能原样通过 renderNoticeList 里 link 的净化正则，
+    // 否则公告 id 会被截断，点开就找不到对应公告了。
+    return 'an' + Date.now() + Math.random().toString(36).slice(2, 6);
+  }
+
+  // 放宽弹窗尺寸：resetDialogStyle 默认限 380px / 52vh，长公告会被截断且滚不动
+  function __widenAlertDialog(maxW, maxH) {
+    try {
+      const dlg = document.getElementById('customDialog');
+      const modal = dlg ? dlg.querySelector('.modal') : null;
+      if (modal) modal.style.maxWidth = maxW || '440px';
+      const msg = document.getElementById('customDialogMsg');
+      if (msg) { msg.style.maxHeight = maxH || '62vh'; msg.style.overflowY = 'auto'; }
+    } catch (e) { }
+  }
+
+  function publishAnnouncement(title, body) {
+    if (!noticeIsAdminViewer()) return;
+    title = String(title || '').trim();
+    body = String(body || '').trim();
+    if (!title) { showToast('❌ 请填写公告标题'); return; }
+    if (!body) { showToast('❌ 请填写公告正文'); return; }
+    if (title.length > 60) { showToast('❌ 标题最多 60 字'); return; }
+
+    const ident = getCurrentIdentity() || {};
+    const item = {
+      id: __newAnnouncementId(),
+      title: title,
+      body: body,
+      time: Date.now(),
+      actor: ident.type === 'super' ? '超级管理员' : (ident.name || '内部管理员'),
+      actorType: ident.type === 'super' ? 'super' : 'staff',
+      pinned: false
+    };
+
+    // 先本地乐观插入：弹窗立刻关、列表立刻出现，再异步写回远端
+    if (!Array.isArray(appState.announcements)) appState.announcements = [];
+    appState.announcements.unshift(item);
+    addAdminLog('发公告', '发布公告：' + title);
+    closeCustomDialog();
+    refreshNoticeCenter({ data: __noticeSnapshot() });
+    showToast('📢 公告已发布，正在同步到所有设备…');
+
+    patchRemoteState(function (base) {
+      // ⚠️ 这里改的是「远端基线 base」，不是 appState
+      if (!Array.isArray(base.announcements)) base.announcements = [];
+      // 幂等：同 id 已存在先剔除，避免重复提交产生两条
+      base.announcements = base.announcements.filter(function (x) { return x && x.id !== item.id; });
+      base.announcements.unshift(item);
+      return base.announcements.length;
+    }, '📢 公告：' + title.slice(0, 24)).then(function () {
+      showToast('✅ 公告已同步到线上');
+    }).catch(function (err) {
+      // 写回失败 → 回滚本地乐观插入，避免「本机看得见、别人看不见」的假象
+      appState.announcements = (appState.announcements || []).filter(function (x) { return x && x.id !== item.id; });
+      refreshNoticeCenter({ data: __noticeSnapshot() });
+      showAlert('❌ 公告发布失败：' + ((err && err.message) || '网络异常'));
+    });
+  }
+
+  function deleteAnnouncement(annId) {
+    if (!noticeIsAdminViewer()) return;
+    const id = String(annId || '').replace(/[^\w.-]/g, '');
+    if (!id) return;
+    const a = (appState.announcements || []).find(function (x) { return x && String(x.id) === id; });
+    if (!a) { showToast('该公告已不存在'); return; }
+    // confirmAction 的消息走 textContent，不解析 HTML，可以直接拼标题
+    confirmAction('确定删除公告「' + (a.title || '') + '」？删除后所有用户都看不到这条了。', function () {
+      closeCustomDialog();
+      appState.announcements = (appState.announcements || []).filter(function (x) { return !x || String(x.id) !== id; });
+      addAdminLog('删公告', '删除公告：' + (a.title || ''));
+      refreshNoticeCenter({ data: __noticeSnapshot() });
+      patchRemoteState(function (base) {
+        if (!Array.isArray(base.announcements)) base.announcements = [];
+        base.announcements = base.announcements.filter(function (x) { return !x || String(x.id) !== id; });
+        return base.announcements.length;
+      }, '🗑 删除公告：' + String(a.title || '').slice(0, 24)).then(function () {
+        showToast('🗑 公告已删除');
+      }).catch(function (err) {
+        showAlert('❌ 删除失败：' + ((err && err.message) || '网络异常') + '\n\n将重新拉取最新数据以避免不一致。');
+        try { loadData(); } catch (e) { }
+      });
+    }, '删除公告');
+  }
+
+  // 发公告面板：标题 + 正文 + 已发布公告列表（可直接删）
+  function openAnnounceAdmin() {
+    if (!noticeIsAdminViewer()) return;
+
+    const ex = (appState.announcements || []).slice().sort(function (a, b) {
+      return (b.time || 0) - (a.time || 0);
+    });
+    let listHtml;
+    if (!ex.length) {
+      listHtml = '<div style="text-align:center; color:var(--text-muted); padding:14px; font-size:12px;">还没有发布过公告</div>';
+    } else {
+      listHtml = ex.map(function (a) {
+        const t = a.time ? fmtDateTime(a.time) : '';
+        return '<div style="display:flex; gap:8px; align-items:flex-start; padding:9px 0; border-bottom:1px dashed var(--border);">'
+          + '<div style="flex:1; min-width:0;">'
+          + '<div style="font-weight:600; font-size:13px; word-break:break-word;">' + escapeHtml(a.title || '') + '</div>'
+          + '<div style="font-size:11px; color:var(--text-muted); margin-top:2px;">' + escapeHtml(t + (a.actor ? ' · ' + a.actor : '')) + '</div>'
+          + '</div>'
+          + '<button class="btn btn-outline" style="font-size:11px; padding:4px 10px; flex-shrink:0; color:var(--danger); border-color:#fca5a5;"'
+          + ' onclick="closeCustomDialog(); deleteAnnouncement(\'' + String(a.id).replace(/[^\w.-]/g, '') + '\')">🗑</button>'
+          + '</div>';
+      }).join('');
+    }
+
+    const inputCss = 'width:100%; padding:10px 12px; font-size:13px; line-height:1.6; border:1px solid var(--border); border-radius:10px; outline:none; box-sizing:border-box; background:var(--bg); color:var(--text); font-family:inherit;';
+    const html = '<div style="text-align:left; font-size:13px;">'
+      + '<div style="font-weight:700; font-size:12px; margin-bottom:5px;">标题</div>'
+      + '<input type="text" id="annTitleInput" maxlength="60" placeholder="例如：本周六线下活动通知" style="' + inputCss + '">'
+      + '<div style="font-weight:700; font-size:12px; margin:12px 0 5px;">正文</div>'
+      + '<textarea id="annBodyInput" rows="6" maxlength="2000" placeholder="输入公告内容，可以换行" style="' + inputCss + ' resize:vertical;"></textarea>'
+      + '<div style="font-size:11px; color:var(--text-muted); margin-top:6px; line-height:1.6;">'
+      + '发布后<b>所有访客</b>都会在「收件箱 → 🔔 站内通知」里看到这条公告，点开可读完整正文。</div>'
+      + '<div style="font-weight:700; font-size:12px; margin:16px 0 2px; padding-top:12px; border-top:1px solid var(--border);">已发布的公告</div>'
+      + listHtml
+      + '</div>';
+
+    showAlertHtml(html, '📢 发公告',
+      '<button class="btn btn-outline" style="flex:1;" onclick="closeCustomDialog()">取消</button>'
+      + '<button class="btn btn-primary" style="flex:1;" onclick="submitAnnounceForm()">📢 发布</button>');
+    __widenAlertDialog('460px', '68vh');
+  }
+
+  function submitAnnounceForm() {
+    const ti = document.getElementById('annTitleInput');
+    const bo = document.getElementById('annBodyInput');
+    publishAnnouncement(ti ? ti.value : '', bo ? bo.value : '');
   }
 
   function markAllNoticesRead() {
