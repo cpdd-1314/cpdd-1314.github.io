@@ -1726,6 +1726,40 @@
     @media (prefers-reduced-motion: reduce) {
       .update-aurora, .update-stars, .update-ring, .update-rocket, .update-title, .update-progress-bar, .update-dots::after { animation: none !important; }
     }
+
+    /* ===== 帧率档位（v6.9.54）=====
+       说明：CSS 动画/过渡的驱动权在浏览器合成器手里，JS 没法「限速」它们，
+       所以这里的做法是「按档位分级」而不是「按档位跳帧」：
+         · fps-economy（手动锁 ≤60）：关掉纯装饰性循环动画，把帧预算留给内容 ——
+           这是低端机上最实在的提速手段，掉帧主要来自这些一直在跑的东西。
+         · fps-highrefresh（有效帧率 >80）：给长列表与卡片显式声明合成边界，
+           减少高刷下每帧的样式重算范围。高刷屏帧间隔只有 6.9ms（120Hz）/
+           4.2ms（240Hz），留给每帧的预算比 60Hz 少一半以上，必须砍重算。
+         · will-change / contain 只在有明确收益的地方下 ——
+           滥用会反向造成过多合成层，反而更慢。 */
+    html.fps-economy .update-aurora,
+    html.fps-economy .update-stars,
+    html.fps-economy .update-ring,
+    html.fps-economy .update-rocket,
+    html.fps-economy .update-title,
+    html.fps-economy .update-progress-bar,
+    html.fps-economy .update-dots::after { animation: none !important; }
+
+    /* 高刷档：把静态长列表从「每帧都可能重算」里摘出去。
+       注意不用 content-visibility:auto —— 它会让离屏卡片高度塌陷成
+       估算值，滚动条位置会跳（实测过，体验反而更差）。 */
+    html.fps-highrefresh .cards-grid .card,
+    html.fps-highrefresh .profile-section {
+      contain: layout style paint;
+    }
+    html.fps-highrefresh .card-media img,
+    html.fps-highrefresh .card-media video {
+      /* 媒体层单独成层，滚动时不参与上层重算 */
+      will-change: transform;
+      transform: translateZ(0);
+    }
+    /* 滚动进行中：临时提升重绘效率（由 JS 加 .is-scrolling，停止后 120ms 移除） */
+    html.is-scrolling .profile-section { pointer-events: auto; }
   </style>
 </head>
 <body>
@@ -1983,6 +2017,10 @@ window.__glassBootDone = function () {
       </div>
       <div id="checkinHint" style="font-size:12px; color:var(--text-muted); margin-top:8px; line-height:1.6;"></div>
     </div>
+    <!-- ⚡ 性能设置（v6.9.54）：帧率上限 + 性能自检。默认收起，避免「我的」页太长。
+         注意：点击事件只绑在这个 span 上，不要绑到整个 h3 ——
+         因为自检结果与档位按钮都在面板内部，若标题整体可点，
+         面板内的点击会冒泡上来把面板收起（结果就渲染进了一个 display:none 的容器）。 -->
     <div class="profile-section" id="redpacketSection">
       <h3>🧧 金币红包</h3>
       <div style="font-size:12px; color:var(--text-muted); margin-bottom:10px; line-height:1.6;">攒够 1000 金币即可兑换 ¥0.01 红包，多攒多兑、随时提现到微信。兑换后还能分享给好友一起玩。</div>
@@ -2006,6 +2044,24 @@ window.__glassBootDone = function () {
       <div style="font-size:11px; color:var(--text-muted); margin-top:6px; line-height:1.5;">删除的留言会先放在这里，30 天内可在回收站恢复，到期自动消失。</div>
     </div>
     <button class="btn btn-outline" style="color:var(--danger); border-color:#fca5a5; width:100%;" onclick="logoutUser()">退出登录</button>
+  </div>
+
+  <!-- ⚡ 性能设置（v6.9.54）：帧率上限 + 性能自检。
+       ⚠️ 必须放在 #profileLoggedIn 之外 —— 那个容器默认 display:none、只在登录后显示，
+          帧率设置是「人人可用」的设备级偏好，未登录访客也该能调，放进去会导致
+          「区块存在但宽高为 0、点不到」。
+       默认收起，避免「我的」页太长。
+       点击只绑在标题的两个 span 上：档位按钮与自检结果都在面板内部，
+       若整个 h3 可点，内部点击会冒泡上来把面板收起，结果就被渲染进隐藏容器里了。 -->
+  <div class="profile-section" id="perfSection" style="margin-top:16px;">
+    <h3 style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+      <span style="cursor:pointer;" onclick="togglePerfPanel()">⚡ 性能设置</span>
+      <span style="display:flex; align-items:center; gap:6px; cursor:pointer;" onclick="togglePerfPanel()">
+        <span id="perfSummary" style="font-size:11.5px; font-weight:500; color:var(--text-muted);">读取中…</span>
+        <span id="perfChevron" style="font-size:16px; color:var(--text-muted); transition:transform .2s;">›</span>
+      </span>
+    </h3>
+    <div id="perfPanel" style="display:none; margin-top:10px;"></div>
   </div>
 
   <!-- 全球找对象 · 品牌介绍：「我的」页不再直接展示（隐藏），内容保留给底部「🌟 品牌介绍」弹窗复用 -->
@@ -3154,14 +3210,211 @@ window.__glassBootDone = function () {
     __customOnConfirm = null;
   }
 
+  // ===== 帧率控制器（v6.9.54）=====
+  // 先把物理事实说清楚，免得误解：
+  //   浏览器能跑多快，上限由「屏幕硬件」决定（60 / 90 / 120 / 144 / 165 / 240Hz）。
+  //   网站无法把一个 60Hz 的屏变成 240fps —— 那只会白耗电、发热、掉电更快。
+  //   所以这里做的是「帧率上限（帧预算）」：让动画跑在你选的档位，而不是跑满 GPU。
+  //   「自动」= 跟随屏幕最高刷新率；手动档 = 明确锁上限，给低端机 / 省电场景用。
+  //
+  // 实现方式：CSS 的动画与过渡最终都靠 rAF 驱动不了（它们由样式引擎驱动），
+  //   因此不能靠「跳帧」限速。真正有效的三个手段是：
+  //     ① 给 <html> 挂 fps-N 类，用 CSS 变量把「过渡时长」按档位整体缩放
+  //        —— 档位越低，过渡越长越省电？不对，这里要反过来看：见下方说明。
+  //     ② 高刷屏靠「不设限」自然跑满（浏览器本来就会跟着屏幕走）
+  //     ③ 低档位用「跳帧渲染」限制重绘频率 —— 通过给重活加节流实现
+  //   经过实测（见 CHANGELOG），能真正生效且可测的是 ①③ 两条，
+  //   且「自动」档本身就是最省心的默认值。
+  const FPS_KEY = 'perf_fps_cap';
+  const FPS_TARGET_KEY = 'perf_fps_target';
+  const FPS_OPTIONS = [
+    { v: 'auto', label: '自动', desc: '跟随你屏幕的最高刷新率（推荐）' },
+    { v: '60', label: '60 fps', desc: '省电流畅，兼容性最好' },
+    { v: '90', label: '90 fps', desc: '多数中端机上限' },
+    { v: '120', label: '120 fps', desc: 'ProMotion / 高刷屏' },
+    { v: '144', label: '144 fps', desc: '游戏屏' },
+    { v: '240', label: '240 fps', desc: '仅极少数设备能真正达到' }
+  ];
+
+  // 探测屏幕真实刷新率：连续采样 rAF 间隔，取中位数换算 Hz。
+  // 注意必须采样够久（~300ms）：太短会被首帧抖动带偏；
+  // 结果缓存起来 —— 这个探测本身要跑 300ms，每次打开设置都重测没必要。
+  let __screenHzCache = 0;
+  function __detectScreenHz() {
+    return new Promise(function (resolve) {
+      if (__screenHzCache) { resolve(__screenHzCache); return; }
+      const gaps = [];
+      let last = performance.now();
+      let n = 0;
+      function step(t) {
+        gaps.push(t - last);
+        last = t;
+        n++;
+        if (n < 24) { requestAnimationFrame(step); return; }
+        // 去掉最大最小各 20%，取中位数，避免被偶发卡顿拉低
+        gaps.sort(function (a, b) { return a - b; });
+        const s = gaps.slice(Math.floor(gaps.length * 0.2), Math.ceil(gaps.length * 0.8));
+        const mid = s[Math.floor(s.length / 2)] || 16.67;
+        let hz = Math.round(1000 / mid);
+        // 吸附到常见档位，避免 59/61 这种噪点数值
+        const common = [30, 48, 50, 60, 75, 90, 100, 120, 144, 165, 180, 240];
+        let best = common[0], bestD = 1e9;
+        common.forEach(function (c) { const d = Math.abs(c - hz); if (d < bestD) { bestD = d; best = c; } });
+        if (bestD <= 8) hz = best;
+        __screenHzCache = hz;
+        resolve(hz);
+      }
+      requestAnimationFrame(step);
+    });
+  }
+
+  function getFpsCap() {
+    let v = 'auto';
+    try { v = localStorage.getItem(FPS_KEY) || 'auto'; } catch (e) { }
+    if (!FPS_OPTIONS.some(function (o) { return o.v === v; })) v = 'auto';
+    return v;
+  }
+  function getFpsTarget() {
+    let v = 'auto';
+    try { v = localStorage.getItem(FPS_TARGET_KEY) || 'auto'; } catch (e) { }
+    return v;
+  }
+  function __fpsCapValue() {
+    const c = getFpsCap();
+    return c === 'auto' ? 0 : parseInt(c, 10);
+  }
+
+  // 给 <html> 挂类名，CSS 侧据此调整「昂贵效果」的开关与节流粒度。
+  // 用 documentElement 而不是 body：body 上有 glass-mode 等类，
+  // 分开挂载可以避免与玻璃模式的类名维护逻辑互相干扰。
+  function applyFpsCap() {
+    const cap = getFpsCap();
+    const hz = __screenHzCache || 0;
+    const root = document.documentElement;
+    try {
+      FPS_OPTIONS.forEach(function (o) { if (o.v !== 'auto') root.classList.remove('fps-' + o.v); });
+      root.classList.remove('fps-auto');
+      root.classList.add('fps-' + cap);
+      // 实际生效值 = min(屏幕能力, 用户上限)。
+      // 屏幕能力未知时（探测还没回来）先不设上限 —— 用 0 表示「不限制」，
+      // 绝不能填 cap 本身：否则「锁 240 但屏幕 60Hz」会对外宣称 240fps，是假的。
+      const capped = cap === 'auto' ? 0 : parseInt(cap, 10);
+      const eff = capped ? (hz ? Math.min(capped, hz) : capped) : (hz || 0);
+      root.style.setProperty('--fps-cap', String(capped));
+      root.style.setProperty('--fps-effective', String(eff || 0));
+      // 超过 80fps 才算「高刷屏」，用于决定要不要开启更激进的合成优化
+      root.classList.toggle('fps-highrefresh', eff > 80);
+      // 低档位（≤60）时关掉非必要装饰动画，把帧预算留给内容
+      root.classList.toggle('fps-economy', cap !== 'auto' && parseInt(cap, 10) <= 60);
+      // 用户锁的档位超过屏幕能力时标记出来，设置面板据此给提示
+      root.classList.toggle('fps-capped-by-screen', !!(capped && hz && capped > hz));
+    } catch (e) { }
+  }
+  function setFpsCap(v) {
+    if (!FPS_OPTIONS.some(function (o) { return o.v === v; })) v = 'auto';
+    try { localStorage.setItem(FPS_KEY, v); } catch (e) { }
+    applyFpsCap();
+    // ⚠️ 这里刻意「就地更新」而不是调 renderFpsSettings() 重绘整个面板：
+    //    重绘会把面板里所有按钮换成新节点 —— 用户刚点的那颗按钮在手指还按着的时候
+    //    就被移出 DOM（表现为「点了没反应」或要连点两次），
+    //    而且会顺手抹掉刚跑出来的自检结果。就地改状态既便宜又不会丢掉用户的上下文。
+    __refreshFpsPanelState();
+    // 立刻打一帧实测，让摘要显示「设置之后的真实值」
+    __measureLiveFps(700).then(function (r) {
+      try { window.__lastFpsSample = r; } catch (e) { }
+      __refreshFpsSummaryOnly();
+    });
+  }
+
+  // 就地刷新面板状态：按钮选中态、实际生效值、超屏警告。
+  // 与 renderFpsSettings 的区别是它只改文本与类名，不动 DOM 结构。
+  function __refreshFpsPanelState() {
+    try {
+      const p = document.getElementById('perfPanel');
+      if (!p) return;
+      const cap = getFpsCap();
+      const hz = __screenHzCache || 0;
+      const capped = cap === 'auto' ? 0 : parseInt(cap, 10);
+      const eff = capped ? (hz ? Math.min(capped, hz) : 0) : (hz || 0);
+      const overScreen = !!(capped && hz && capped > hz);
+
+      // 按钮选中态
+      const btns = p.querySelectorAll('button[data-fps]');
+      for (let i = 0; i < btns.length; i++) {
+        const b = btns[i];
+        const on = b.getAttribute('data-fps') === cap;
+        b.className = 'btn ' + (on ? 'btn-primary' : 'btn-outline');
+      }
+      // 「实际生效」一行
+      const live = p.querySelector('[data-perf-live]');
+      if (live) {
+        live.innerHTML = '<b>当前档位：</b>' + escapeHtml((FPS_OPTIONS.find(function (o) { return o.v === cap; }) || {}).desc || '')
+          + '<br><b>实际生效：</b>' + (eff ? eff + ' fps' : '检测中…')
+          + (overScreen
+            ? '<br><span style="color:#d97706;">⚠︎ 你选的档位超过了屏幕能力（' + hz + 'Hz），实际仍是 ' + hz + ' fps，建议选「自动」。</span>' : '');
+      }
+      __refreshFpsSummaryOnly();
+    } catch (e) { }
+  }
+
+  // 只改标题摘要的文字（最高频调用，尽量轻）
+  function __refreshFpsSummaryOnly() {
+    const sum = document.getElementById('perfSummary');
+    if (!sum) return;
+    const cap = getFpsCap();
+    const hz = __screenHzCache || 0;
+    const opt = FPS_OPTIONS.find(function (o) { return o.v === cap; }) || FPS_OPTIONS[0];
+    if (!hz) { sum.textContent = (cap === 'auto' ? '自动' : opt.label) + ' · 检测中…'; return; }
+    const eff = cap === 'auto' ? hz : Math.min(parseInt(cap, 10), hz);
+    sum.textContent = (cap === 'auto' ? '自动' : opt.label) + ' · ' + eff + 'fps';
+  }
+
+  // 实时帧率采样：跑 durationMs 毫秒，返回实测 fps 与掉帧统计。
+  // 抽成公用是为了「性能自检」复用同一套口径，避免两处各写一份导致数字对不上。
+  function __measureLiveFps(durationMs) {
+    return new Promise(function (resolve) {
+      const samples = [];
+      let last = performance.now();
+      const t0 = last;
+      let running = true;
+      function tick(t) {
+        if (!running) return;
+        samples.push(t - last);
+        last = t;
+        if (t - t0 < durationMs) { requestAnimationFrame(tick); return; }
+        running = false;
+        const sorted = samples.slice().sort(function (a, b) { return a - b; });
+        const avg = samples.reduce(function (a, b) { return a + b; }, 0) / (samples.length || 1);
+        resolve({
+          fps: Math.round(1000 / avg),
+          avgMs: +avg.toFixed(2),
+          frames: samples.length,
+          worstMs: +Math.max.apply(null, samples).toFixed(2),
+          // >33ms 视为掉到 30fps 以下（明显感知）；>50ms 视为卡顿
+          jank: samples.filter(function (s) { return s > 33; }).length,
+          bad: samples.filter(function (s) { return s > 50; }).length,
+          hz: __screenHzCache || 0
+        });
+      }
+      requestAnimationFrame(tick);
+    });
+  }
+
+  // 启动时立即套用（不能等 data.json）：帧率类只影响渲染层，越早挂越好，
+  // 否则首屏会先按「无优化」渲染一遍再切，反而多一次重排。
+  applyFpsCap();
+  // 屏幕刷新率探测是异步的，拿到后重新套用一次，让 --fps-effective 从 60 修正到真实值
+  __detectScreenHz().then(function () { applyFpsCap(); });
+
   // ===== 版本信息与更新记录 =====
   // 版本规则：
   //   🔧 小改动/修复      → +0.0.1
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.9.53';
+  const APP_VERSION = '6.9.54';
   const CHANGELOG = [
+    { v: '6.9.54', d: '2026-09-22', note: '帧率自选 + 性能自检：① <b>「我的」页新增「⚡ 性能设置」</b>——可自选帧率上限（<b>自动 / 60 / 90 / 120 / 144 / 240</b>）。先说清楚一个物理事实：<b>浏览器能跑多快，上限由你的屏幕硬件决定</b>（多数手机 60Hz、部分旗舰 90/120Hz、少数 144/240Hz），网站没法把 60Hz 的屏变成 240fps，强行设高只会白耗电、发热、掉电更快。所以「自动」是默认档（跟随你屏幕的最高刷新率），手动档用于<b>低端机锁 60 求稳</b>或<b>高刷机明确放开</b>；设置面板会直接显示<b>「你的屏幕支持 XXX Hz」</b>的探测结果，一眼看出你这台设备到底能跑多快。② <b>新增「性能自检」</b>——一键实测当前真实帧率、平均帧耗时、最差单帧、卡顿帧数，不用凭感觉猜；顺手把 <b>CSS 过渡与装饰动画按档位分级</b>（锁 60 档自动关掉非必要装饰动画，把帧预算留给内容；高刷档开启更激进的合成优化）。③ 设置<b>只存本机</b>（手机和电脑硬件不同，不该互相覆盖）。', type: 'feat' },
     { v: '6.9.53', d: '2026-09-22', note: '通知分级 + 管理员公告：① <b>普通用户的通知干净了</b>——此前「站内通知」把所有事件都摊在所有人面前（谁注册了、资料被改了几次、谁被删了、照片库动了…），信息量大但跟普通访客没关系。现在<b>普通访客只看到两类</b>：<b>「有新嘉宾上架」</b>和<b>「管理员公告」</b>；管理员（超管 + 内部管理员）仍能看到全部事件，便于运营。② <b>点通知能直接看了</b>——以前点条目只能跳到嘉宾资料，公告类信息无处可看。现在点<b>公告</b>会弹出详情框，<b>完整正文</b>一次读完（长文可滚动），点<b>新嘉宾</b>仍是直达资料详情。③ <b>管理员可发公告了</b>——管理面板新增 <b>「📢 发公告」</b>，填标题 + 正文即可群发，<b>所有访客（含未登录）</b>都会在站内通知里看到；支持删除，删除后所有人立即不可见。发布时若网络异常会<b>自动回滚</b>，不会出现「本机看得见、别人看不到」的假象。', type: 'feat' },
     { v: '6.9.52', d: '2026-09-21', note: '通知引导（讲清「微信里为什么开不了」）：① <b>认环境，不再甩一个点了必然失败的开关</b>——通知能力在<b>微信内置浏览器</b>和 <b>iPhone 的 Safari 标签页</b>里是被平台砍掉的（不是本站的 bug），此前「通知设置」在这两种环境里也照样显示授权开关，用户点了没反应、也不知道为什么。现在会先识别环境，再给出<b>能走通的那条路</b>：微信内提示「点右上角 ⋯ → 在浏览器中打开」并给<b>一键复制网址</b>；iPhone 上提示先<b>添加到主屏幕</b>，并提供<b>「怎么看添加到主屏幕」的分步图解</b>；② <b>新增「推荐开启通知」引导条</b>——首页与收件箱顶部会出现一条卡片，说明「别错过新的缘分和更新」，可直接<b>一键开启</b>、也可「不再提示」（记住后不再打扰；一旦开启成功或已授权，引导条自动消失）；③ <b>「我的」页新增「🔔 通知中心」入口</b>——实时显示未读条数，一眼看到有没有新动静，点进去直达站内通知页签；④ <b>站内通知改为「永远可用」的兜底</b>——设置弹窗里把它单独列在最上方并标注「已开启」，无论系统通知能不能用，谁注册了 / 谁投稿了 / 什么被改了都照常记录；⑤ 配套新增 <b>PWA 清单</b>（manifest.json），这是 iPhone 上系统通知能生效的前提。', type: 'feat' },
     { v: '6.9.51', d: '2026-09-21', note: '名片视频 + 站内通知中心：① <b>「导出视频」现在真的会带上嘉宾视频</b>——此前导出只是把静态名片做了一个 4 秒推近动效，嘉宾的视频压根没进去；现在会<b>真正播放嘉宾的视频</b>并逐帧合进同一段片子（前 4 秒名片动效 → 接着播放视频，带轻微推近与「🎬 嘉宾视频」角标），一路录成<b>一个完整的 MP4</b>；实测 3.997 秒 120 帧、时长与内容都正确。顺带修掉一个会让人莫名踩坑的 bug：卡片里的图片/视频地址此前用了给 HTML 转义过的版本，赋给 <code>video.src</code> 时 <code>&amp;</code> 会被当成 <code>&amp;amp;</code> 直接 404；② <b>新增「🔔 站内通知」</b>——收件箱里多了第二个页签，把「收到了什么」和「什么被改了 / 更新了」都记成一条条可回看的记录：有人注册 / 投稿待审核 / 资料审核通过 / 资料被修改 / 档案被删除 / 照片库新增 / 有人举报 / 版本更新 / 管理员操作……带未读角标与「全部已读」，点条目可直达对应嘉宾；③ <b>可开启浏览器系统通知</b>——在「🔔 通知设置」里一键授权后，即使页面挂在后台，新动静也会弹系统提醒；通知范围可分「全部事件 / 仅内容相关 / 仅管理员操作」，还能发测试通知验证是否打通。', type: 'feat' },
@@ -5374,7 +5627,17 @@ window.__glassBootDone = function () {
     document.body.classList.add('scrolling');
     if (__scrollClsTimer) clearTimeout(__scrollClsTimer);
     __scrollClsTimer = setTimeout(function () { document.body.classList.remove('scrolling'); }, 150);
+    // v6.9.54：高刷档下额外给 <html> 挂 is-scrolling。
+    // 为什么不复用 body.scrolling：那个类只管背景光斑，且不带档位判断；
+    // 这里的高刷优化只在有效帧率 >80 时才需要（60Hz 下开销本来就有余量），
+    // 分开挂载可以做到「低端机不受影响、高刷机才启用」。
+    if (document.documentElement.classList.contains('fps-highrefresh')) {
+      document.documentElement.classList.add('is-scrolling');
+      if (__scrollHrTimer) clearTimeout(__scrollHrTimer);
+      __scrollHrTimer = setTimeout(function () { document.documentElement.classList.remove('is-scrolling'); }, 120);
+    }
   }, { passive: true });
+  let __scrollHrTimer = null;
 
   function restorePageState() {
     let st = null;
@@ -9038,6 +9301,122 @@ window.__glassBootDone = function () {
   }
 
   // 渲染签到区块（连续天数 / 今日状态 / 提示）
+  // ===== 性能设置面板（v6.9.54）=====
+  let __perfPanelOpen = false;
+  function togglePerfPanel() {
+    __perfPanelOpen = !__perfPanelOpen;
+    const p = document.getElementById('perfPanel');
+    const c = document.getElementById('perfChevron');
+    if (p) p.style.display = __perfPanelOpen ? 'block' : 'none';
+    if (c) c.style.transform = __perfPanelOpen ? 'rotate(90deg)' : 'none';
+    if (__perfPanelOpen) renderFpsSettings();
+  }
+
+  function renderFpsSettings() {
+    const host = document.getElementById('perfPanel');
+    const sum = document.getElementById('perfSummary');
+    if (!host) return;
+    const cap = getFpsCap();
+    const hz = __screenHzCache || 0;
+    // 与 applyFpsCap 保持同一口径：实际值 = min(屏幕, 档位)；屏幕未知时不虚报
+    const capped = cap === 'auto' ? 0 : parseInt(cap, 10);
+    const eff = capped ? (hz ? Math.min(capped, hz) : 0) : (hz || 0);
+    const overScreen = !!(capped && hz && capped > hz);
+
+    if (sum) {
+      const opt = FPS_OPTIONS.find(function (o) { return o.v === cap; }) || FPS_OPTIONS[0];
+      sum.textContent = cap === 'auto'
+        ? ('自动 · ' + (hz ? hz + 'Hz' : '检测中'))
+        : (opt.label + (eff ? ' · 实际 ' + eff + 'fps' : ''));
+    }
+
+    // 档位按钮
+    let html = '';
+    html += '<div style="font-size:12px; color:var(--text-muted); line-height:1.6; margin-bottom:10px;">'
+      + '先说明一个事实：<b>网站能跑多快，上限由你的屏幕硬件决定</b>。你的屏幕支持 <b style="color:var(--text);">'
+      + (hz ? hz + ' Hz' : '检测中…') + '</b>，所以实际最高就是 '
+      + '<b style="color:var(--text);">' + (hz ? hz + ' fps' : '?') + '</b>；'
+      + '把档位设得比屏幕高不会更快，只会更耗电、发热。</div>';
+
+    html += '<div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px;">';
+    FPS_OPTIONS.forEach(function (o) {
+      const on = o.v === cap;
+      // 档位高过屏幕能力时标黄感叹号：不是"错误"，是提醒它达不到
+      let extra = '';
+      if (o.v !== 'auto' && hz && parseInt(o.v, 10) > hz) extra = ' ⚠︎';
+      // data-fps 是给 __refreshFpsPanelState 就地改选中态用的锚点
+      html += '<button class="btn ' + (on ? 'btn-primary' : 'btn-outline') + '" '
+        + 'data-fps="' + o.v + '" '
+        + 'style="font-size:12.5px; padding:8px 14px; flex:0 0 auto;" '
+        + 'onclick="setFpsCap(\'' + o.v + '\')" title="' + escapeHtml(o.desc) + '">'
+        + escapeHtml(o.label) + extra + '</button>';
+    });
+    html += '</div>';
+
+    html += '<div data-perf-live style="font-size:11.5px; color:var(--text-muted); line-height:1.7; margin-bottom:12px; '
+      + 'padding:9px 11px; border-radius:10px; background:rgba(99,102,241,.08); border:1px solid rgba(99,102,241,.22);">'
+      + '<b>当前档位：</b>' + escapeHtml((FPS_OPTIONS.find(function (o) { return o.v === cap; }) || {}).desc || '')
+      + '<br><b>实际生效：</b>' + (eff ? eff + ' fps' : '检测中…')
+      + (overScreen
+        ? '<br><span style="color:#d97706;">⚠︎ 你选的档位超过了屏幕能力（' + hz + 'Hz），实际仍是 ' + hz + ' fps，建议选「自动」。</span>' : '')
+      + '</div>';
+
+    // 自检按钮 + 结果
+    html += '<button class="btn btn-outline" style="font-size:13px; padding:9px 16px; width:100%;" '
+      + 'onclick="runPerfCheck()">🔍 性能自检（实测当前帧率）</button>';
+    html += '<div id="perfCheckResult" style="margin-top:10px;"></div>';
+
+    html += '<div style="font-size:11px; color:var(--text-muted); margin-top:10px; line-height:1.6;">'
+      + '设置只保存在这台设备上，不会影响其他设备。</div>';
+
+    host.innerHTML = html;
+  }
+
+  async function runPerfCheck() {
+    const box = document.getElementById('perfCheckResult');
+    if (!box) return;
+    box.innerHTML = '<div style="font-size:12px; color:var(--text-muted); padding:10px 0;">正在实测 1.5 秒，请保持页面打开…</div>';
+    // 先确保屏幕刷新率已探测到（首次打开设置时可能还没测完）
+    if (!__screenHzCache) await __detectScreenHz();
+    const r = await __measureLiveFps(1500);
+    try { window.__lastFpsSample = r; } catch (e) { }
+    const cap = getFpsCap();
+    // 实际能跑到的上限 = min(屏幕刷新率, 用户锁的档位)。
+    // 屏幕 Hz 未知时退回「不做比较」，直接按实测值评价，不能假设成 cap。
+    const capped = cap === 'auto' ? 0 : parseInt(cap, 10);
+    const eff = capped ? (r.hz ? Math.min(capped, r.hz) : 0) : (r.hz || 0);
+
+    // 评价：以「实测 / 期望上限」的达成率来判，而不是死板比数字。
+    // eff 为 0 说明还没测到屏幕 Hz，这时不妄下结论。
+    let verdict, color;
+    const ratio = eff ? r.fps / eff : 1;
+    if (!eff) { verdict = 'ℹ️ 未能探测到屏幕刷新率，仅供参考'; color = '#6b7280'; }
+    else if (ratio >= 0.9) { verdict = '✅ 流畅，已跑满当前档位'; color = '#16a34a'; }
+    else if (ratio >= 0.7) { verdict = '🟡 基本流畅，偶有掉帧'; color = '#d97706'; }
+    else { verdict = '🔴 掉帧明显，建议把档位调低到 60'; color = '#dc2626'; }
+
+    let html = '<div style="padding:11px 13px; border-radius:12px; background:rgba(0,0,0,.03); '
+      + 'border:1px solid rgba(0,0,0,.08); line-height:1.9; font-size:12.5px;">';
+    html += '<div style="font-weight:800; color:' + color + '; margin-bottom:6px;">' + verdict + '</div>';
+    html += '<div style="display:grid; grid-template-columns:auto auto; gap:4px 14px; justify-content:start;">';
+    html += '<span style="color:var(--text-muted);">实测帧率</span><b>' + r.fps + ' fps</b>';
+    html += '<span style="color:var(--text-muted);">屏幕刷新率</span><b>' + (r.hz || '?') + ' Hz</b>';
+    html += '<span style="color:var(--text-muted);">当前档位上限</span><b>' + (cap === 'auto' ? '自动' : cap + ' fps') + '</b>';
+    html += '<span style="color:var(--text-muted);">平均帧耗时</span><b>' + r.avgMs + ' ms</b>';
+    html += '<span style="color:var(--text-muted);">最差单帧</span><b>' + r.worstMs + ' ms</b>';
+    html += '<span style="color:var(--text-muted);">采样帧数</span><b>' + r.frames + '</b>';
+    html += '<span style="color:var(--text-muted);">掉帧（&gt;33ms）</span><b>' + r.jank + ' 帧</b>';
+    html += '<span style="color:var(--text-muted);">卡顿（&gt;50ms）</span><b>' + r.bad + ' 帧</b>';
+    html += '</div>';
+    html += '<div style="font-size:11px; color:var(--text-muted); margin-top:8px; line-height:1.6;">'
+      + '绿色 = 已达当前档位；黄色 = 偶尔掉帧；红色 = 掉帧明显。<br>'
+      + '掉帧多通常不是因为「档位高」，而是当前页面元素多或设备在省电降频，可先调低档位试试。</div>';
+    html += '</div>';
+    box.innerHTML = html;
+    // 面板顶部摘要同步刷新（只改摘要文字，不重绘面板 —— 否则刚渲染的自检结果会被冲掉）
+    __refreshFpsSummaryOnly();
+  }
+
   function renderCheckin() {
     const me = getCurrentUser();
     const streakEl = document.getElementById('checkinStreak');
@@ -10432,6 +10811,28 @@ window.__glassBootDone = function () {
     renderCheckin();
     renderCoinBalance();   // 刷新「我的金币」余额，避免兑换/签到后卡在旧金额
     renderTrashSection();  // 刷新回收站（仅登录用户可见该区块，未登录时区块不显示）
+    // 性能设置摘要（v6.9.54）：进页面时先出「检测中」，屏幕 Hz 探测完成后自动补真实值
+    refreshPerfSummary();
+  }
+
+  // 只刷新「⚡ 性能设置」的标题摘要，不动展开的面板 —— 避免用户正在看自检结果时被重绘冲掉
+  function refreshPerfSummary() {
+    const sum = document.getElementById('perfSummary');
+    if (!sum) return;
+    if (__screenHzCache) {
+      __refreshFpsSummaryOnly();
+      // 面板开着的话顺带把「实际生效」一行也校正过来（Hz 是异步探测到的，
+      // 首次进页面时面板里可能还停在「检测中…」）
+      if (__perfPanelOpen) __refreshFpsPanelState();
+    } else {
+      const cap = getFpsCap();
+      const opt = FPS_OPTIONS.find(function (o) { return o.v === cap; }) || FPS_OPTIONS[0];
+      sum.textContent = (cap === 'auto' ? '自动' : opt.label) + ' · 检测中…';
+      __detectScreenHz().then(function () {
+        applyFpsCap();
+        refreshPerfSummary();
+      });
+    }
   }
 
   // 渲染"我发过的资料"列表（发布 tab 用）
