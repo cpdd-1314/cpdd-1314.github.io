@@ -1897,6 +1897,11 @@ window.__glassBootDone = function () {
 <!-- ===== 收件箱 Tab ===== -->
 <main id="tab-inbox" class="tab-page" style="display:none;">
   <h2>💬 收件箱</h2>
+  <!-- 页签：互动消息 / 站内通知 -->
+  <div style="display:flex; gap:8px; margin-bottom:14px;">
+    <button class="filter-btn active" id="inboxTabMsg" onclick="switchInboxTab('msg')" style="flex:1; justify-content:center;">💬 互动消息</button>
+    <button class="filter-btn" id="inboxTabNotice" onclick="switchInboxTab('notice')" style="flex:1; justify-content:center;">🔔 站内通知 <span id="noticeBadge" style="display:none; background:#ef4444; color:#fff; font-size:10px; padding:1px 6px; border-radius:9px; margin-left:4px;">0</span></button>
+  </div>
   <div id="inboxNeedLogin" style="display:none;">
     <div class="login-prompt">
       <div class="login-prompt-icon">💬</div>
@@ -1909,6 +1914,15 @@ window.__glassBootDone = function () {
     </div>
   </div>
   <div id="inboxList"></div>
+  <!-- 站内通知：与登录态无关，记录「收到了什么」+「什么被改了/更新了」 -->
+  <div id="noticeListWrap" style="display:none;">
+    <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px; flex-wrap:wrap;">
+      <span id="noticeHint" style="font-size:12px; color:var(--text-muted); flex:1; min-width:140px; line-height:1.6;"></span>
+      <button class="btn btn-outline" style="font-size:12px; padding:6px 12px;" onclick="markAllNoticesRead()">✅ 全部已读</button>
+      <button class="btn btn-outline" style="font-size:12px; padding:6px 12px;" onclick="openNoticeSettings()">🔔 通知设置</button>
+    </div>
+    <div id="noticeList"></div>
+  </div>
 </main>
 
 <!-- ===== 我的主页 Tab ===== -->
@@ -2049,6 +2063,7 @@ window.__glassBootDone = function () {
         <button class="btn btn-primary admin-only" onclick="openAddForm('admin')">➕ 添加新嘉宾</button>
         <button class="btn btn-outline super-only" onclick="toggleModal('staffAdminModal', true)">👥 内部管理员</button>
         <button class="btn btn-outline super-only" onclick="openAdminLogs()">📋 操作记录</button>
+        <button class="btn btn-outline super-only" onclick="openNoticeSettings()">🔔 通知设置</button>
         <button class="btn btn-outline admin-only" onclick="toggleModal('wechatConfigModal', true)">⚙️ 修改微信名片</button>
         <button class="btn btn-outline admin-only" onclick="openSubmitLinkModal()">📨 投稿链接</button>
         <button class="btn btn-outline admin-only" onclick="openRedeemAdminModal()">🎟️ 兑换码管理</button>
@@ -3124,8 +3139,9 @@ window.__glassBootDone = function () {
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.9.50';
+  const APP_VERSION = '6.9.51';
   const CHANGELOG = [
+    { v: '6.9.51', d: '2026-09-21', note: '名片视频 + 站内通知中心：① <b>「导出视频」现在真的会带上嘉宾视频</b>——此前导出只是把静态名片做了一个 4 秒推近动效，嘉宾的视频压根没进去；现在会<b>真正播放嘉宾的视频</b>并逐帧合进同一段片子（前 4 秒名片动效 → 接着播放视频，带轻微推近与「🎬 嘉宾视频」角标），一路录成<b>一个完整的 MP4</b>；实测 3.997 秒 120 帧、时长与内容都正确。顺带修掉一个会让人莫名踩坑的 bug：卡片里的图片/视频地址此前用了给 HTML 转义过的版本，赋给 <code>video.src</code> 时 <code>&amp;</code> 会被当成 <code>&amp;amp;</code> 直接 404；② <b>新增「🔔 站内通知」</b>——收件箱里多了第二个页签，把「收到了什么」和「什么被改了 / 更新了」都记成一条条可回看的记录：有人注册 / 投稿待审核 / 资料审核通过 / 资料被修改 / 档案被删除 / 照片库新增 / 有人举报 / 版本更新 / 管理员操作……带未读角标与「全部已读」，点条目可直达对应嘉宾；③ <b>可开启浏览器系统通知</b>——在「🔔 通知设置」里一键授权后，即使页面挂在后台，新动静也会弹系统提醒；通知范围可分「全部事件 / 仅内容相关 / 仅管理员操作」，还能发测试通知验证是否打通。', type: 'feat' },
     { v: '6.9.50', d: '2026-09-19', note: '照片库补齐 + 名片可导出视频：① <b>照片库新增「📁 仓库全部文件」页签</b>——此前照片库只显示「被嘉宾资料引用了的」媒体（30 个），而仓库 <code>media/</code> 目录里其实躺着 <b>89 个文件</b>，多出来的是历史遗留的<b>孤儿文件</b>（上传过但资料已删、或从未保存成功）。现在可直接看到仓库里的<b>每一个文件</b>，含大小、格式，无人引用的已自动排到最前，方便集中清理；② <b>仓库文件可直接删除</b>——仅<b>超级管理员</b>可操作，删除前弹窗<b>明确告知该文件正被几份嘉宾资料引用</b>（列出姓名），避免误删导致资料坏图；③ <b>名片支持导出视频</b>——名片弹窗新增「🎬 导出视频」，把名片录成 4 秒的<b>轻微推近 + 淡入</b>动效视频，优先输出 <b>MP4</b>（微信、朋友圈、抖音都能直接发）；iPhone 上走系统分享面板可直接存相册，不支持的浏览器会自动隐藏该按钮。', type: 'feat' },
     { v: '6.9.49', d: '2026-09-18', note: '名片与照片库升级：① <b>名片照片更大、资料更紧凑</b>——照片区高度相比原先放大<b>约 24%</b>（成为名片主角），同时压缩资料区排版（字号与行距下调、基础资料网格收紧、二维码与品牌区同步缩小），<b>全部字段一个不少</b>，只是排布更紧密，信息密度不降；② <b>名片支持视频</b>——嘉宾名下有视频时，名片照片区自动改用<b>该视频的首帧画面</b>作为封面，并叠加<b>播放标记</b>与「点击查看视频」提示；在名片弹窗点「🎬 播放视频」即可<b>直接播放</b>，不必再回详情页翻找；③ <b>照片库显示全部媒体</b>——此前只收「库内照片」，现在<b>照片与视频统统显示</b>（含每位嘉宾名下的视频，带播放角标与「🎬 视频」标签，点击即弹内嵌播放器）；④ <b>照片库新增「⬆️ 上传照片 / 视频」入口</b>——可直接把图片或视频上传进本站图库，随后可挂到<b>任意嘉宾</b>名下（图片自动压缩，视频按原画质上传、超 60MB 自动跳过）。', type: 'feat' },
     { v: '6.9.48', d: '2026-09-18', note: '<b>整站流畅度大幅优化</b>（解决「连高端机都掉帧」）。根因是<b>玻璃拟态被滥用</b>：一个页面里竟有 <b>365 个元素</b>各自带 backdrop-filter（52 个按钮、37 个输入框、35 个主按钮、32 个弹窗遮罩、28 个表单行…），每个都要独立建 GPU 合成层并逐帧回读背景重算模糊。本轮做了四件事：① <b>只给真正「透出背景」的大面板保留模糊</b>（卡片/顶栏/底部胶囊/弹窗），按钮、输入框、徽章、表单行、列表项改为<b>同色系半透明填充 + 描边 + 内高光</b>——肉眼几乎无差别，但实际参与模糊的元素从 <b>365 降到 17</b>；② <b>关掉背景 4 个全屏光斑的永久动画并去掉其 blur</b>（它们一动，全屏玻璃都得重算模糊，这是高端机也卡的头号原因）；③ <b>新增媒体懒加载</b>：此前没有任何 IntersectionObserver，所有图片视频一进 DOM 就加载、且视频用 preload="metadata" 逐个建连拉流；现在距视口 300px 内才加载、视频改为按需 preload="none"，离屏自动释放，首屏视频请求<b>归零</b>；④ <b>事件与合成优化</b>：触摸涟漪改为复用单个元素 + rAF 节流（原每次触摸都新建 DOM 并强制回流）、指针高光缓存 rect（不再每帧 getBoundingClientRect）、低端机/省电模式自动降级。实测（4× CPU 限速）每帧耗时：首页 121→43ms、滚动 126→37ms、详情页 212→48ms，最大帧阻塞 <b>383ms → 83ms</b>', type: 'fix' },
@@ -5417,6 +5433,19 @@ window.__glassBootDone = function () {
     refreshUserUI();
     renderCoinBalance();   // 后台刷新数据后同步「我的金币」余额显示
     updateInboxBadge();
+    // v6.9.51：首次拿到数据后建立通知基线（本次不出通知，避免一进来刷一屏历史），
+    // 之后每次同步到新数据才会产生「有什么变了」的事件。
+    try {
+      const baseForNotice = {
+        profiles: appState.profiles, users: appState.users, staffs: appState.staffs,
+        notifications: appState.notifications, trash: appState.trash, reports: appState.reports,
+        photoLibrary: appState.photoLibrary, adminLogs: appState.adminLogs
+      };
+      if (!localStorage.getItem(NOTICE_SIG_KEY)) {
+        localStorage.setItem(NOTICE_SIG_KEY, JSON.stringify(baseForNotice));
+      }
+      refreshNoticeCenter({});
+    } catch (e) { }
     cleanupTrash();   // 启动后清理已到 30 天的回收站条目（异步，不阻塞渲染）
     // 底部 Tab 栏显示（首次访问即可见）
     const bottomTab = document.getElementById('bottomTab');
@@ -5537,6 +5566,16 @@ window.__glassBootDone = function () {
       if (Array.isArray(data.reports)) appState.reports = data.reports;
       if (Array.isArray(data.photoLibrary)) appState.photoLibrary = data.photoLibrary;
       __lastSyncSig = sig;
+      // v6.9.51：数据确实变了 → 归纳出「有什么被改了 / 更新了」并刷新通知中心
+      try {
+        refreshNoticeCenter({
+          data: {
+            profiles: appState.profiles, users: appState.users, staffs: appState.staffs,
+            notifications: appState.notifications, trash: appState.trash, reports: appState.reports,
+            photoLibrary: appState.photoLibrary, adminLogs: appState.adminLogs
+          }
+        });
+      } catch (e) { }
       // 被封号的当前登录用户立即踢下线（多端实时生效）
       const cu = getCurrentUser();
       if (cu) {
@@ -6269,6 +6308,21 @@ window.__glassBootDone = function () {
     return firstImg || null;
   }
 
+  // 取「未转义」的媒体地址：用于赋给 <video>.src。
+  // ⚠️ 不能直接用 safeMediaUrl() —— 它返回的是已 escapeHtml 的字符串（给 innerHTML 用的），
+  // 赋给 DOM 属性会被原样当成 URL，`&` 变成 `&amp;` 直接 404。
+  function rawMediaUrl(u) {
+    const s = String(u == null ? '' : u).trim();
+    if (!s) return '';
+    if (/^[a-z][a-z0-9+.\-]*:/i.test(s)) {
+      if (/^https?:\/\//i.test(s)) return s;
+      if (/^(data:(image|video)\/|blob:)/i.test(s)) return s;
+      return '';
+    }
+    if (/["'<>\s]/.test(s)) return '';
+    return s;
+  }
+
   // 取名片用视频（v6.9.49）：优先 mediaList 第一项，否则第一段视频；都没有返回 null
   function pickCardVideo(mediaList) {
     const list = Array.isArray(mediaList) ? mediaList.filter(function (m) { return m && m.url; }) : [];
@@ -6668,7 +6722,7 @@ window.__glassBootDone = function () {
       let drewMedia = false;      // 是否已画上真实画面（照片或视频首帧）
       if (cardVideo) {
         // 优先视频首帧
-        const vframe = await loadVideoFirstFrame(safeMediaUrl(cardVideo.url));
+        const vframe = await loadVideoFirstFrame(rawMediaUrl(cardVideo.url));
         if (vframe && vframe.width) {
           const scale = Math.max(W / vframe.width, realPhotoH / vframe.height);
           const dw = vframe.width * scale, dh = vframe.height * scale;
@@ -6677,7 +6731,7 @@ window.__glassBootDone = function () {
         }
       }
       if (!drewMedia && photo) {
-        const pimg = await loadImageForCanvas(safeMediaUrl(photo.url));
+        const pimg = await loadImageForCanvas(rawMediaUrl(photo.url));
         if (pimg && pimg.width) {
           const scale = Math.max(W / pimg.width, realPhotoH / pimg.height);
           const dw = pimg.width * scale, dh = pimg.height * scale;
@@ -6886,7 +6940,13 @@ window.__glassBootDone = function () {
         }
       } catch (e) { }
       // 暴露画布便于自测/导出，避免 canvas 过大长期驻留内存
-      try { window.__lastCardCanvas = canvas; window.__lastCardName = item['姓名'] || item.id; } catch (e) { }
+      try {
+        window.__lastCardCanvas = canvas;
+        window.__lastCardName = item['姓名'] || item.id;
+        // v6.9.51：导出视频时需要「真实播放嘉宾视频」，这里把视频源与照片区几何一起暴露出去
+        window.__lastCardVideo = cardVideo ? { url: cardVideo.url } : null;
+        window.__lastCardVideoBox = { x: 0, y: 0, w: W, h: realPhotoH };
+      } catch (e) { }
       toggleModal('cardModal', true);
     } catch (err) {
       showAlert('❌ 名片生成失败：' + err.message);
@@ -6897,7 +6957,67 @@ window.__glassBootDone = function () {
   // 把 canvas 合成动画用 MediaRecorder 录成视频文件。
   // 关键决策：优先 mp4 —— Safari 只支持 MP4/H.264（无 VP8/VP9 编码器授权），
   // 而 MP4 恰好也是微信/朋友圈/抖音都能直接发的格式；WebM 仅作为安卓 Chrome 的兜底。
+  // 读取当前名片的嘉宾视频地址（由 generateCardImage 暴露）
+  function getCurrentCardVideoUrl() {
+    try {
+      const v = window.__lastCardVideo;
+      return (v && v.url) ? rawMediaUrl(v.url) : '';
+    } catch (e) { return ''; }
+  }
+
+  // 实测能力探测：浏览器说支持的格式，真开一个 MediaRecorder 未必不报错（尤其是 mp4 的
+  // avc1 在部分 Linux/安卓 Chromium 上 isTypeSupported 为 true 但 start() 直接抛
+  // NotSupportedError）。这里逐个真开、短超时后真停，用「start 之后没有立刻抛错」判定可用。
+  // ⚠️ 不能用 onstart 事件判定：部分 Chromium 构建根本不派发 onstart（实测本机浏览器
+  // start() 后 state 已是 recording，但 onstart 永不触发），用它会把全部格式误判成不支持。
+  function __probeOneMime(mime) {
+    return new Promise(function (resolve) {
+      let settled = false;
+      let rec = null, stream = null;
+      const done = function (ok) {
+        if (settled) return;
+        settled = true;
+        clearTimeout(to);
+        try { if (rec && rec.state !== 'inactive') rec.stop(); } catch (e) { }
+        try { if (stream) stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) { }
+        resolve(ok);
+      };
+      let to = setTimeout(function () { done(!!(rec && rec.state === 'recording')); }, 500);
+      try {
+        const c = document.createElement('canvas');
+        c.width = 64; c.height = 64;
+        stream = c.captureStream(5);
+        rec = new MediaRecorder(stream, { mimeType: mime });
+        rec.onerror = function (e) {
+          const nm = (e && e.error && e.error.name) || '';
+          // 编码器缺失/初始化失败 → 这个格式确实不能用
+          if (nm === 'NotSupportedError' || nm === 'InvalidStateError') done(false);
+        };
+        rec.start();
+        // start() 未抛错且状态进入 recording，即视为该格式可用
+        done(rec.state === 'recording');
+      } catch (e) { done(false); }
+    });
+  }
+
+  let __cardMimeCache;   // undefined=未探测 / null=不支持 / 字符串=可用格式
+  async function pickCardVideoMime() {
+    if (__cardMimeCache !== undefined) return __cardMimeCache;
+    if (!window.MediaRecorder || !HTMLCanvasElement.prototype.captureStream) { __cardMimeCache = null; return null; }
+    const cands = ['video/mp4;codecs=avc1.42E01E', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
+    for (let i = 0; i < cands.length; i++) {
+      const m = cands[i];
+      try { if (!MediaRecorder.isTypeSupported(m)) continue; } catch (e) { continue; }
+      if (await __probeOneMime(m)) { __cardMimeCache = m; return m; }
+    }
+    __cardMimeCache = null;
+    return null;
+  }
+
+  // 同步版（按钮显隐用）：只判断「是否已有可用格式」，未探测过时先给乐观答案，
+  // 真正点击时再走异步实测（pickCardVideoMime），不匹配则给出明确文案。
   function canExportCardVideo() {
+    if (__cardMimeCache !== undefined) return !!__cardMimeCache;
     try {
       if (!window.MediaRecorder || !HTMLCanvasElement.prototype.captureStream) return false;
       return ['video/mp4;codecs=avc1.42E01E', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm']
@@ -6936,74 +7056,165 @@ window.__glassBootDone = function () {
 
   let __cardVideoBusy = false;
 
-  // 基于「当前已生成的名片画布」录制一段带轻微动效的视频
+  // 加载嘉宾视频为「可逐帧绘制到 canvas」的 video 元素（静音、playsInline、同源）。
+  // 返回 { el, dur } 或 null。iOS 上对 <video> 元素 captureStream 不可用，
+  // 但本项目是把 video 画进 canvas、再对 canvas captureStream，因此不受影响。
+  function loadCardVideoElement(url) {
+    return new Promise(function (resolve) {
+      if (!url) { resolve(null); return; }
+      let settled = false;
+      const v = document.createElement('video');
+      const done = function (res) { if (!settled) { settled = true; resolve(res); } };
+      const to = setTimeout(function () { done(null); }, 12000);
+      v.muted = true;              // 必须静音：未静音的自动播放会被浏览器拒绝
+      v.defaultMuted = true;
+      v.playsInline = true;
+      v.setAttribute('playsinline', '');
+      v.setAttribute('webkit-playsinline', '');
+      v.preload = 'auto';
+      v.onerror = function () { clearTimeout(to); done(null); };
+      v.onloadeddata = function () {
+        clearTimeout(to);
+        let d = Number(v.duration);
+        // 部分容器（或未拿到 moov）duration 会是 Infinity/NaN，此时回退一个合理值
+        if (!isFinite(d) || d <= 0.2) d = 4;
+        done({ el: v, dur: Math.min(d, 12) });   // 最长只录 12 秒，避免文件过大
+      };
+      try { v.src = url; } catch (e) { clearTimeout(to); done(null); }
+    });
+  }
+
+  // 基于「当前已生成的名片画布」录制一段视频。
+  // v6.9.51：有嘉宾视频时，不再只是静态名片——前 4 秒放名片动效，之后把嘉宾视频
+  // 逐帧 drawImage 进同一张 canvas 一起录，最终得到「名片 + 视频」的完整片子。
   async function generateCardVideo() {
     if (__cardVideoBusy) return;
     const src = window.__lastCardCanvas;
     if (!src || !src.width || !src.height) { showAlert('请先生成名片，再导出视频'); return; }
-    if (!canExportCardVideo()) {
-      showAlert('当前浏览器不支持视频导出。\n\niPhone 需 iOS 14.5 及以上；你也可以直接「⬇️ 保存图片」，或长按名片图片保存。');
-      return;
-    }
     const btn = document.getElementById('cardVideoExportBtn');
     const oldText = btn ? btn.textContent : '';
     __cardVideoBusy = true;
     if (btn) { btn.textContent = '⏳ 生成中…'; btn.style.pointerEvents = 'none'; btn.style.opacity = '.6'; }
+    let stream = null;
+    let vid = null;
     try {
+      const mimeType = await pickCardVideoMime();
+      if (!mimeType) {
+        throw new Error('当前浏览器不支持视频导出（iPhone 需 iOS 14.5 及以上）');
+      }
+
       const W = src.width, H = src.height;
       const canvas = document.createElement('canvas');
-      canvas.width = W; canvas.height = H;
-      const ctx = canvas.getContext('2d');
-      const stream = canvas.captureStream(30);
-      const mimeCandidates = ['video/mp4;codecs=avc1.42E01E', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm'];
-      const mimeType = mimeCandidates.find(function (m) { return MediaRecorder.isTypeSupported(m); });
-      if (!mimeType) throw new Error('当前浏览器不支持任何可用的视频编码格式');
-
-      // 画布很大（750×1400+），码率给足以免糊；1280×720 的 4Mbps 经验值按像素数线性放大
-      const bitrate = Math.min(12000000, Math.round(W * H * 4.5));
       // 编码器对尺寸有偶数要求，避免某些安卓机型直接报错
-      if (canvas.width % 2) canvas.width = W - 1;
-      if (canvas.height % 2) canvas.height = H - 1;
+      canvas.width = W % 2 ? W - 1 : W;
+      canvas.height = H % 2 ? H - 1 : H;
+      const ctx = canvas.getContext('2d');
 
+      // 画布很大（750×1400+），码率给足以免糊
+      const bitrate = Math.min(12000000, Math.round(canvas.width * canvas.height * 4.5));
+      stream = canvas.captureStream(30);
       const rec = new MediaRecorder(stream, { mimeType: mimeType, videoBitsPerSecond: bitrate });
       const chunks = [];
       rec.ondataavailable = function (e) { if (e.data && e.data.size > 0) chunks.push(e.data); };
 
-      const DURATION = 4000;         // 4 秒：足够看完资料，又不至于文件过大
-      const start = performance.now();
-      let ended = false;
-      const stopRec = function () { if (!ended) { ended = true; if (rec.state !== 'inactive') rec.stop(); } };
+      // ---- 阶段一：名片动效（4 秒，轻微推近 + 开头淡入）----
+      const INTRO = 4000;
+      const now = function () { return performance.now(); };
+      const t0 = now();
+      let introDone = false;
 
-      // 逐帧重绘名片 + 轻微动效：整体极缓慢推近，底部品牌文案呼吸
-      const drawLoop = function (now) {
-        if (ended) return;
-        const t = Math.min(1, (now - start) / DURATION);
-        const zoom = 1 + 0.02 * t;                       // 1.00 → 1.02 的轻微推近
+      const drawIntro = function () {
+        const el = now() - t0;
+        const t = Math.min(1, el / INTRO);
+        const zoom = 1 + 0.02 * t;
         const dw = canvas.width * zoom, dh = canvas.height * zoom;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(src, (canvas.width - dw) / 2, (canvas.height - dh) / 2, dw, dh);
-        // 开头 400ms 淡入，避免第一帧突兀
-        if (t * DURATION < 400) {
-          const a = (t * DURATION) / 400;
-          ctx.globalAlpha = 1 - a;
+        if (el < 400) {                       // 开头 400ms 淡入
+          ctx.globalAlpha = 1 - el / 400;
           ctx.fillStyle = '#ffffff';
           ctx.fillRect(0, 0, canvas.width, canvas.height);
           ctx.globalAlpha = 1;
         }
-        if (now - start < DURATION) requestAnimationFrame(drawLoop);
-        else stopRec();
+        if (el < INTRO) requestAnimationFrame(drawIntro);
+        else if (!introDone) { introDone = true; startVideoPhase(); }
+      };
+
+      // ---- 阶段二：真实播放嘉宾视频，逐帧覆盖绘制到名片照片区 ----
+      const startVideoPhase = function () {
+        const vurl = getCurrentCardVideoUrl();
+        if (!vurl) { stopRec(); return; }       // 无视频：名片动效即为成片
+        loadCardVideoElement(vurl).then(function (res) {
+          if (!res) { stopRec(); return; }      // 视频加载失败：降级为纯名片视频
+          vid = res;
+          const ve = vid.el;
+          // 视频绘制区域 = 名片画布最顶部那块照片区（与静态名片保持一致）
+          const box = window.__lastCardVideoBox;
+          const bx = box ? box.x : 0, by = box ? box.y : 0;
+          const bw = box ? box.w : canvas.width, bh = box ? box.h : Math.round(canvas.height * 0.45);
+          const drawVid = function () {
+            if (ended) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            // 先把静态名片画上去，再用视频覆盖最上面的照片区，且视频区加轻微推近
+            ctx.drawImage(src, 0, 0, canvas.width, canvas.height);
+            if (ve.videoWidth) {
+              const t = ve.currentTime || 0;
+              const z = 1 + 0.03 * Math.min(1, t / Math.max(1, vid.dur));
+              const scale = Math.max(bw / ve.videoWidth, bh / ve.videoHeight) * z;
+              const dw = ve.videoWidth * scale, dh = ve.videoHeight * scale;
+              ctx.save();
+              ctx.beginPath();
+              ctx.rect(bx, by, bw, bh);
+              ctx.clip();
+              ctx.drawImage(ve, bx + (bw - dw) / 2, by + (bh - dh) / 2, dw, dh);
+              // 底部提示条（与静态名片同款，让人知道这是视频而非静图）
+              ctx.fillStyle = 'rgba(0,0,0,.42)';
+              ctx.fillRect(bx, by + bh - 46, bw, 46);
+              ctx.fillStyle = '#fff';
+              ctx.font = '22px sans-serif';
+              ctx.textAlign = 'center';
+              ctx.fillText('🎬 嘉宾视频', bx + bw / 2, by + bh - 15);
+              ctx.textAlign = 'left';
+              ctx.restore();
+            }
+            requestAnimationFrame(drawVid);
+          };
+          // 播放到结束或超时（视频本身很长时只取前 12 秒）都要收尾
+          ve.onended = function () { stopRec(true); };
+          requestAnimationFrame(drawVid);
+          const p = ve.play();
+          if (p && p.catch) p.catch(function () { stopRec(true); });
+        });
+      };
+
+      let ended = false;
+      const stopRec = function (keepOpen) {
+        if (ended) return;
+        ended = true;
+        if (keepOpen) {
+          // 让最后一帧多停留 300ms 再停，避免成片尾部过短
+          setTimeout(function () { try { rec.stop(); } catch (e) { } }, 300);
+        } else {
+          try { rec.stop(); } catch (e) { }
+        }
       };
 
       await new Promise(function (resolve, reject) {
         rec.onstop = resolve;
         rec.onerror = reject;
         rec.start(500);
-        requestAnimationFrame(drawLoop);
-        setTimeout(stopRec, DURATION + 8000);   // 兜底
+        requestAnimationFrame(drawIntro);
+        // 兜底：名片 4s + 视频最长 12s + 余量
+        setTimeout(function () { stopRec(false); }, INTRO + 14000);
       });
 
       const blob = new Blob(chunks, { type: mimeType });
-      try { stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) { }
+      try { if (stream) stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) { }
+      try { if (vid) { vid.el.pause(); vid.el.removeAttribute('src'); vid.el.load(); } } catch (e) { }
       if (!blob || blob.size === 0) throw new Error('录制失败，未产生任何数据（可能是浏览器限制）');
 
       const isMp4 = mimeType.indexOf('mp4') >= 0;
@@ -7013,6 +7224,8 @@ window.__glassBootDone = function () {
       if (how === 'shared') showToast('✅ 已生成视频，请选择保存到相册或发送给朋友');
       else if (how === 'downloaded') showToast('✅ 视频已生成（' + (blob.size / 1048576).toFixed(1) + 'MB，' + ext.replace('.', '').toUpperCase() + '）');
     } catch (err) {
+      try { if (stream) stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) { }
+      try { if (vid) { vid.el.pause(); vid.el.removeAttribute('src'); vid.el.load(); } } catch (e) { }
       showAlert('❌ 视频导出失败：' + err.message + '\n\n可先用「⬇️ 保存图片」，或换用安卓手机 / 电脑 Chrome 再试。');
     } finally {
       __cardVideoBusy = false;
@@ -8926,6 +9139,438 @@ window.__glassBootDone = function () {
     }
   }
 
+  // ===== 站内通知中心（v6.9.51）=====
+  // 目标：把「收到了什么」和「什么被改了 / 更新了」都变成一条可回看的通知。
+  // 设计要点：
+  //   1) data.json 每次写入都会盖新时间戳，若把「数据文件变了」直接当通知，会刷出一堆噪音。
+  //      所以这里不监听文件本身，而是在同步到新数据后按事件归纳：对比前后快照，产出
+  //      「有新资料待审核」「资料审核通过」「有新用户注册」这类人话事件。
+  //   2) 未读状态存本机 localStorage 游标，多端各自已读互不干扰。
+  //   3) 事件是纯客户端派生的内存数据，不落 data.json，因此不需要动 appState 的四处登记点。
+  let __noticeSubTab = 'msg';          // 'msg' | 'notice'
+  const NOTICE_READ_KEY = 'notice_read_id';
+  const NOTICE_SIG_KEY = 'notice_snap_sig';
+  const NOTICE_MAX = 120;
+  const NOTICE_KINDS = {
+    like: { icon: '👍', color: '#4f46e5' },
+    favorite: { icon: '⭐', color: '#f59e0b' },
+    comment: { icon: '💬', color: '#0ea5e9' },
+    review: { icon: '📝', color: '#ef4444' },
+    gift: { icon: '🎁', color: '#ec4899' },
+    profile: { icon: '📇', color: '#16a34a' },
+    update: { icon: '🚀', color: '#7c3aed' },
+    admin: { icon: '🔧', color: '#0891b2' },
+    user: { icon: '👥', color: '#6366f1' },
+    system: { icon: '🔔', color: '#6b7280' }
+  };
+  let __noticeLocalOn = false;         // 本机是否开启浏览器系统通知
+  let __noticeRange = 'all';           // all | audit | admin
+
+  function getNoticeReadId() {
+    try { return String(localStorage.getItem(NOTICE_READ_KEY) || ''); } catch (e) { return ''; }
+  }
+  function setNoticeReadId(id) {
+    try { localStorage.setItem(NOTICE_READ_KEY, String(id || '')); } catch (e) { }
+    updateNoticeBadge();
+  }
+  function noticeOn() { return __noticeLocalOn; }
+  function noticeRangeAllows(kind) {
+    if (__noticeRange === 'admin') return kind === 'admin' || kind === 'update' || kind === 'system';
+    if (__noticeRange === 'audit') return kind === 'profile' || kind === 'review' || kind === 'comment' || kind === 'user';
+    return true;
+  }
+
+  // 把原始记录规范成一条通知
+  function __mkNotice(id, time, kind, icon, title, body, link) {
+    const k = NOTICE_KINDS[kind] || NOTICE_KINDS.system;
+    return {
+      id: String(id), time: time || 0, kind: kind,
+      icon: icon || k.icon, color: k.color,
+      title: title || '', body: body || '', link: link || ''
+    };
+  }
+
+  // 从 data.json 快照推导「无需对比也能确定」的事件
+  function __deriveDataNotices(d) {
+    const out = [];
+    const me = getCurrentUser();
+    if (me) {
+      (d.notifications || []).forEach(function (n) {
+        if (!n || String(n.toUid) !== String(me.id)) return;
+        out.push(__mkNotice('n' + n.id, n.time, n.type, '',
+          n.actorName || '有人', n.text || '',
+          n.profileId != null ? ('?guest=' + n.profileId) : ''));
+      });
+    }
+    (d.trash || []).forEach(function (t) {
+      if (!t || t.type !== 'profile' || !t.profile) return;
+      out.push(__mkNotice('t' + t.id, t.deletedAt, 'admin', '🗑️',
+        '档案被移入回收站', '「' + (t.profile['姓名'] || '未填') + '」被删除，30 天内可恢复', ''));
+    });
+    (d.photoLibrary || []).forEach(function (p) {
+      if (!p || !p.uploadedAt) return;
+      out.push(__mkNotice('p' + p.id, p.uploadedAt, 'admin', '🖼',
+        '照片库有新增', (p.name || '一张照片') + (p.uploadedBy ? '（' + p.uploadedBy + ' 上传）' : ''), ''));
+    });
+    (d.reports || []).forEach(function (r) {
+      if (!r || r.status !== 'pending') return;
+      out.push(__mkNotice('r' + r.id, r.time, 'admin', '🚩',
+        '有新举报待处理', (r.reporterName || '有人') + ' 举报了「' + String(r.detail || '').slice(0, 30) + '」', ''));
+    });
+    if (d.version) {
+      out.push(__mkNotice('v' + String(d.version), 0, 'system', '⚙️',
+        '版本号被管理员调整', '当前显示版本：v' + String(d.version), ''));
+    }
+    return out;
+  }
+
+  // 对比「上一次快照 → 这一次快照」的差异，得出「改了什么 / 更新了什么」
+  function __diffNotices(oldD, newD) {
+    const out = [];
+    const oldP = {};
+    (oldD.profiles || []).forEach(function (p) { if (p) oldP[String(p.id)] = p; });
+    const newP = {};
+    (newD.profiles || []).forEach(function (p) { if (p) newP[String(p.id)] = p; });
+
+    // 1) 新增资料
+    (newD.profiles || []).forEach(function (p) {
+      if (!p || p._deleted) return;
+      if (oldP[String(p.id)]) return;
+      const nm = p['姓名'] || '未填';
+      if (p.status === 'pending') {
+        out.push(__mkNotice('np' + p.id, p.createdAt || Date.now(), 'profile', '⏳',
+          '有新的资料待审核', nm + ' 提交了资料，等待审核', '?guest=' + p.id));
+      } else {
+        out.push(__mkNotice('na' + p.id, p.createdAt || Date.now(), 'profile', '📇',
+          '有新的嘉宾资料', nm + ' 的资料已发布', '?guest=' + p.id));
+      }
+    });
+
+    // 2) 已有资料：审核状态 / 内容 / 隐藏状态变化
+    (newD.profiles || []).forEach(function (p) {
+      if (!p) return;
+      const o = oldP[String(p.id)];
+      if (!o) return;
+      const nm = p['姓名'] || o['姓名'] || '未填';
+      const stamp = p.statusUpdatedAt || p.updatedAt || Date.now();
+      if (o.status !== p.status) {
+        if (p.status === 'approved') {
+          out.push(__mkNotice('st' + p.id + '_a' + stamp, stamp, 'admin', '✅',
+            '资料审核通过', '「' + nm + '」的资料已公开展示', '?guest=' + p.id));
+        } else if (p.status === 'pending') {
+          out.push(__mkNotice('st' + p.id + '_p' + stamp, stamp, 'admin', '⏳',
+            '资料回到待审核', '「' + nm + '」有待处理改动', ''));
+        }
+      }
+      const fp = function (x) {
+        return JSON.stringify([x['姓名'], x['性别'], x['年龄'], x['国家/城市'], x['身高'],
+          x['职业/学生'], x['性格'], x['兴趣爱好'], x['生活习惯'], x['要求'], x['一句话介绍'],
+          (x.mediaList || []).length, !!x.isHidden, !!x.isPinned]);
+      };
+      if (fp(o) !== fp(p)) {
+        out.push(__mkNotice('ed' + p.id + '_' + stamp, stamp, 'profile', '✏️',
+          '资料有更新', '「' + nm + '」的资料被修改', '?guest=' + p.id));
+      }
+      if (!!o.isHidden !== !!p.isHidden) {
+        out.push(__mkNotice('hd' + p.id + '_' + stamp, stamp, 'admin', p.isHidden ? '🙈' : '👁',
+          p.isHidden ? '资料已隐藏' : '资料已取消隐藏', '「' + nm + '」', ''));
+      }
+    });
+
+    // 3) 被删除的档案
+    Object.keys(oldP).forEach(function (k) {
+      if (newP[k]) return;
+      const o = oldP[k];
+      if (!o || o._deleted) return;
+      out.push(__mkNotice('dl' + k, Date.now(), 'admin', '🗑️',
+        '有档案被删除', '「' + (o['姓名'] || '未填') + '」已从列表移除', ''));
+    });
+
+    // 4) 新注册用户（排除管理员自身账号）
+    const oldU = {};
+    (oldD.users || []).forEach(function (u) { if (u) oldU[String(u.id)] = u; });
+    (newD.users || []).forEach(function (u) {
+      if (!u || oldU[String(u.id)]) return;
+      const sid = String(u.id);
+      if (sid.indexOf('super') === 0 || sid.indexOf('staff-') === 0) return;
+      out.push(__mkNotice('us' + u.id, u.createdAt || Date.now(), 'user', '👥',
+        '有新用户注册', (u.name || '匿名') + (u.groupName ? '（' + u.groupName + '）' : ''), ''));
+    });
+
+    return out;
+  }
+
+  // 汇总所有通知（差异事件 + 快照事件 + 管理员操作记录），按时间倒序
+  function refreshNoticeCenter(opts) {
+    try {
+      opts = opts || {};
+      const data = opts.data || null;
+      let prev = null;
+      try {
+        const raw = localStorage.getItem(NOTICE_SIG_KEY);
+        prev = raw ? JSON.parse(raw) : null;
+      } catch (e) { prev = null; }
+
+      let list = [];
+      if (data) {
+        if (prev) list = list.concat(__diffNotices(prev, data));
+        list = list.concat(__deriveDataNotices(data));
+        try { localStorage.setItem(NOTICE_SIG_KEY, JSON.stringify(data)); } catch (e) { }
+      }
+      if (Array.isArray(appState.adminLogs)) {
+        appState.adminLogs.slice(0, 60).forEach(function (l) {
+          if (!l) return;
+          list.push(__mkNotice('a' + l.time + '_' + String(l.op || '') + '_' + String(l.desc || ''),
+            l.time, 'update', '🔧', l.op || '操作记录', l.desc || '', ''));
+        });
+      }
+
+      const seen = {};
+      list = list.filter(function (n) {
+        if (!n || !n.id || seen[n.id]) return false;
+        seen[n.id] = 1;
+        return true;
+      }).sort(function (a, b) { return (b.time || 0) - (a.time || 0); }).slice(0, NOTICE_MAX);
+
+      window.__noticeItems = list;
+      renderNoticeList();
+      updateNoticeBadge();
+      maybeSystemNotify(list);
+    } catch (e) { }
+  }
+
+  function getUnreadNoticeCount() {
+    const list = window.__noticeItems || [];
+    if (!list.length) return 0;
+    const id = getNoticeReadId();
+    if (!id) return list.length;                 // 从未标记过已读：全部算未读
+    const idx = list.findIndex(function (n) { return String(n.id) === id; });
+    return idx < 0 ? 0 : idx;                    // 游标不在列表里 = 全部已读
+  }
+
+  function updateNoticeBadge() {
+    const el = document.getElementById('noticeBadge');
+    if (!el) return;
+    const n = getUnreadNoticeCount();
+    if (n > 0) { el.style.display = 'inline-block'; el.textContent = n > 99 ? '99+' : n; }
+    else el.style.display = 'none';
+  }
+
+  function renderNoticeList() {
+    const box = document.getElementById('noticeList');
+    if (!box) return;
+    const list = window.__noticeItems || [];
+    const hint = document.getElementById('noticeHint');
+    if (hint) hint.textContent = list.length ? ('共 ' + list.length + ' 条 · 未读 ' + getUnreadNoticeCount() + ' 条') : '';
+    if (!list.length) {
+      box.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:40px; line-height:1.8;">'
+        + '🔔 还没有通知<br><br>当有人注册、投稿、资料被审核或修改，以及网站有更新时，这里都会有记录</div>';
+      return;
+    }
+    const readId = getNoticeReadId();
+    const cut = readId ? list.findIndex(function (n) { return String(n.id) === readId; }) : -1;
+    box.innerHTML = list.map(function (n, i) {
+      const unread = (readId === '') || (cut > 0 && i < cut);
+      const t = new Date(n.time || Date.now());
+      const pad = function (x) { return String(x).padStart(2, '0'); };
+      const ts = n.time ? ((t.getMonth() + 1) + '月' + t.getDate() + '日 ' + t.getHours() + ':' + pad(t.getMinutes())) : '';
+      const clickable = !!n.link;
+      const safeLink = String(n.link || '').replace(/[^?&=#\w.-]/g, '');
+      return '<div class="notif-item" style="' + (clickable ? 'cursor:pointer;' : '') + '" '
+        + (clickable ? 'onclick="noticeGo(\'' + safeLink + '\')"' : '') + '>'
+        + '<span class="notif-dot" style="' + (unread ? '' : 'opacity:.25;') + '"></span>'
+        + '<span style="font-size:20px; line-height:1.2;">' + (n.icon || '🔔') + '</span>'
+        + '<div style="flex:1; min-width:0;">'
+        + '<div style="font-weight:600; font-size:13px; color:' + (n.color || 'var(--text)') + ';">' + escapeHtml(n.title) + '</div>'
+        + (n.body ? '<div style="font-size:12px; color:var(--text-muted); margin-top:2px; line-height:1.5; word-break:break-word;">' + escapeHtml(n.body) + '</div>' : '')
+        + (ts ? '<div style="font-size:11px; color:var(--text-muted); margin-top:2px;">' + ts + '</div>' : '')
+        + '</div></div>';
+    }).join('');
+  }
+
+  function noticeGo(link) {
+    if (link === '#admin') { switchTab('profile'); return; }
+    try {
+      const g = new URLSearchParams(link.replace(/^\?/, '')).get('guest');
+      if (!g) return;
+      const target = (appState.profiles || []).find(function (p) {
+        return String(p.id) === String(g) || String(p.guestNo || '') === String(g);
+      });
+      if (!target) { showAlert('该嘉宾资料已删除'); return; }
+      switchTab('home');
+      setTimeout(function () { openDetail(target.id); }, 200);
+    } catch (e) { }
+  }
+
+  function markAllNoticesRead() {
+    const list = window.__noticeItems || [];
+    setNoticeReadId(list.length ? list[0].id : '');
+    renderNoticeList();
+    showToast('✅ 已全部标记为已读');
+  }
+
+  function switchInboxTab(tab) {
+    __noticeSubTab = (tab === 'notice') ? 'notice' : 'msg';
+    const isNotice = __noticeSubTab === 'notice';
+    const bm = document.getElementById('inboxTabMsg');
+    const bn = document.getElementById('inboxTabNotice');
+    if (bm) bm.classList.toggle('active', !isNotice);
+    if (bn) bn.classList.toggle('active', isNotice);
+    const wrap = document.getElementById('noticeListWrap');
+    const nlg = document.getElementById('inboxNeedLogin');
+    const list = document.getElementById('inboxList');
+    if (isNotice) {
+      if (wrap) wrap.style.display = 'block';
+      if (nlg) nlg.style.display = 'none';
+      if (list) { list.style.display = 'none'; list.innerHTML = ''; }
+      refreshNoticeCenter({});
+    } else {
+      if (wrap) wrap.style.display = 'none';
+      if (list) list.style.display = '';
+      renderInbox();
+    }
+  }
+
+  // ===== 浏览器系统通知（Service Worker）=====
+  // 为什么用 service worker：页面切到后台时 new Notification() 会抛
+  // InvalidStateError（Illegal constructor），而 registration.showNotification 不受影响。
+  // ⚠️ 为什么必须是一个独立文件（notice-sw.js）而不是内联 Blob：
+  //    浏览器规范禁止用 blob: URL 注册 SW，会抛
+  //    "The URL protocol of the script ('blob:...') is not supported"。
+  // 注册失败（没这个文件 / file:// 直接打开）时静默降级为「仅站内通知」，不影响其他功能。
+  let __swRegPromise = null;
+  function ensureNoticeSW() {
+    if (__swRegPromise) return __swRegPromise;
+    __swRegPromise = new Promise(function (resolve) {
+      if (!('serviceWorker' in navigator) || !window.isSecureContext) { resolve(null); return; }
+      try {
+        navigator.serviceWorker.register('./notice-sw.js', { scope: './' })
+          .then(function (r) { resolve(r); })
+          .catch(function () { resolve(null); });
+      } catch (e) { resolve(null); }
+    });
+    return __swRegPromise;
+  }
+
+  // 申请权限必须在用户手势里「同步」发起（先 await 注册再申请就太迟），
+  // 所以这里把 SW 注册与权限申请并行，不等前者。
+  function requestNoticePermission() {
+    if (!('Notification' in window)) return Promise.resolve('unsupported');
+    ensureNoticeSW();
+    try {
+      const p = Notification.requestPermission();
+      return (p && p.then) ? p : Promise.resolve('default');
+    } catch (e) { return Promise.resolve('error'); }
+  }
+
+  function showSystemNotice(title, body, tag) {
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    const opts = { body: body || '', tag: tag || 'cpdd', icon: './apple-touch-icon.png', badge: './apple-touch-icon.png' };
+    try {
+      if (navigator.serviceWorker && navigator.serviceWorker.ready) {
+        navigator.serviceWorker.ready.then(function (reg) {
+          if (reg && reg.showNotification) reg.showNotification(title, opts).catch(function () { });
+        }).catch(function () { });
+        return;
+      }
+    } catch (e) { }
+    try { new Notification(title, opts); } catch (e) { }
+  }
+
+  // 只对「首次出现的新通知」弹系统提醒，并遵守范围设置
+  function maybeSystemNotify(list) {
+    if (!noticeOn()) return;
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    const id = getNoticeReadId();
+    const fresh = list.filter(function (n) { return String(n.id) !== id && noticeRangeAllows(n.kind); });
+    if (!fresh.length) return;
+    fresh.slice(0, 3).forEach(function (n) {
+      showSystemNotice('🔔 ' + n.title, n.body || '点开查看详情', n.id);
+    });
+    if (fresh.length > 3) {
+      showSystemNotice('🔔 还有 ' + (fresh.length - 3) + ' 条新通知', '点开收件箱查看全部', 'more');
+    }
+  }
+
+  function openNoticeSettings() {
+    const perm = ('Notification' in window) ? Notification.permission : 'unsupported';
+    const permText = perm === 'granted' ? '✅ 已授权'
+      : perm === 'denied' ? '❌ 已被浏览器拒绝（点地址栏左侧的锁图标 → 通知 → 改为「允许」）'
+        : perm === 'unsupported' ? '⚠️ 当前浏览器不支持' : '⏳ 未授权，勾选下面的开关即可申请';
+    const rows = [
+      ['all', '全部事件', '任何动静都通知（推荐给站长）'],
+      ['audit', '仅内容相关', '有人投稿 / 审核 / 修改 / 注册'],
+      ['admin', '仅管理员操作', '审核动作、删除、版本更新']
+    ].map(function (r) {
+      const on = __noticeRange === r[0];
+      return '<label style="display:flex; gap:10px; align-items:flex-start; padding:9px 12px; border:1px solid ' + (on ? 'var(--primary)' : 'var(--border)') + '; border-radius:10px; margin-bottom:8px; cursor:pointer;">'
+        + '<input type="radio" name="noticeRange" value="' + r[0] + '"' + (on ? ' checked' : '') + ' onchange="setNoticeRange(this.value)" style="margin-top:3px;">'
+        + '<span><b style="font-size:13px;">' + r[1] + '</b><br><span style="font-size:11px; color:var(--text-muted);">' + r[2] + '</span></span></label>';
+    }).join('');
+    showAlertHtml(
+      '<div style="text-align:left; font-size:13px; line-height:1.7;">'
+      + '<div style="margin-bottom:10px;">浏览器通知权限：' + permText + '</div>'
+      + '<label style="display:flex; gap:8px; align-items:center; margin-bottom:12px; font-weight:600;">'
+      + '<input type="checkbox" id="noticeLocalOn"' + (noticeOn() ? ' checked' : '') + ' onchange="toggleNoticeLocal(this.checked)">'
+      + '<span>开启浏览器系统通知（页面切到后台也能弹提醒）</span></label>'
+      + '<div style="font-size:12px; color:var(--text-muted); margin-bottom:6px;">通知范围：</div>'
+      + rows
+      + '<button class="btn btn-outline" style="width:100%; margin-top:6px; font-size:12px;" onclick="noticeTestPush()">🔔 发送一条测试通知</button>'
+      + '</div>',
+      '🔔 通知设置',
+      '<button class="btn btn-primary" style="flex:1;" onclick="closeCustomDialog()">完成</button>'
+    );
+  }
+
+  function setNoticeRange(v) {
+    __noticeRange = (v === 'admin' || v === 'audit') ? v : 'all';
+    try { localStorage.setItem('notice_range', __noticeRange); } catch (e) { }
+    showToast('已切换通知范围');
+  }
+
+  function toggleNoticeLocal(on) {
+    const cb = document.getElementById('noticeLocalOn');
+    if (on) {
+      requestNoticePermission().then(function (p) {
+        if (p === 'granted') {
+          __noticeLocalOn = true;
+          try { localStorage.setItem('notice_local_on', '1'); } catch (e) { }
+          showSystemNotice('🔔 通知已开启', '网站有新动静时会在这里提醒你', 'welcome');
+          showToast('✅ 已开启系统通知');
+        } else {
+          __noticeLocalOn = false;
+          try { localStorage.setItem('notice_local_on', '0'); } catch (e) { }
+          if (cb) cb.checked = false;
+          showAlert('未能获取通知权限。\n\n若浏览器已拒绝，请点地址栏左侧的🔒图标 → 通知 → 改为「允许」后再试。');
+        }
+      });
+    } else {
+      __noticeLocalOn = false;
+      try { localStorage.setItem('notice_local_on', '0'); } catch (e) { }
+      showToast('已关闭系统通知（站内通知照常记录）');
+    }
+  }
+
+  function noticeTestPush() {
+    if (!('Notification' in window)) { showAlert('当前浏览器不支持系统通知'); return; }
+    if (Notification.permission !== 'granted') {
+      requestNoticePermission().then(function (p) {
+        if (p === 'granted') showSystemNotice('🔔 测试通知', '看到这条说明通知已经打通了！', 'test');
+        else showAlert('通知权限未授予，无法发送测试通知。');
+      });
+      return;
+    }
+    showSystemNotice('🔔 测试通知', '看到这条说明通知已经打通了！', 'test');
+  }
+
+  function initNoticeSettings() {
+    try {
+      __noticeLocalOn = localStorage.getItem('notice_local_on') === '1';
+      const r = localStorage.getItem('notice_range');
+      if (r === 'admin' || r === 'audit' || r === 'all') __noticeRange = r;
+    } catch (e) { }
+  }
+
   function fmtDateTime(ts) {
     const t = new Date(ts);
     const p = function (n) { return String(n).padStart(2, '0'); };
@@ -9223,7 +9868,11 @@ window.__glassBootDone = function () {
     document.querySelectorAll('.tab-btn').forEach(function(b) {
       b.classList.toggle('active', b.dataset.tab === name);
     });
-    if (name === 'inbox') renderInbox();
+    if (name === 'inbox') {
+      // 默认停在「互动消息」页签；已经切到「站内通知」时保持不动
+      if (typeof switchInboxTab === 'function' && __noticeSubTab === 'notice') switchInboxTab('notice');
+      else renderInbox();
+    }
     if (name === 'profile') renderProfilePage();
     if (name === 'publish') renderMyPublished();
     if (name === 'adminlist') renderAdminCards();
@@ -11356,6 +12005,7 @@ window.__glassBootDone = function () {
   refreshUserUI();
   updateVersionWidget();   // 显示版本号 + 按隐藏设置控制可见性
   prefillAdminToken();     // 记住令牌时预填登录框，避免反复粘贴
+  initNoticeSettings();    // v6.9.51：恢复本机的通知开关与范围设置
   loadData();
   startDataSync();         // 启动自动同步，修复多端/多标签页数据不同步
 
