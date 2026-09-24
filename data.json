@@ -1272,6 +1272,12 @@
   ],
   "adminLogs": [
     {
+      "time": 1790247962521,
+      "actor": "超级管理员",
+      "op": "照片库",
+      "desc": "上传 2 个媒体到照片库"
+    },
+    {
       "time": 1789823283835,
       "actor": "超级管理员",
       "op": "配置",
@@ -4993,6 +4999,25 @@
       }
     }
   ],
-  "photoLibrary": [],
+  "photoLibrary": [
+    {
+      "id": "ph_1790247961825_usq6p",
+      "url": "./media/1790247949067_card_____1789981824244.mp4",
+      "type": "video/mp4",
+      "name": "card_郑润泽_1789981824244.mp4",
+      "size": 1124167,
+      "uploadedAt": 1790247961825,
+      "uploadedBy": "管理员"
+    },
+    {
+      "id": "ph_1790247949066_qt5w8",
+      "url": "./media/1790247942749_3f92211a-c9ae-3f7a-9b02-87770a962784_Puerto_Del_Sol_Gallery_05_large_2x.jpg",
+      "type": "image/jpeg",
+      "name": "3f92211a-c9ae-3f7a-9b02-87770a962784_Puerto_Del_Sol_Gallery_",
+      "size": 418015,
+      "uploadedAt": 1790247949066,
+      "uploadedBy": "管理员"
+    }
+  ],
   "announcements": []
 }
