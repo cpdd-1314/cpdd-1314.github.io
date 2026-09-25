@@ -5019,5 +5019,15 @@
       "uploadedBy": "管理员"
     }
   ],
-  "announcements": []
+  "announcements": [
+    {
+      "id": "an1790327806828fml6",
+      "title": "hi",
+      "body": "hi",
+      "time": 1790327806828,
+      "actor": "超级管理员",
+      "actorType": "super",
+      "pinned": false
+    }
+  ]
 }
