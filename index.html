@@ -10287,8 +10287,45 @@ window.__glassBootDone = function () {
     return 'v' + Date.now() + Math.random().toString(36).slice(2, 6);
   }
 
+  // ── 访问记录上报通道（v6.9.55）──
+  // 为什么需要中转：本站是纯前端站点，数据存在 GitHub 仓库的 data.json 里，
+  //   而**写入 GitHub 需要 Token**。普通访客的浏览器里没有 Token（也不该有），
+  //   所以访客没法直接把自己的访问记录写进仓库 —— 单靠 patchRemoteState 的话，
+  //   只有管理员自己访问时能写进去，真实访客的访问一条都收不到，功能形同虚设。
+  //   Cloudflare Worker 就是那个「代收人」：它持有 Token，访客只 POST 数据给它。
+  //   Token 只存在于 Worker 的环境变量里，永远不会下发到浏览器。
+  //
+  // 留空时的行为：自动退回「直接写入」通道（只有登录了 GitHub Token 的管理员能成功）。
+  //   也就是说功能不会报错，只是收不到普通访客的数据 —— 部署好中转后填上地址即可生效。
+  const VISIT_RELAY_URL = '';   // ← 部署好 Worker 后填这里，如 'https://xxx.workers.dev'
+  const VISIT_RELAY_KEY = '';   // ← 填你在 Worker 里设的 RELAY_KEY
+
+  // 把一条访问记录交给中转。
+  // 返回 true = 中转已接收；false = 没配中转 / 中转不可用（调用方会退回直写）。
+  async function __relayVisit(item) {
+    if (!VISIT_RELAY_URL) return false;
+    try {
+      const ctrl = new AbortController();
+      const tid = setTimeout(function () { ctrl.abort(); }, 8000);
+      const res = await fetch(VISIT_RELAY_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        // 字段名用短名（k/v）减少传输体积；服务端会做完整净化，不信任这里的内容
+        body: JSON.stringify({ k: VISIT_RELAY_KEY, v: item }),
+        signal: ctrl.signal
+      });
+      clearTimeout(tid);
+      if (!res.ok) return false;
+      const j = await res.json().catch(function () { return null; });
+      return !!(j && j.ok);
+    } catch (e) {
+      // 中转失败不抛错：浏览记录是运营辅助数据，不能影响访客正常使用
+      return false;
+    }
+  }
+
   // 主动采集一次访问并上报。
-  // 调用点只在首屏加载后一次（见 __bootVisitRecord），不做心跳、不做定时上报 —— 
+  // 调用点只在首屏加载后一次（见 __bootVisitRecord），不做心跳、不做定时上报 ——
   // 本站没有后端，频繁写 GitHub 既慢又浪费配额。
   async function recordVisit() {
     if (__visitRecording) return;
@@ -10343,23 +10380,37 @@ window.__glassBootDone = function () {
         admin: isAdminVisit
       };
 
-      // ② 本地乐观插入（先让自己在管理面板里立刻看到，写失败再回滚）
+      // ② 本地乐观插入（先让自己在管理面板里立刻看到；写失败再回滚）
       if (!Array.isArray(appState.visits)) appState.visits = [];
       appState.visits.unshift(item);
       while (appState.visits.length > VISIT_MAX) appState.visits.pop();
 
-      // ③ 增量写回。这里刻意「不」用 saveToGitHub：
-      //    访问记录是高频追加型数据，走整体保存会和其他字段互相覆盖。
-      const ok = await patchRemoteState(function (base) {
-        if (!Array.isArray(base.visits)) base.visits = [];
-        base.visits.unshift(item);
-        // 服务端那份也可能已超限，一并裁剪，避免 data.json 无限增长
-        while (base.visits.length > VISIT_MAX) base.visits.pop();
-        return base.visits.length;
-      }, '👁 访问记录 +1');
+      // ③ 写回：优先走中转（只有这条路能让普通访客的记录真正落到仓库里）。
+      let ok = false;
+      const viaRelay = await __relayVisit(item);
+      if (!viaRelay) {
+        // 中转没配 / 中转挂了 → 退回原来那条「带 Token 直写」的路。
+        // 只有登录了 Token 的管理员能成功；普通访客会失败并走下面的回滚。
+        // 这里刻意不报错、不提示：对访客来说浏览记录是后台功能，不该打扰他。
+        try {
+          ok = await patchRemoteState(function (base) {
+            if (!Array.isArray(base.visits)) base.visits = [];
+            base.visits.unshift(item);
+            // 服务端那份也可能已超限，一并裁剪，避免 data.json 无限增长
+            while (base.visits.length > VISIT_MAX) base.visits.pop();
+            return base.visits.length;
+          }, '👁 访问记录 +1');
+        } catch (e) {
+          // patchRemoteState 在无 Token 时会 throw（'未检测到写入令牌'），
+          // 这是普通访客的常态，静默吞掉即可 —— 但绝不能把本地那条留着装作写成功了。
+          ok = false;
+        }
+      } else {
+        ok = true;
+      }
 
       if (!ok) {
-        // 写失败（网络/权限）：把本地乐观插入的那条撤掉，避免「本机看得见、服务端没有」的假象
+        // 写失败：把本地乐观插入的那条撤掉，避免「本机看得见、服务端没有」的假象
         const i = appState.visits.findIndex(function (x) { return x.id === item.id; });
         if (i >= 0) appState.visits.splice(i, 1);
       }
@@ -10537,8 +10588,21 @@ window.__glassBootDone = function () {
     }
 
     html += '<div style="font-size:10.5px; color:var(--text-muted); margin-top:12px; line-height:1.7; '
-      + 'padding-top:10px; border-top:1px dashed var(--border);">'
-      + 'IP 与地区由浏览器直连公开接口反查（依次尝试 ipwho.is → ipwhois.app → ipinfo.io，'
+      + 'padding-top:10px; border-top:1px dashed var(--border);">';
+
+    // 数据通道状态：这是整个功能能不能收到真实访客数据的关键。
+    // 不显示出来的话，管理员会以为「怎么一直没人访问」，其实只是通道没配。
+    if (VISIT_RELAY_URL) {
+      html += '<div style="color:#16a34a; margin-bottom:5px;">✅ 接收通道：已配置中转（可收到所有访客的记录）</div>';
+    } else {
+      html += '<div style="color:#d97706; margin-bottom:5px;">'
+        + '⚠️ 接收通道：未配置中转<br>'
+        + '<span style="opacity:.85;">当前只有管理员自己的访问能被记录，普通访客的记录收不到 —— '
+        + '因为写入 GitHub 需要 Token，而访客没有。'
+        + '部署免费的 Cloudflare 中转即可解决（说明见仓库 visit-relay 目录）。</span></div>';
+    }
+
+    html += 'IP 与地区由浏览器直连公开接口反查（依次尝试 ipwho.is → ipwhois.app → ipinfo.io，'
       + '任一成功即用，不经过本站服务器）。访客使用 VPN / 代理时会显示代理的位置。<br>'
       + '若某条记录 IP 为空，说明当时三个接口都没返回（通常是公共接口临时限流），'
       + '该次访问的<b>设备信息仍然有效</b>。<br>'
