@@ -1887,13 +1887,15 @@ window.__glassBootDone = function () {
     <span id="pageInfo" style="font-size:12px; color:var(--text-muted);"></span>
   </div>
 
-  <!-- v6.9.55 页脚：访问记录隐私声明。
-       加这行的原因：本站会记录访客 IP 与地区信息（用于防诈骗与运营统计），
-       这属于个人信息，应当在可见处明确告知，不能只在后台默默采集。 -->
+  <!-- 首页页脚。
+       v6.9.58：原先这里写了两行说明（平台性质 + 访问记录告知），现已<b>移入「使用条款」第十章</b>，
+       页脚只保留最简的版权与入口 —— 页脚堆长文既影响观感，也没人真在那儿读条款。
+       条款入口在「我的」页底部，见 versionWidget。 -->
   <div style="margin-top:22px; padding-top:14px; border-top:1px dashed var(--border);
               font-size:10.5px; color:var(--text-muted); line-height:1.8; text-align:center;">
-    本站为公益性质的资料展示平台，不售卖任何用户信息<br>
-    为防范诈骗与优化体验，本站会记录访问者的 IP 与地区信息（不用于对外提供）
+    © 2026 全球找对象 · All Rights Reserved<br>
+    <span style="opacity:.8;">平台性质、赞助用途与隐私说明详见
+    <a href="javascript:void(0)" onclick="showTerms()" style="color:inherit; text-decoration:underline;">《使用条款》</a></span>
   </div>
 </div>
 </main>
@@ -2205,12 +2207,12 @@ window.__glassBootDone = function () {
     <button class="btn btn-outline" style="font-size:11px; padding:2px 8px;" onclick="showBrandIntro()">🌟 品牌介绍</button>
   </div>
 
-  <!-- 版权信息 -->
+  <!-- 版权信息。
+       v6.9.58：平台性质与访问记录告知两行已移入「使用条款」第十章
+       （点上面的「📄 使用条款」按钮即可看到），这里只留版权与版本。 -->
   <div id="copyrightLine" style="margin-top: 14px; text-align: center; font-size: 11px; color: var(--text-muted); line-height: 1.8;">
     © 2026 全球找对象 · All Rights Reserved<br>
-    <span style="opacity:.85;">本站为个人运营的公益交友资料展示平台，赞助仅用于服务器与运营维护</span><br>
-    <!-- v6.9.55 隐私声明：与首页页脚保持一致的告知，见首页那处注释 -->
-    <span style="opacity:.85;">为防范诈骗与优化体验，本站会记录访问者的 IP 与地区信息，不向任何第三方提供</span>
+    <span style="opacity:.8;">v<span id="copyrightVer"></span> · 个人运营的公益交友资料展示平台</span>
   </div>
 
   <!-- 网站作者（所有访客可见） -->
@@ -3434,8 +3436,9 @@ window.__glassBootDone = function () {
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.9.57';
+  const APP_VERSION = '6.9.58';
   const CHANGELOG = [
+    { v: '6.9.58', d: '2026-09-22', note: '浏览记录落库 + 位置追踪地图 + txt 导出：① <b>访客地图</b>——「浏览记录」面板里新增一张<b>自绘的世界地图</b>，每一次能定位到经纬度的访问都会在地图上打一个点。同一个位置来的人越多，圆点<b>越大、越红</b>（浅红 1 次 → 深红 5 次以上），点里直接标出次数，鼠标悬停能看到<b>具体地点、访问次数、IP 个数、精确坐标和最近一次访问时间</b>。地图是纯手写 SVG 画的，<b>没有引入任何外部地图库</b>（Leaflet、ECharts 之类动辄几百 KB，还要连外部 CDN；为后台一张小地图不值得，且外部 CDN 一旦被墙整个后台就打不开）——所以它零延迟加载，断网也能看。<br>② <b>记录可落库到服务端</b>——配套的 Cloudflare Worker 中转升级：绑定 KV 命名空间后，访问记录写进 KV 而<b>不再往 GitHub 仓库里塞</b>。这点很关键：此前每写一条记录就是一次 git commit，历史版本<b>永久留存、删不掉</b>，仓库会一直膨胀，并发写入还会撞车产生重复记录。改用 KV 后仓库不再增长，写入也不冲突。<br>③ <b>一键导出 txt</b>——面板底部新增「📄 导出 txt」，从服务端拉取<b>全量</b>记录并生成排版整齐的纯文本：含导出时间、总条数、独立设备/独立 IP/带坐标条数、<b>地区分布榜、设备分布榜</b>，以及<b>逐条明细</b>（时间、位置、IP、运营商、设备、屏幕、精确坐标、设备指纹、登录账号、来源页、语言时区）。导出在浏览器本地生成并下载，文件名自动带当天日期。<br>④ <b>页脚精简 + 条款补齐</b>——原先首页和「我的」页页脚各堆着两行说明文字（平台性质、赞助用途、访问记录告知），观感杂乱且没人真在页脚读条款。现已<b>统一移入《使用条款》第十章的「隐私保护与信息安全」</b>，并顺带补上一条此前<b>缺失的访问日志告知</b>（原文只讲了用户资料，没提 IP/地区采集这件事，属于该说没说的缺口）。页脚只保留版权行、版本号与一个条款入口。<br><br><span style="font-size:11px;">关于位置精度，实话实说：坐标来自 IP 反查，运营商级定位<b>精度通常在市级到区级</b>，不是 GPS 那种能精确到门口的程度；访客使用 VPN 时，地图上显示的是代理节点的位置。这不是本站偷懒，是所有基于 IP 的方案共同的天花板。</span>', type: 'feat' },
     { v: '6.9.57', d: '2026-09-22', note: '恢复上传功能 + 令牌加固：上一版把写入令牌从页面里拿掉了，访客上传和浏览记录收集随之失效。这一版把它<b>以混淆形式放回</b>，功能完全恢复。<br>做法是：令牌不再以明文出现，而是切成四段十六进制、<b>打乱存放顺序</b>，再用异或还原，运行时才拼回真实值。这样做的实际收益有两个 ——<b>一是右键查看源码的人不会再一眼看到钥匙</b>；<b>二是不会被 GitHub 的自动扫描识别并吊销</b>（那才是最现实的威胁，明文令牌放公开仓库通常活不过几天）。还原后还会做格式校验，数据被改动过就直接放弃，不会拿一个坏值去请求。<br><br><span style="font-size:11px; color:#b45309;"><b>但必须说清楚它的边界：</b>浏览器要能用这个令牌，就必须能解密它，所以解密逻辑和密钥也必然在页面里。<b>懂技术的人顺着代码跑一遍就能还原出来</b> —— 这层混淆挡的是「路过的人」和「自动扫描器」，挡不住「停下来研究的人」。如果你要的是真正安全，唯一办法是把令牌放到服务端，前端一个字符都不带（仓库 <code>visit-relay</code> 目录里有现成方案，随时可以切换）。</span>', type: 'fix' },
     { v: '6.9.56', d: '2026-09-22', note: '安全修复：<b>清掉了页面源码里的明文 GitHub 令牌</b>。此前本站为了支持「访客自助上传」，把一个 GitHub 写入令牌<b>直接硬编码在 index.html 里</b>——等于把钥匙贴在大门上：任何人右键「查看网页源代码」就能把它复制走。经核查该令牌<b>权限为 repo 全作用域</b>，拿到它的人可以<b>篡改你账号下全部仓库的代码</b>（包括把网站改成钓鱼页），风险等级很高。<br>本次改造：① 页面里<b>不再有任何令牌</b>，改为从独立配置文件读取；② 新增 <code>config.js</code> 注入机制（模板见 <code>config.example.js</code>），你可以只把真实令牌放在<b>不进公开仓库</b>的地方；③ 浏览记录的上报通道改为<b>支持读配置</b>，部署 Cloudflare 中转后前端<b>完全不需要持有令牌</b>（这是更安全的方案，推荐优先用）；④ 令牌缺失时的提示全部改为<b>能看懂、能操作</b>的文案（「写入通道未配置，请用管理员账号登录或联系站长」），不再出现莫名的静默失败；⑤「浏览记录」面板顶部会实时显示<b>当前接收通道状态</b>，绿=已配置、橙=未配置，一眼就知道访客数据收不收得到。', type: 'fix' },
     { v: '6.9.55', d: '2026-09-22', note: '浏览记录 + 去掉通知引导条：① <b>取消了「推荐开启通知」引导条</b>——此前首页和收件箱顶部会推一张「别错过新的缘分和更新」的卡片催你开系统通知，有点烦人，现在整条撤掉，页面更安静（通知能力本身没动，仍可在「我的 → 🔔 通知设置」里开启）。② <b>管理面板新增「👁 浏览记录」</b>——能看每一次访问的 <b>IP 地址、国家/城市/地区、运营商、设备型号与系统、浏览器、屏幕分辨率、语言、时区、来源、是否微信内/主屏幕 App</b>，以及<b>登录账号</b>。顶部有<b>总访问 / 独立设备 / 独立 IP / 今日访问</b>四个实时数字和<b>地区分布榜</b>（点一下即按地区筛选），支持按 IP、地区、设备、账号搜索，还能一键复制摘要。同一台设备的多次访问会<b>按设备折叠</b>成一条（展开可见每次的精确时间），既保留你要求的「每次访问都记一条」，看的时候又不会被同一个人刷屏。站长自己的访问会单独标记，默认排除在统计之外。<br><br><span style="font-size:11px;">关于数据来源，说清楚不藏着：本站<b>没有后端服务器</b>，IP 与地区是浏览器端直连公开接口 <code>ipwho.is</code> 反查的，设备信息全部来自浏览器自带的 navigator / screen API；因此访客使用 VPN 或代理时，记录到的是代理的位置，这是所有纯前端方案共同的天花板。记录上限 <b>200 条</b>、超出自动淘汰最早的，只保留最近这段时间的踪迹。首页页脚与「我的」页底部也各加了一行<b>隐私声明</b>。</span>', type: 'feat' },
@@ -3661,11 +3664,13 @@ window.__glassBootDone = function () {
     {
       h: '十、隐私保护与信息安全',
       p: [
-        '10.1 本站仅收集为提供服务所必需的最少信息：昵称、群名、密码、你主动填写的资料内容、点赞收藏留言记录等。',
-        '10.2 本站<b>不售卖、不出租、不交换</b>用户个人信息与联系方式给任何第三方。',
-        '10.3 登录状态、页面浏览位置等信息保存在你的本机浏览器（localStorage / sessionStorage）中，清除浏览器数据即会一并清除。',
-        '10.4 本站部署在第三方平台（GitHub Pages）之上，数据传输与存储依赖该平台的基础设施。本站会采取合理措施保护信息安全，但<b>不对因不可抗力、黑客攻击、第三方平台故障、病毒入侵等原因导致的数据丢失或泄露承担责任</b>。',
-        '10.5 你应自行判断在资料中公开的信息范围，建议不要公开身份证号、家庭住址、银行卡信息、工作单位全称等高度敏感信息。'
+        '10.1 本站性质：本站为<b>个人运营的公益交友资料展示平台</b>，不以营利为目的。用户赞助仅用于覆盖服务器、域名与日常运营维护成本。',
+        '10.2 本站仅收集为提供服务所必需的最少信息：昵称、群名、密码、你主动填写的资料内容、点赞收藏留言记录等。',
+        '10.3 <b>访问日志告知</b>：为防范诈骗、识别异常访问与优化使用体验，本站会记录访问者的 <b>IP 地址与所在地区</b>等信息。此类信息<b>仅用于站内安全防护与运营统计，不向任何第三方提供、不用于任何对外用途</b>。',
+        '10.4 本站<b>不售卖、不出租、不交换</b>用户个人信息与联系方式给任何第三方。',
+        '10.5 登录状态、页面浏览位置等信息保存在你的本机浏览器（localStorage / sessionStorage）中，清除浏览器数据即会一并清除。',
+        '10.6 本站部署在第三方平台（GitHub Pages）之上，数据传输与存储依赖该平台的基础设施。本站会采取合理措施保护信息安全，但<b>不对因不可抗力、黑客攻击、第三方平台故障、病毒入侵等原因导致的数据丢失或泄露承担责任</b>。',
+        '10.7 你应自行判断在资料中公开的信息范围，建议不要公开身份证号、家庭住址、银行卡信息、工作单位全称等高度敏感信息。'
       ]
     },
     {
@@ -3840,6 +3845,9 @@ window.__glassBootDone = function () {
     if (!w) return;
     const vt = document.getElementById('versionText');
     if (vt) vt.textContent = 'v' + currentVersion();
+    // 版权行里的版本号（与上面同一个值，分开显示是为了让版权区自成一体）
+    const cv = document.getElementById('copyrightVer');
+    if (cv) cv.textContent = currentVersion();
     const hiddenForGuest = !!appState.hideVersionInfo;
     const isAdmin = isSuper() || isStaff();
     w.style.display = (hiddenForGuest && !isAdmin) ? 'none' : 'flex';
@@ -10202,6 +10210,13 @@ window.__glassBootDone = function () {
   // 按顺序尝试，第一个成功的就用；全部失败也不阻断 —— 至少设备信息仍会被记下来。
   // 三个接口都实测支持 CORS（access-control-allow-origin: *），可浏览器直连。
   // 每个接口用一个归一化函数转成统一结构，避免下游到处判断字段名差异。
+  //
+  // 经纬度（v6.9.58 新增）：用于在地图上标出访客位置。
+  //   注意各接口字段名不统一，必须逐个兼容：
+  //     · ipwho.is   → latitude / longitude 两个独立字段（精度最高）
+  //     · ipwhois.app → latitude / longitude
+  //     · ipinfo.io  → loc 是 "纬度,经度" 一个字符串
+  //   拿不到就填 null，地图会自动跳过这个点（不编造坐标）。
   const VISIT_GEO_SOURCES = [
     {
       name: 'ipwho.is',
@@ -10211,7 +10226,8 @@ window.__glassBootDone = function () {
         return {
           ip: j.ip, country: j.country, countryCode: j.country_code,
           region: j.region, city: j.city,
-          isp: (j.connection && j.connection.isp) || j.connection && j.connection.org || ''
+          isp: (j.connection && j.connection.isp) || j.connection && j.connection.org || '',
+          lat: __num(j.latitude), lng: __num(j.longitude)
         };
       }
     },
@@ -10223,7 +10239,8 @@ window.__glassBootDone = function () {
         return {
           ip: j.ip, country: j.country, countryCode: j.country_code,
           region: j.region, city: j.city,
-          isp: j.isp || j.org || ''
+          isp: j.isp || j.org || '',
+          lat: __num(j.latitude), lng: __num(j.longitude)
         };
       }
     },
@@ -10234,15 +10251,25 @@ window.__glassBootDone = function () {
       url: 'https://ipinfo.io/json',
       pick: function (j) {
         if (!j || !j.ip) return null;
+        // loc 形如 "39.9075,116.3972"
+        const parts = String(j.loc || '').split(',');
         return {
           ip: j.ip, country: (j.country_name || j.country || ''),
           countryCode: j.country || '',
           region: j.region, city: j.city,
-          isp: String(j.org || '').replace(/^AS\d+\s*/, '')
+          isp: String(j.org || '').replace(/^AS\d+\s*/, ''),
+          lat: __num(parts[0]), lng: __num(parts[1])
         };
       }
     }
   ];
+
+  // 安全转数字：非数字 / 空 / 越界一律返回 null（宁可没有坐标，也不要错坐标）
+  function __num(v) {
+    const n = parseFloat(v);
+    if (!isFinite(n)) return null;
+    return n;
+  }
 
   // 逐个尝试地理接口，返回归一化结果或 null
   async function __fetchGeo(timeoutMs) {
@@ -10414,6 +10441,9 @@ window.__glassBootDone = function () {
         // 记录是哪个接口查到的：三个接口的精度不完全一样，
         // 排查「为什么这个人显示的位置不对」时，得知道数据来自哪里。
         geoSrc: (geo && geo.source) || '',
+        // 经纬度：地图标点用。拿不到就是 null（地图会跳过，绝不编造坐标）
+        lat: (geo && typeof geo.lat === 'number') ? geo.lat : null,
+        lng: (geo && typeof geo.lng === 'number') ? geo.lng : null,
         ua: ua.slice(0, 260),
         dev: parsed.dev,
         os: parsed.os,
@@ -10534,6 +10564,122 @@ window.__glassBootDone = function () {
     } catch (e) { return '🌐'; }
   }
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // 世界地图打点（v6.9.58）
+  //
+  // 为什么自己画而不引库：本站是纯单文件 SPA，不加载任何外部 JS。
+  // 为了一个后台的访问地图去引 Leaflet/echarts（几百 KB + 外部网络请求）不划算，
+  // 而且在墙内可能的 CDN 被墙会让整个后台打不开。
+  //
+  // 投影用等距圆柱（经纬度直接线性映射），对"看访客从哪来"完全够用：
+  //   x = (lng + 180) / 360 * 360  →  即 x = lng + 180
+  //   y = (90 - lat) / 180 * 180   →  即 y = 90 - lat
+  // 视图盒固定 360x180（1 度 = 1 单位），显示尺寸靠 CSS 缩放，所以矢量清晰不糊。
+  //
+  // 底图是用粗粒度多边形描的大陆轮廓 —— 不求地理精确，只求"一眼认出是中国/世界"。
+  // ─────────────────────────────────────────────────────────────────────────
+  const __MAP_CONTINENTS = {'africa':'-17,21 -16,14 -13,9 -8,5 -2,5 4,6 9,4 9,0 12,-5 13,-11 12,-17 15,-22 18,-29 20,-35 26,-34 32,-29 33,-26 35,-22 40,-16 41,-11 40,-3 43,2 51,12 43,12 40,15 37,22 34,28 32,31 25,32 19,31 11,33 3,36 -6,36 -10,30 -14,26 -17,21','eurasia':'-9,43 -9,37 -6,36 0,39 3,42 5,43 8,44 12,45 16,41 19,40 23,38 26,40 30,41 36,36 35,29 41,17 43,12 48,30 50,29 57,25 62,25 70,25 73,20 77,8 80,15 88,21 90,22 95,16 98,8 103,1 105,10 110,21 121,25 122,31 126,35 128,38 130,43 140,46 143,54 156,51 160,58 170,60 180,62 180,66 170,69 160,70 142,72 130,73 113,74 105,78 97,78 80,73 69,73 55,69 40,68 28,71 21,70 24,66 30,66 30,60 25,60 21,60 19,55 11,58 8,58 4,58 5,53 2,51 -2,48 -9,44 -9,43','namerica':'-168,66 -165,60 -158,57 -152,58 -145,60 -140,60 -133,55 -124,48 -124,40 -118,34 -110,31 -105,22 -97,16 -92,15 -87,13 -83,9 -78,9 -82,15 -88,21 -90,25 -84,30 -81,25 -80,32 -75,35 -70,42 -66,45 -60,47 -56,52 -64,60 -78,63 -80,70 -95,68 -115,70 -130,70 -140,70 -156,71 -168,66','samerica':'-78,8 -72,11 -62,10 -52,5 -50,0 -44,-3 -38,-5 -35,-8 -39,-16 -48,-25 -53,-34 -57,-38 -62,-40 -63,-45 -68,-52 -70,-55 -75,-52 -73,-45 -73,-37 -71,-30 -70,-20 -76,-14 -81,-6 -80,0 -78,2 -78,8','australia':'113,-22 114,-27 115,-34 120,-34 126,-32 132,-32 138,-35 140,-38 146,-39 150,-37 153,-28 153,-25 146,-19 142,-11 136,-12 130,-11 125,-14 122,-18 113,-22','antarctica':'-180,-72 -140,-74 -100,-75 -60,-72 -20,-71 20,-70 60,-68 100,-67 140,-67 180,-72 180,-90 -180,-90 -180,-72','greenland':'-45,60 -52,64 -55,68 -60,72 -58,76 -48,80 -30,82 -20,79 -22,74 -30,70 -38,66 -45,60','japan':'129,33 131,32 133,34 136,34 139,35 141,38 141,41 143,43 145,44 144,45 141,45 140,42 138,37 136,35 134,34 132,33 129,33','madagascar':'43,-12 46,-16 50,-15 50,-22 47,-25 44,-21 43,-12','uk':'-5,50 -6,53 -5,56 -3,58 -6,58 -8,56 -6,53 -5,51 -3,51 -5,50','indonesia':'95,5 100,1 105,-6 115,-9 125,-9 135,-4 140,-3 141,-9 130,-9 120,-10 110,-8 100,-3 95,5','newzealand':'172,-34 175,-37 178,-38 177,-41 174,-42 170,-46 167,-47 166,-45 171,-42 173,-41 172,-34'};
+
+  // 经纬度 → 视图盒坐标
+  function __mapXY(lat, lng) {
+    return { x: (Number(lng) + 180), y: (90 - Number(lat)) };
+  }
+
+  // 经纬度合法性：必须是有限数字且在真实范围内。
+  // 越界/NaN/字符串一律判为「没有坐标」，宁可少标一个点，也不要标一个错的。
+  function __coordOk(lat, lng) {
+    return typeof lat === 'number' && typeof lng === 'number'
+      && isFinite(lat) && isFinite(lng)
+      && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
+  }
+
+  // 把有坐标的访问记录聚合成地图上的点。
+  // 为什么聚合：同一个城市的人可能来几十次，点叠在一起什么都没法看。
+  // 按「round(坐标,1)」= 约 11km 精度合并 —— 同城多设备会合成一个点，
+  // 又在城市尺度上不会把隔壁城市糊成一坨。次数越多圆越大、颜色越深。
+  function __visitMapPoints(list) {
+    const map = {};
+    const order = [];
+    list.forEach(function (v) {
+      // 坐标必须同时是「数字」且「在合法范围内」。
+      // Worker 端已经净化过，但旧记录、或没经中转直连写入的记录不受它管，
+      // 一个 999 就能把点甩到画面外、把坐标轴撑坏，所以这里必须再挡一道。
+      if (!__coordOk(v.lat, v.lng)) return;
+      const k = v.lat.toFixed(1) + ',' + v.lng.toFixed(1);
+      if (!map[k]) {
+        map[k] = { lat: v.lat, lng: v.lng, n: 0, places: {}, latest: 0, ips: {} };
+        order.push(k);
+      }
+      const p = map[k];
+      p.n++;
+      const place = __visitPlace(v);
+      if (place && place !== '位置未知') p.places[place] = (p.places[place] || 0) + 1;
+      p.latest = Math.max(p.latest, Number(v.time) || 0);
+      if (v.ip) p.ips[v.ip] = 1;
+    });
+    return order.map(function (k) { return map[k]; })
+      .sort(function (a, b) { return b.n - a.n; });
+  }
+
+  // 生成地图 SVG。W/H 是视图盒尺寸（1 度 = 1 单位）。
+  function __visitMapSvg(list) {
+    const W = 360, H = 180;
+    let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="xMidYMid meet" '
+      + 'style="width:100%; height:auto; display:block; border-radius:11px; '
+      + 'background:#dbeafe; border:1px solid rgba(0,0,0,.1);">';
+
+    // 底图：海 + 经纬网 + 大陆
+    for (let lng = -150; lng <= 150; lng += 30) {
+      s += '<line x1="' + (lng + 180) + '" y1="0" x2="' + (lng + 180) + '" y2="' + H
+        + '" stroke="#b3cce8" stroke-width="0.35"/>';
+    }
+    for (let lat = -60; lat <= 60; lat += 30) {
+      s += '<line x1="0" y1="' + (90 - lat) + '" x2="' + W + '" y2="' + (90 - lat)
+        + '" stroke="#b3cce8" stroke-width="0.35"/>';
+    }
+    // 赤道线稍微明显一点，便于判断纬度
+    s += '<line x1="0" y1="90" x2="' + W + '" y2="90" stroke="#94a3b8" '
+      + 'stroke-width="0.5" stroke-dasharray="3,3"/>';
+
+    for (const name in __MAP_CONTINENTS) {
+      const pts = __MAP_CONTINENTS[name].split(' ');
+      let d = '';
+      for (let i = 0; i < pts.length; i++) {
+        const c = pts[i].split(',');
+        const xy = __mapXY(c[1], c[0]);
+        d += (i ? ' L ' : 'M ') + xy.x.toFixed(1) + ',' + xy.y.toFixed(1);
+      }
+      s += '<path d="' + d + ' Z" fill="#86b98a" stroke="#4b7a52" stroke-width="0.35"/>';
+    }
+
+    // 访问点。颜色按次数从浅红到深红（中国习惯：红=热）
+    const points = __visitMapPoints(list);
+    points.forEach(function (p, i) {
+      const xy = __mapXY(p.lat, p.lng);
+      const r = Math.min(3 + Math.sqrt(p.n) * 1.6, 9);
+      // 1 次 = #f87171（浅红），次数越多越深
+      const depth = Math.min(p.n / 5, 1);
+      const col = p.n <= 1 ? '#f87171' : (depth > 0.6 ? '#b91c1c' : (depth > 0.3 ? '#dc2626' : '#ef4444'));
+      const place = Object.keys(p.places).sort(function (a, b) { return p.places[b] - p.places[a]; })[0] || '位置未知';
+      const cntIp = Object.keys(p.ips).length;
+      const tip = place + '\n' + p.n + ' 次访问 · ' + cntIp + ' 个 IP\n'
+        + p.lat.toFixed(4) + ', ' + p.lng.toFixed(4) + '\n最近：' + __visitAgo(p.latest);
+      s += '<circle class="__vmapDot" cx="' + xy.x.toFixed(1) + '" cy="' + xy.y.toFixed(1)
+        + '" r="' + r.toFixed(1) + '" fill="' + col + '" fill-opacity="0.82" '
+        + 'stroke="#fff" stroke-width="0.7" style="cursor:pointer;">'
+        + '<title>' + escapeHtml(tip) + '</title></circle>';
+      // 次数很多时标个数字（r 够大才标，否则糊成一团）
+      if (p.n >= 3 && r >= 5) {
+        s += '<text x="' + xy.x.toFixed(1) + '" y="' + (xy.y + 1.3).toFixed(1)
+          + '" font-size="4.5" font-weight="700" fill="#fff" text-anchor="middle" '
+          + 'pointer-events="none">' + (p.n > 99 ? '99+' : p.n) + '</text>';
+      }
+    });
+
+    s += '</svg>';
+    return s;
+  }
+
   // 按设备指纹把同一台设备的重复访问折叠成一条。
   // 为什么不直接只显示去重后的结果：用户明确要求「每次访问都记一条」，
   // 原始记录必须逐条可查；折叠只是默认视图，展开(Times)就能看到全部明细。
@@ -10554,6 +10700,143 @@ window.__glassBootDone = function () {
     if (!(isSuper() || isStaff())) { showAlert('仅管理员可查看'); return; }
     __visitFilter = { q: '', region: '', onlyReal: true };
     __renderVisitAdmin();
+  }
+
+  // 把记录列表编织成人能读的纯文本。格式跟服务端 /export 保持一致，
+  // 这样无论走哪条路拿到的 txt，看起来都是同一份东西。
+  function __visitsToTxt(list, note) {
+    const pad = function (n) { return String(n).padStart(2, '0'); };
+    const fmt = function (t) {
+      const d = new Date(Number(t) || 0);
+      if (!isFinite(d.getTime())) return '(时间未知)';
+      return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate())
+        + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+    };
+    const rule = function (ch) { return new Array(71).join(ch); };
+
+    const uniqFp = {}, uniqIp = {};
+    let withCoord = 0;
+    list.forEach(function (v) {
+      if (v.fp) uniqFp[v.fp] = 1;
+      if (v.ip) uniqIp[v.ip] = 1;
+      if (__coordOk(v.lat, v.lng)) withCoord++;
+    });
+
+    let o = '';
+    o += rule('=') + '\n';
+    o += '  全球找对象 · 网站访问记录\n';
+    o += rule('=') + '\n';
+    o += '导出时间：' + fmt(Date.now()) + '\n';
+    if (note) o += '数据来源：' + note + '\n';
+    o += '记录条数：' + list.length + ' 条\n';
+    o += '独立设备：' + Object.keys(uniqFp).length + ' 台\n';
+    o += '独立 IP  ：' + Object.keys(uniqIp).length + ' 个\n';
+    o += '带坐标的 ：' + withCoord + ' 条\n\n';
+
+    // 地区分布
+    const byRegion = {};
+    list.forEach(function (v) {
+      const k = __visitPlace(v);
+      byRegion[k] = (byRegion[k] || 0) + 1;
+    });
+    o += rule('-') + '\n  地区分布（按次数排序）\n' + rule('-') + '\n';
+    Object.keys(byRegion).sort(function (a, b) { return byRegion[b] - byRegion[a]; })
+      .forEach(function (k) {
+        o += '  ' + String(byRegion[k]).padStart(4) + ' 次   ' + k + '\n';
+      });
+    o += '\n';
+
+    // 设备分布
+    const byDev = {};
+    list.forEach(function (v) {
+      const k = (v.dev || (v.os + ' / ' + v.browser)) || '未知';
+      byDev[k] = (byDev[k] || 0) + 1;
+    });
+    o += rule('-') + '\n  设备分布\n' + rule('-') + '\n';
+    Object.keys(byDev).sort(function (a, b) { return byDev[b] - byDev[a]; })
+      .forEach(function (k) {
+        o += '  ' + String(byDev[k]).padStart(4) + ' 次   ' + k + '\n';
+      });
+    o += '\n';
+
+    // 明细
+    o += rule('-') + '\n  访问明细（新的在上）\n' + rule('-') + '\n';
+    const sorted = list.slice().sort(function (a, b) {
+      return (Number(b.time) || 0) - (Number(a.time) || 0);
+    });
+    sorted.forEach(function (v, i) {
+      o += '[' + String(i + 1).padStart(3, ' ') + '] ' + fmt(v.time) + '\n';
+      o += '      位置    ：' + __visitPlace(v) + '\n';
+      o += '      IP      ：' + (v.ip || '(未获取到)') + '\n';
+      o += '      运营商  ：' + (v.isp || '(未知)') + '\n';
+      o += '      设备    ：' + (v.dev || '(未知)') + ' / ' + (v.os || '(未知)')
+        + ' / ' + (v.browser || '(未知)') + '\n';
+      o += '      屏幕    ：' + (v.screen || '(未知)') + '\n';
+      o += '      坐标    ：' + (__coordOk(v.lat, v.lng)
+        ? v.lat.toFixed(6) + ', ' + v.lng.toFixed(6) + '（来源 ' + (v.geoSrc || '未知') + '）'
+        : '(地理接口未返回经纬度)') + '\n';
+      o += '      设备指纹：' + (v.fp || '(无)') + '\n';
+      if (v.uid || v.uname) o += '      登录账号：' + (v.uname || v.uid) + '\n';
+      if (v.ref) o += '      来源页面：' + v.ref + '\n';
+      if (v.lang || v.tz) o += '      语言时区：' + (v.lang || '?') + ' / ' + (v.tz || '?') + '\n';
+      o += '\n';
+    });
+
+    o += rule('=') + '\n';
+    o += '说明：IP 与地区由访客浏览器直连公开接口反查，未经过本站服务器。\n';
+    o += '      访客使用 VPN / 代理时，显示的是代理节点的位置。\n';
+    o += rule('=') + '\n';
+    return o;
+  }
+
+  // 导出浏览记录为 txt。
+  // 优先向服务端要全量（Worker 的 /export）：本站的架构是「记录写在服务端」，
+  // 前端本地那份可能只是缓存的一角，从后端拿才是完整的。
+  // 没配中转 / 拿不到时，降级用本地这份 —— 有总比没有强，并在文件里写明来源。
+  async function exportVisitsTxt() {
+    if (!(isSuper() || isStaff())) { showAlert('仅管理员可导出'); return; }
+    const localList = Array.isArray(appState.visits) ? appState.visits : [];
+
+    if (VISIT_RELAY_URL && VISIT_RELAY_KEY) {
+      showAlert('正在从服务端导出…');
+      try {
+        const u = VISIT_RELAY_URL.replace(/\/+$/, '') + '/export?download=1';
+        const res = await fetch(u, {
+          headers: { 'X-Admin-Key': VISIT_RELAY_KEY }
+        });
+        if (res.ok) {
+          const body = await res.text();
+          if (body && body.length > 20) {
+            const d = new Date();
+            const name = '访问记录-' + d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0')
+              + String(d.getDate()).padStart(2, '0') + '.txt';
+            await saveBlobFile(new Blob([body], { type: 'text/plain;charset=utf-8' }), name);
+            showAlert('已导出服务端全量记录（' + localList.length + ' 条本地缓存的记录也含在其中）');
+            return;
+          }
+        } else if (res.status === 403) {
+          showAlert('服务端拒绝了导出请求：管理员密钥（ADMIN_KEY）不对。\n'
+            + '请检查站点配置里的 visitRelayKey 是否与 Worker 的 ADMIN_KEY 一致。');
+          return;
+        }
+      } catch (e) {
+        // 网络失败 → 落到下面的本地降级
+      }
+    }
+
+    // 降级：用前端本地这份
+    if (!localList.length) { showAlert('没有可导出的记录'); return; }
+    const src = VISIT_RELAY_URL
+      ? '本地缓存（服务端连接失败，可能不含全部访客数据）'
+      : '本地缓存（本站未配置服务端中转，只有管理员自己能写入，故此文件仅含你本人的访问）';
+    const txt = __visitsToTxt(localList, src);
+    const d = new Date();
+    const name = '访问记录-本地-' + d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0')
+      + String(d.getDate()).padStart(2, '0') + '.txt';
+    await saveBlobFile(new Blob([txt], { type: 'text/plain;charset=utf-8' }), name);
+    showAlert('已导出本地记录 ' + localList.length + ' 条。\n\n'
+      + (VISIT_RELAY_URL ? '服务端暂时连不上，这份可能不完整。'
+        : '提示：配置服务端中转后，这里能导出全部访客的记录。'));
   }
 
   function __renderVisitAdmin() {
@@ -10620,6 +10903,27 @@ window.__glassBootDone = function () {
       html += '</div>';
     }
 
+    // 世界地图打点（v6.9.58）—— 只在有坐标时显示，没坐标就别占地方
+    const __mapPts = __visitMapPoints(list);
+    if (__mapPts.length) {
+      const __geoTotal = list.filter(function (v) {
+        return __coordOk(v.lat, v.lng);
+      }).length;
+      html += '<div style="display:flex; align-items:baseline; justify-content:space-between; '
+        + 'gap:8px; margin-bottom:5px; flex-wrap:wrap;">'
+        + '<div style="font-size:11.5px; color:var(--text-muted);">🗺️ 访客地图（' + __mapPts.length
+        + ' 个位置 / ' + __geoTotal + ' 次访问有坐标）</div>'
+        + '<div style="font-size:10.5px; color:var(--text-muted);">圆越大越红 = 来的次数越多</div>'
+        + '</div>';
+      html += __visitMapSvg(list);
+      if (__geoTotal < list.length) {
+        html += '<div style="font-size:10.5px; color:var(--text-muted); margin:5px 0 0; line-height:1.6;">'
+          + '另有 <b>' + (list.length - __geoTotal) + '</b> 次访问没有坐标（旧记录，或当时地理接口未返回经纬度），'
+          + '未标在地图上。</div>';
+      }
+      html += '<div style="height:11px;"></div>';
+    }
+
     // 工具栏：搜索 + 是否包含管理员
     html += '<div style="display:flex; gap:6px; align-items:center; margin-bottom:10px; flex-wrap:wrap;">'
       + '<input id="visitSearchInput" type="text" placeholder="搜 IP / 地区 / 设备 / 账号…" '
@@ -10675,10 +10979,15 @@ window.__glassBootDone = function () {
 
     const hasAny = list.length > 0;
     showAlertHtml(html, '👁 浏览记录' + (hasAny ? '' : '（暂无）'),
-      '<button class="btn btn-outline" style="flex:1; color:var(--danger); border-color:#fca5a5;" '
-      + 'onclick="clearAllVisits()">🗑 清空记录</button>'
+      '<div style="display:flex; gap:6px; width:100%;">'
+      + '<button class="btn btn-primary" style="flex:2;" onclick="exportVisitsTxt()">📄 导出 txt</button>'
+      + '<button class="btn btn-outline" style="flex:1;" onclick="closeCustomDialog()">关闭</button>'
+      + '</div>'
+      + '<div style="display:flex; gap:6px; width:100%; margin-top:6px;">'
       + '<button class="btn btn-outline" style="flex:1;" onclick="copyVisitSummary()">📋 复制摘要</button>'
-      + '<button class="btn btn-primary" style="flex:1;" onclick="closeCustomDialog()">关闭</button>'
+      + '<button class="btn btn-outline" style="flex:1; color:var(--danger); border-color:#fca5a5;" '
+      + 'onclick="clearAllVisits()">🗑 清空记录</button>'
+      + '</div>'
     );
     __widenAlertDialog('500px', '72vh');
   }
