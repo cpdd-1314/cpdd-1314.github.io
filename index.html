@@ -15,6 +15,16 @@
        所以这个 manifest 是「系统通知」在 iPhone 上能用的前提之一。 -->
   <link rel="manifest" href="manifest.json">
 
+  <!-- 站点密钥注入位（v6.9.56 安全改造）
+       这里刻意用一个「可能不存在」的本地脚本 config.js 来注入敏感配置。
+       为什么这样做：
+         · 把令牌写进 index.html 等于公开发布，任何人查看源码即可拿走；
+         · 放在独立文件里，可以只上传到你的服务器 / 用 Cloudflare 的
+           「Transform Rules」或环境变量注入，而不进公开仓库。
+       如果该文件不存在（当前线上就是这种情况），浏览器只会报一条 404，
+       页面功能不受影响，写入类操作会给出「未配置」的明确提示。 -->
+  <script src="config.js" onerror="window.__CONFIG_MISSING__=true"></script>
+
   <!-- 搜索与分享信息 -->
   <meta name="description" content="全球找对象 —— 面向全球华人的公开交友资料展示平台。真人照片视频、城市筛选、条件说清、人工审核，加微信或进群直接联系。">
   <meta property="og:title" content="🌍 全球找对象 - 快速找到心目中的伴侣">
@@ -3424,8 +3434,9 @@ window.__glassBootDone = function () {
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.9.55';
+  const APP_VERSION = '6.9.56';
   const CHANGELOG = [
+    { v: '6.9.56', d: '2026-09-22', note: '安全修复：<b>清掉了页面源码里的明文 GitHub 令牌</b>。此前本站为了支持「访客自助上传」，把一个 GitHub 写入令牌<b>直接硬编码在 index.html 里</b>——等于把钥匙贴在大门上：任何人右键「查看网页源代码」就能把它复制走。经核查该令牌<b>权限为 repo 全作用域</b>，拿到它的人可以<b>篡改你账号下全部仓库的代码</b>（包括把网站改成钓鱼页），风险等级很高。<br>本次改造：① 页面里<b>不再有任何令牌</b>，改为从独立配置文件读取；② 新增 <code>config.js</code> 注入机制（模板见 <code>config.example.js</code>），你可以只把真实令牌放在<b>不进公开仓库</b>的地方；③ 浏览记录的上报通道改为<b>支持读配置</b>，部署 Cloudflare 中转后前端<b>完全不需要持有令牌</b>（这是更安全的方案，推荐优先用）；④ 令牌缺失时的提示全部改为<b>能看懂、能操作</b>的文案（「写入通道未配置，请用管理员账号登录或联系站长」），不再出现莫名的静默失败；⑤「浏览记录」面板顶部会实时显示<b>当前接收通道状态</b>，绿=已配置、橙=未配置，一眼就知道访客数据收不收得到。<br><br><span style="font-size:11px; color:#dc2626;"><b>⚠️ 请务必执行：</b>到 GitHub → Settings → Developer settings → Personal access tokens 里<b>吊销旧令牌</b>，然后重新申请一个<b>只授权 cpdd-1314.github.io 这一个仓库、只开 Contents 读写权限</b>的 fine-grained token。旧令牌只要还活着，漏洞就没堵上。</span>', type: 'fix' },
     { v: '6.9.55', d: '2026-09-22', note: '浏览记录 + 去掉通知引导条：① <b>取消了「推荐开启通知」引导条</b>——此前首页和收件箱顶部会推一张「别错过新的缘分和更新」的卡片催你开系统通知，有点烦人，现在整条撤掉，页面更安静（通知能力本身没动，仍可在「我的 → 🔔 通知设置」里开启）。② <b>管理面板新增「👁 浏览记录」</b>——能看每一次访问的 <b>IP 地址、国家/城市/地区、运营商、设备型号与系统、浏览器、屏幕分辨率、语言、时区、来源、是否微信内/主屏幕 App</b>，以及<b>登录账号</b>。顶部有<b>总访问 / 独立设备 / 独立 IP / 今日访问</b>四个实时数字和<b>地区分布榜</b>（点一下即按地区筛选），支持按 IP、地区、设备、账号搜索，还能一键复制摘要。同一台设备的多次访问会<b>按设备折叠</b>成一条（展开可见每次的精确时间），既保留你要求的「每次访问都记一条」，看的时候又不会被同一个人刷屏。站长自己的访问会单独标记，默认排除在统计之外。<br><br><span style="font-size:11px;">关于数据来源，说清楚不藏着：本站<b>没有后端服务器</b>，IP 与地区是浏览器端直连公开接口 <code>ipwho.is</code> 反查的，设备信息全部来自浏览器自带的 navigator / screen API；因此访客使用 VPN 或代理时，记录到的是代理的位置，这是所有纯前端方案共同的天花板。记录上限 <b>200 条</b>、超出自动淘汰最早的，只保留最近这段时间的踪迹。首页页脚与「我的」页底部也各加了一行<b>隐私声明</b>。</span>', type: 'feat' },
     { v: '6.9.54', d: '2026-09-22', note: '帧率自选 + 性能自检：① <b>「我的」页新增「⚡ 性能设置」</b>——可自选帧率上限（<b>自动 / 60 / 90 / 120 / 144 / 240</b>）。先说清楚一个物理事实：<b>浏览器能跑多快，上限由你的屏幕硬件决定</b>（多数手机 60Hz、部分旗舰 90/120Hz、少数 144/240Hz），网站没法把 60Hz 的屏变成 240fps，强行设高只会白耗电、发热、掉电更快。所以「自动」是默认档（跟随你屏幕的最高刷新率），手动档用于<b>低端机锁 60 求稳</b>或<b>高刷机明确放开</b>；设置面板会直接显示<b>「你的屏幕支持 XXX Hz」</b>的探测结果，一眼看出你这台设备到底能跑多快。② <b>新增「性能自检」</b>——一键实测当前真实帧率、平均帧耗时、最差单帧、卡顿帧数，不用凭感觉猜；顺手把 <b>CSS 过渡与装饰动画按档位分级</b>（锁 60 档自动关掉非必要装饰动画，把帧预算留给内容；高刷档开启更激进的合成优化）。③ 设置<b>只存本机</b>（手机和电脑硬件不同，不该互相覆盖）。', type: 'feat' },
     { v: '6.9.53', d: '2026-09-22', note: '通知分级 + 管理员公告：① <b>普通用户的通知干净了</b>——此前「站内通知」把所有事件都摊在所有人面前（谁注册了、资料被改了几次、谁被删了、照片库动了…），信息量大但跟普通访客没关系。现在<b>普通访客只看到两类</b>：<b>「有新嘉宾上架」</b>和<b>「管理员公告」</b>；管理员（超管 + 内部管理员）仍能看到全部事件，便于运营。② <b>点通知能直接看了</b>——以前点条目只能跳到嘉宾资料，公告类信息无处可看。现在点<b>公告</b>会弹出详情框，<b>完整正文</b>一次读完（长文可滚动），点<b>新嘉宾</b>仍是直达资料详情。③ <b>管理员可发公告了</b>——管理面板新增 <b>「📢 发公告」</b>，填标题 + 正文即可群发，<b>所有访客（含未登录）</b>都会在站内通知里看到；支持删除，删除后所有人立即不可见。发布时若网络异常会<b>自动回滚</b>，不会出现「本机看得见、别人看不到」的假象。', type: 'feat' },
@@ -3930,11 +3941,26 @@ window.__glassBootDone = function () {
   const GITHUB_OWNER = "cpdd-1314";
   const GITHUB_REPO = "cpdd-1314.github.io";
 
-  // 嘉宾自助上传专用令牌：⚠️ 注意 — 此令牌会明文出现在网页源码中，任何查看源码的人都能看到。
-  // 当前用的是全权限 classic token，风险由你确认接受。强烈建议：发布后尽快到 GitHub 吊销它，
-  // 或改用只授权本仓库 cpdd-1314/cpdd-1314.github.io 的 fine-grained token（Contents 读写）。
-  // 为避免 GitHub 安全扫描拦截明文令牌，此处用分段拼接（功能与明文完全相同）。
-  const GUEST_TOKEN = 'ghp_' + 'PnM5VlJiBHp' + 'YOXC7ASvnq' + 'VrEklEjYn426MJE';
+  // ─────────────────────────────────────────────────────────────────────────
+  // 写入令牌（v6.9.56 安全改造）
+  //
+  // 原实现把令牌明文硬编码在这里，等于把账号的写入钥匙贴在大门上：
+  // 任何人查看网页源码都能拿走它，进而篡改你能访问的所有仓库。
+  // 现已改为「外部注入」，本文件不再含任何令牌。
+  //
+  // 两种注入方式（任选其一，页面会自动探测）：
+  //   ① window.__SITE_CONFIG__.guestToken = '...'  —— 由外部脚本（如 config.js）注入
+  //   ② 访客登录了自己的令牌 → 自动使用访客自己的令牌
+  //
+  // 都拿不到时的行为：写入类操作（上传/发公告/改资料等）会明确提示"未配置写入通道"，
+  // 而不是像以前那样静默失败或假装成功。
+  // ─────────────────────────────────────────────────────────────────────────
+  const GUEST_TOKEN = (function () {
+    try {
+      const c = window.__SITE_CONFIG__;
+      return (c && typeof c.guestToken === 'string') ? c.guestToken : '';
+    } catch (e) { return ''; }
+  })();
   function getRepo() {
     const owner = GITHUB_OWNER || location.hostname.split('.')[0];
     const repo = GITHUB_REPO || (location.pathname.split('/')[1] || '');
@@ -4224,11 +4250,12 @@ window.__glassBootDone = function () {
     return sessionStorage.getItem('gh_token') || localStorage.getItem('gh_token') || '';
   }
 
-  // 写入用令牌：内部管理员/公开上传访客用内置受限令牌，超级管理员用个人令牌
+  // 写入用令牌：超级管理员用个人令牌，内部管理员/公开上传访客用外部注入的令牌。
+  // 返回空串表示「写入通道未配置」—— 调用方必须自己判断，不要假设一定有值。
   function getWriteToken() {
     const ident = getCurrentIdentity();
     if (isStaff()) return GUEST_TOKEN;
-    // 访客公开上传（未登录）也使用内置受限令牌
+    // 访客公开上传（未登录）也使用外部注入的令牌
     if (!getToken()) return GUEST_TOKEN;
     return getToken();
   }
@@ -4248,7 +4275,7 @@ window.__glassBootDone = function () {
 
   async function uploadToRepo(file) {
     const token = getWriteToken();
-    if (!token) throw new Error('未检测到写入令牌（管理员需登录，或嘉宾需输入有效凭证）');
+    if (!token) throw new Error('写入通道未配置（本站未注入写入令牌）。请用管理员账号登录，或联系站长配置。');
     const safeName = Date.now() + '_' + file.name.replace(/[^\w.\-]/g, '_');
     const path = 'media/' + safeName;
     const buf = await file.arrayBuffer();
@@ -4296,7 +4323,7 @@ window.__glassBootDone = function () {
   // 若期间该文件被改动过会返回 409，调用方需提示用户刷新后重试。
   async function deleteRepoFile(path, sha, commitMsg) {
     const token = getWriteToken();
-    if (!token) throw new Error('未检测到写入令牌');
+    if (!token) throw new Error('写入通道未配置（本站未注入写入令牌）。请用管理员账号登录，或联系站长配置。');
     const res = await fetch(`${API}/${path}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -4311,7 +4338,7 @@ window.__glassBootDone = function () {
 
   async function saveToGitHub() {
     const token = getWriteToken();
-    if (!token) throw new Error('未检测到写入令牌（管理员需登录，或嘉宾需输入有效凭证）');
+    if (!token) throw new Error('写入通道未配置（本站未注入写入令牌）。请用管理员账号登录，或联系站长配置。');
     // 加写锁：保存的网络请求进行期间，禁止自动同步把 appState 替换成服务端旧副本，
     // 否则本地的审核/编辑/生成链接会在 await 期间被污染，写回时被覆盖丢。
     __saving = true;
@@ -4490,7 +4517,7 @@ window.__glassBootDone = function () {
   // 既不覆盖别人，sha 也对得上；写成功后本地同步为最新，顺带看到别人刚发的内容。
   async function patchRemoteState(patchFn, commitMsg) {
     const token = getWriteToken();
-    if (!token) throw new Error('未检测到写入令牌');
+    if (!token) throw new Error('写入通道未配置（本站未注入写入令牌）。请用管理员账号登录，或联系站长配置。');
 
     let sha;
     let base = null;
@@ -8411,7 +8438,7 @@ window.__glassBootDone = function () {
     if (!files || files.length === 0) return;
     const status = document.getElementById('photoLibStatus');
     const token = getWriteToken();
-    if (!token) { showAlert('❌ 未检测到写入令牌，请先以管理员身份登录'); return; }
+    if (!token) { showAlert('❌ 写入通道未配置（本站未注入写入令牌），请先以管理员身份登录，或联系站长配置'); return; }
     // v6.9.49：图片与视频都可上传（视频不压缩，原样入库）
     const arr = Array.from(files).filter(function (f) {
       return f.type && (f.type.indexOf('image/') === 0 || f.type.indexOf('video/') === 0);
@@ -10287,18 +10314,28 @@ window.__glassBootDone = function () {
     return 'v' + Date.now() + Math.random().toString(36).slice(2, 6);
   }
 
-  // ── 访问记录上报通道（v6.9.55）──
+  // ── 访问记录上报通道（v6.9.55，v6.9.56 改为外部注入）──
   // 为什么需要中转：本站是纯前端站点，数据存在 GitHub 仓库的 data.json 里，
   //   而**写入 GitHub 需要 Token**。普通访客的浏览器里没有 Token（也不该有），
-  //   所以访客没法直接把自己的访问记录写进仓库 —— 单靠 patchRemoteState 的话，
-  //   只有管理员自己访问时能写进去，真实访客的访问一条都收不到，功能形同虚设。
+  //   所以访客没法直接把自己的访问记录写进仓库。
   //   Cloudflare Worker 就是那个「代收人」：它持有 Token，访客只 POST 数据给它。
   //   Token 只存在于 Worker 的环境变量里，永远不会下发到浏览器。
   //
-  // 留空时的行为：自动退回「直接写入」通道（只有登录了 GitHub Token 的管理员能成功）。
-  //   也就是说功能不会报错，只是收不到普通访客的数据 —— 部署好中转后填上地址即可生效。
-  const VISIT_RELAY_URL = '';   // ← 部署好 Worker 后填这里，如 'https://xxx.workers.dev'
-  const VISIT_RELAY_KEY = '';   // ← 填你在 Worker 里设的 RELAY_KEY
+  // 配置来源：优先读 window.__SITE_CONFIG__（见 config.example.js），
+  //   读不到就退回下面的空串。留空时自动退回「直接写入」通道
+  //   （有注入令牌 / 管理员已登录时可用）。
+  const VISIT_RELAY_URL = (function () {
+    try {
+      const c = window.__SITE_CONFIG__;
+      return (c && typeof c.visitRelayUrl === 'string') ? c.visitRelayUrl : '';
+    } catch (e) { return ''; }
+  })();
+  const VISIT_RELAY_KEY = (function () {
+    try {
+      const c = window.__SITE_CONFIG__;
+      return (c && typeof c.visitRelayKey === 'string') ? c.visitRelayKey : '';
+    } catch (e) { return ''; }
+  })();
 
   // 把一条访问记录交给中转。
   // 返回 true = 中转已接收；false = 没配中转 / 中转不可用（调用方会退回直写）。
@@ -10385,12 +10422,12 @@ window.__glassBootDone = function () {
       appState.visits.unshift(item);
       while (appState.visits.length > VISIT_MAX) appState.visits.pop();
 
-      // ③ 写回：优先走中转（只有这条路能让普通访客的记录真正落到仓库里）。
+      // ③ 写回：优先走中转（Token 留在服务端，最安全）。
       let ok = false;
       const viaRelay = await __relayVisit(item);
       if (!viaRelay) {
-        // 中转没配 / 中转挂了 → 退回原来那条「带 Token 直写」的路。
-        // 只有登录了 Token 的管理员能成功；普通访客会失败并走下面的回滚。
+        // 中转没配 / 中转挂了 → 退回「带令牌直写」的路。
+        // 这时能否成功取决于本机有没有可用令牌（管理员已登录 / 已注入 guestToken）。
         // 这里刻意不报错、不提示：对访客来说浏览记录是后台功能，不该打扰他。
         try {
           ok = await patchRemoteState(function (base) {
@@ -10592,14 +10629,17 @@ window.__glassBootDone = function () {
 
     // 数据通道状态：这是整个功能能不能收到真实访客数据的关键。
     // 不显示出来的话，管理员会以为「怎么一直没人访问」，其实只是通道没配。
+    const __hasWriteChannel = !!(VISIT_RELAY_URL || GUEST_TOKEN);
     if (VISIT_RELAY_URL) {
       html += '<div style="color:#16a34a; margin-bottom:5px;">✅ 接收通道：已配置中转（可收到所有访客的记录）</div>';
+    } else if (GUEST_TOKEN) {
+      html += '<div style="color:#16a34a; margin-bottom:5px;">✅ 接收通道：已注入写入令牌（可收到所有访客的记录）</div>';
     } else {
       html += '<div style="color:#d97706; margin-bottom:5px;">'
-        + '⚠️ 接收通道：未配置中转<br>'
-        + '<span style="opacity:.85;">当前只有管理员自己的访问能被记录，普通访客的记录收不到 —— '
-        + '因为写入 GitHub 需要 Token，而访客没有。'
-        + '部署免费的 Cloudflare 中转即可解决（说明见仓库 visit-relay 目录）。</span></div>';
+        + '⚠️ 接收通道：未配置<br>'
+        + '<span style="opacity:.85;">当前普通访客的记录收不到，只有管理员自己的访问能被记录。'
+        + '因为写入 GitHub 必须有令牌，而本站已不再把令牌放在页面里（那样任何人扒源码就能拿到）。'
+        + '解决办法二选一：① 注入写入令牌（config.js）；② 部署免费 Cloudflare 中转（见仓库 visit-relay 目录）。</span></div>';
     }
 
     html += 'IP 与地区由浏览器直连公开接口反查（依次尝试 ipwho.is → ipwhois.app → ipinfo.io，'
