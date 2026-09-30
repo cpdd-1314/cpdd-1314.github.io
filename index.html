@@ -1876,6 +1876,15 @@ window.__glassBootDone = function () {
     <button class="btn btn-outline" id="pageNext" style="font-size:13px; padding:6px 14px;" onclick="changePage(currentPage + 1)">下一页 →</button>
     <span id="pageInfo" style="font-size:12px; color:var(--text-muted);"></span>
   </div>
+
+  <!-- v6.9.55 页脚：访问记录隐私声明。
+       加这行的原因：本站会记录访客 IP 与地区信息（用于防诈骗与运营统计），
+       这属于个人信息，应当在可见处明确告知，不能只在后台默默采集。 -->
+  <div style="margin-top:22px; padding-top:14px; border-top:1px dashed var(--border);
+              font-size:10.5px; color:var(--text-muted); line-height:1.8; text-align:center;">
+    本站为公益性质的资料展示平台，不售卖任何用户信息<br>
+    为防范诈骗与优化体验，本站会记录访问者的 IP 与地区信息（不用于对外提供）
+  </div>
 </div>
 </main>
 
@@ -2141,6 +2150,7 @@ window.__glassBootDone = function () {
         <button class="btn btn-outline super-only" onclick="openAdminLogs()">📋 操作记录</button>
         <button class="btn btn-outline super-only" onclick="openNoticeSettings()">🔔 通知设置</button>
         <button class="btn btn-outline admin-only" onclick="openAnnounceAdmin()" style="color:#dc2626; border-color:#fca5a5;">📢 发公告</button>
+        <button class="btn btn-outline admin-only" onclick="openVisitAdmin()">👁 浏览记录</button>
         <button class="btn btn-outline admin-only" onclick="toggleModal('wechatConfigModal', true)">⚙️ 修改微信名片</button>
         <button class="btn btn-outline admin-only" onclick="openSubmitLinkModal()">📨 投稿链接</button>
         <button class="btn btn-outline admin-only" onclick="openRedeemAdminModal()">🎟️ 兑换码管理</button>
@@ -2188,7 +2198,9 @@ window.__glassBootDone = function () {
   <!-- 版权信息 -->
   <div id="copyrightLine" style="margin-top: 14px; text-align: center; font-size: 11px; color: var(--text-muted); line-height: 1.8;">
     © 2026 全球找对象 · All Rights Reserved<br>
-    <span style="opacity:.85;">本站为个人运营的公益交友资料展示平台，赞助仅用于服务器与运营维护</span>
+    <span style="opacity:.85;">本站为个人运营的公益交友资料展示平台，赞助仅用于服务器与运营维护</span><br>
+    <!-- v6.9.55 隐私声明：与首页页脚保持一致的告知，见首页那处注释 -->
+    <span style="opacity:.85;">为防范诈骗与优化体验，本站会记录访问者的 IP 与地区信息，不向任何第三方提供</span>
   </div>
 
   <!-- 网站作者（所有访客可见） -->
@@ -3412,8 +3424,9 @@ window.__glassBootDone = function () {
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.9.54';
+  const APP_VERSION = '6.9.55';
   const CHANGELOG = [
+    { v: '6.9.55', d: '2026-09-22', note: '浏览记录 + 去掉通知引导条：① <b>取消了「推荐开启通知」引导条</b>——此前首页和收件箱顶部会推一张「别错过新的缘分和更新」的卡片催你开系统通知，有点烦人，现在整条撤掉，页面更安静（通知能力本身没动，仍可在「我的 → 🔔 通知设置」里开启）。② <b>管理面板新增「👁 浏览记录」</b>——能看每一次访问的 <b>IP 地址、国家/城市/地区、运营商、设备型号与系统、浏览器、屏幕分辨率、语言、时区、来源、是否微信内/主屏幕 App</b>，以及<b>登录账号</b>。顶部有<b>总访问 / 独立设备 / 独立 IP / 今日访问</b>四个实时数字和<b>地区分布榜</b>（点一下即按地区筛选），支持按 IP、地区、设备、账号搜索，还能一键复制摘要。同一台设备的多次访问会<b>按设备折叠</b>成一条（展开可见每次的精确时间），既保留你要求的「每次访问都记一条」，看的时候又不会被同一个人刷屏。站长自己的访问会单独标记，默认排除在统计之外。<br><br><span style="font-size:11px;">关于数据来源，说清楚不藏着：本站<b>没有后端服务器</b>，IP 与地区是浏览器端直连公开接口 <code>ipwho.is</code> 反查的，设备信息全部来自浏览器自带的 navigator / screen API；因此访客使用 VPN 或代理时，记录到的是代理的位置，这是所有纯前端方案共同的天花板。记录上限 <b>200 条</b>、超出自动淘汰最早的，只保留最近这段时间的踪迹。首页页脚与「我的」页底部也各加了一行<b>隐私声明</b>。</span>', type: 'feat' },
     { v: '6.9.54', d: '2026-09-22', note: '帧率自选 + 性能自检：① <b>「我的」页新增「⚡ 性能设置」</b>——可自选帧率上限（<b>自动 / 60 / 90 / 120 / 144 / 240</b>）。先说清楚一个物理事实：<b>浏览器能跑多快，上限由你的屏幕硬件决定</b>（多数手机 60Hz、部分旗舰 90/120Hz、少数 144/240Hz），网站没法把 60Hz 的屏变成 240fps，强行设高只会白耗电、发热、掉电更快。所以「自动」是默认档（跟随你屏幕的最高刷新率），手动档用于<b>低端机锁 60 求稳</b>或<b>高刷机明确放开</b>；设置面板会直接显示<b>「你的屏幕支持 XXX Hz」</b>的探测结果，一眼看出你这台设备到底能跑多快。② <b>新增「性能自检」</b>——一键实测当前真实帧率、平均帧耗时、最差单帧、卡顿帧数，不用凭感觉猜；顺手把 <b>CSS 过渡与装饰动画按档位分级</b>（锁 60 档自动关掉非必要装饰动画，把帧预算留给内容；高刷档开启更激进的合成优化）。③ 设置<b>只存本机</b>（手机和电脑硬件不同，不该互相覆盖）。', type: 'feat' },
     { v: '6.9.53', d: '2026-09-22', note: '通知分级 + 管理员公告：① <b>普通用户的通知干净了</b>——此前「站内通知」把所有事件都摊在所有人面前（谁注册了、资料被改了几次、谁被删了、照片库动了…），信息量大但跟普通访客没关系。现在<b>普通访客只看到两类</b>：<b>「有新嘉宾上架」</b>和<b>「管理员公告」</b>；管理员（超管 + 内部管理员）仍能看到全部事件，便于运营。② <b>点通知能直接看了</b>——以前点条目只能跳到嘉宾资料，公告类信息无处可看。现在点<b>公告</b>会弹出详情框，<b>完整正文</b>一次读完（长文可滚动），点<b>新嘉宾</b>仍是直达资料详情。③ <b>管理员可发公告了</b>——管理面板新增 <b>「📢 发公告」</b>，填标题 + 正文即可群发，<b>所有访客（含未登录）</b>都会在站内通知里看到；支持删除，删除后所有人立即不可见。发布时若网络异常会<b>自动回滚</b>，不会出现「本机看得见、别人看不到」的假象。', type: 'feat' },
     { v: '6.9.52', d: '2026-09-21', note: '通知引导（讲清「微信里为什么开不了」）：① <b>认环境，不再甩一个点了必然失败的开关</b>——通知能力在<b>微信内置浏览器</b>和 <b>iPhone 的 Safari 标签页</b>里是被平台砍掉的（不是本站的 bug），此前「通知设置」在这两种环境里也照样显示授权开关，用户点了没反应、也不知道为什么。现在会先识别环境，再给出<b>能走通的那条路</b>：微信内提示「点右上角 ⋯ → 在浏览器中打开」并给<b>一键复制网址</b>；iPhone 上提示先<b>添加到主屏幕</b>，并提供<b>「怎么看添加到主屏幕」的分步图解</b>；② <b>新增「推荐开启通知」引导条</b>——首页与收件箱顶部会出现一条卡片，说明「别错过新的缘分和更新」，可直接<b>一键开启</b>、也可「不再提示」（记住后不再打扰；一旦开启成功或已授权，引导条自动消失）；③ <b>「我的」页新增「🔔 通知中心」入口</b>——实时显示未读条数，一眼看到有没有新动静，点进去直达站内通知页签；④ <b>站内通知改为「永远可用」的兜底</b>——设置弹窗里把它单独列在最上方并标注「已开启」，无论系统通知能不能用，谁注册了 / 谁投稿了 / 什么被改了都照常记录；⑤ 配套新增 <b>PWA 清单</b>（manifest.json），这是 iPhone 上系统通知能生效的前提。', type: 'feat' },
@@ -3950,7 +3963,12 @@ window.__glassBootDone = function () {
     reports: [],         // 举报记录 [{id, profileId, reporterUid, reporterName, reason, detail, time, status}]；status: pending / resolved
     trash: [],           // 回收站 [{id, type, profileId, deletedAt, expireAt, comment}]；用户删除的留言先进回收站，满 TRASH_EXPIRE_DAYS 天自动消失，期内可恢复
     photoLibrary: [],    // 管理员照片库 [{id, url, type, name, size, uploadedAt, uploadedBy}]；管理员集中管理的共享照片池，可浏览全站照片、上传、删除，并在编辑嘉宾时一键选用
-    announcements: []    // 管理员公告 [{id, title, body, time, actor, actorType, pinned}]；面向所有人的站内消息，普通用户在通知中心只看到「新嘉宾上架」和这一条
+    announcements: [],   // 管理员公告 [{id, title, body, time, actor, actorType, pinned}]；面向所有人的站内消息，普通用户在通知中心只看到「新嘉宾上架」和这一条
+    // 访客浏览记录（v6.9.55）[{id, time, ip, country, countryCode, region, city, isp, ua, dev, os, browser,
+    //   screen, lang, tz, pwa, wechat, ref, fp, uid, uname}]。
+    // 只存最近 VISIT_MAX 条（超出从头淘汰）；fp 是设备指纹，用于在管理面板里折叠同一设备的重复访问。
+    // ⚠️ 仅在浏览器端采集（ipwho.is 拿 IP 地理 + navigator 拿设备信息），不经过任何后端。
+    visits: []
   };
 
   // 内置示例兜底：当取不到仓库 data.json（本地预览 / 分享链接 / 直接双击打开）时，
@@ -4373,6 +4391,10 @@ window.__glassBootDone = function () {
     // ⚠️ 必须登记：saveToGitHub 走的是逐字段白名单合并，漏掉这行会让管理员
     //    任何一次整体保存（审核 / 生成链接…）把已发布的公告整段抹掉（submitLinks 踩过这个坑）。
     if (Array.isArray(local.announcements)) out.announcements = local.announcements;
+    // 访客浏览记录：同样是追加型、本地为准。
+    // ⚠️ 必须登记：漏掉这行的话，管理员任何一次整体保存（审核 / 生成链接…）
+    //    都会把已采集的访问记录整段抹掉 —— 和公告踩过的是同一个坑。
+    if (Array.isArray(local.visits)) out.visits = local.visits;
     return out;
   }
   function mergeById(baseArr, localArr) {
@@ -4491,6 +4513,7 @@ window.__glassBootDone = function () {
     if (!Array.isArray(base.trash)) base.trash = appState.trash || [];
     if (!Array.isArray(base.photoLibrary)) base.photoLibrary = appState.photoLibrary || [];
     if (!Array.isArray(base.announcements)) base.announcements = appState.announcements || [];
+    if (!Array.isArray(base.visits)) base.visits = appState.visits || [];
 
     const ret = patchFn(base);   // 在最新基线上打补丁
 
@@ -5691,6 +5714,7 @@ window.__glassBootDone = function () {
       if (Array.isArray(data.trash)) appState.trash = data.trash;
       if (Array.isArray(data.photoLibrary)) appState.photoLibrary = data.photoLibrary;
       if (Array.isArray(data.announcements)) appState.announcements = data.announcements;
+      if (Array.isArray(data.visits)) appState.visits = data.visits;
       // 兼容老数据：v6.9.4 起的审核状态粘性依赖 statusUpdatedAt；旧资料没有该字段时
       // 退化成 createdAt 比较，并发合并可能把已通过的审核打回 pending。这里在加载时补默认时间戳。
       if (Array.isArray(appState.profiles)) {
@@ -5736,6 +5760,9 @@ window.__glassBootDone = function () {
       refreshNoticeCenter({});
     } catch (e) { }
     cleanupTrash();   // 启动后清理已到 30 天的回收站条目（异步，不阻塞渲染）
+    // v6.9.55：采集一次本次访问（IP 地理 + 设备信息），延迟执行不抢首屏资源。
+    // 放在这里而不是更早：此时 data.json 已拉完、首屏已渲染，采集失败也不影响任何人。
+    try { __bootVisitRecord(); } catch (e) { }
     // 底部 Tab 栏显示（首次访问即可见）
     const bottomTab = document.getElementById('bottomTab');
     if (bottomTab) bottomTab.style.display = 'flex';
@@ -5750,7 +5777,8 @@ window.__glassBootDone = function () {
     } else {
       // home tab：仍然刷新底部 active 状态
       document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.toggle('active', b.dataset.tab === 'home'); });
-      // 首页：首屏稳定后推荐开启通知（关过 / 已开启就不再出现）
+      // v6.9.55：原来这里会在首屏弹「推荐开启通知」引导条，已按用户要求取消。
+      // 保留一次清场调用，专门用来把升级前残留的旧引导条 DOM 抹掉。
       setTimeout(function () { try { renderNoticeBanner(); } catch (e) { } }, 1200);
     }
     // 恢复滚动位置（图片懒加载会让高度变化，分几次校正到位）
@@ -5795,7 +5823,8 @@ window.__glassBootDone = function () {
       profiles: appState.profiles, users: appState.users, staffs: appState.staffs,
       notifications: appState.notifications, trash: appState.trash, reports: appState.reports,
       photoLibrary: appState.photoLibrary, adminLogs: appState.adminLogs,
-      announcements: appState.announcements
+      announcements: appState.announcements,
+      visits: appState.visits
     };
   }
   // 写锁 + 最近保存时间：防止自动同步在「保存的网络请求进行中 / 刚保存完」时，
@@ -5809,7 +5838,10 @@ window.__glassBootDone = function () {
         d.glassMode, d.glassTheme, d.updateMode, d.wechat, d.version, d.hideVersionInfo, d.nextProfileNo,
         // ⚠️ 公告必须进指纹：否则「只发了一条公告」会被判为「数据没变」而直接 return，
         //    其他设备的轮询永远看不到新公告（这是最隐蔽、后果最严重的一处漏登记）。
-        d.announcements
+        d.announcements,
+        // 访问记录同理：不进指纹的话，采集到的新访问会被判为「数据没变」，
+        // 管理员在另一台设备上永远刷不出来。
+        d.visits
       ]);
       let h = 0;
       for (let i = 0; i < sig.length; i++) h = (h * 31 + sig.charCodeAt(i)) | 0;
@@ -5872,6 +5904,9 @@ window.__glassBootDone = function () {
       if (Array.isArray(data.photoLibrary)) appState.photoLibrary = data.photoLibrary;
       // 公告：以服务端为权威源（不用 mergeById —— 那样删除会失效，被删的公告会在本地「复活」）
       if (Array.isArray(data.announcements)) appState.announcements = data.announcements;
+      // 访问记录：同样以服务端为权威源。这里不能用 mergeById 本地合并 ——
+      // 该数组有 200 条上限淘汰，本地那份可能比远端旧，合并会让已淘汰的记录复活。
+      if (Array.isArray(data.visits)) appState.visits = data.visits;
       __lastSyncSig = sig;
       // v6.9.51：数据确实变了 → 归纳出「有什么被改了 / 更新了」并刷新通知中心
       try {
@@ -10100,7 +10135,592 @@ window.__glassBootDone = function () {
     __widenAlertDialog();   // 长正文放宽弹窗，否则被 52vh 截断且无法滚动
   }
 
-  // ===== 管理员公告（v6.9.53）=====
+  // ===== 访客浏览记录（v6.9.55）=====
+  // 采集方式与边界（重要，先讲清楚）：
+  //   ① IP 与地区来自第三方公开接口 ipwho.is —— 纯前端 fetch，不经过本站任何后端
+  //      （本站没有后端，也无处保存访客真实 IP，只能靠这个公开接口反查）。
+  //   ② 设备信息全部来自浏览器自带的 navigator / screen API，不越权、不探测指纹硬件。
+  //   ③ 由于是浏览器端直连，此接口看到的是「访客的公网出口 IP」，
+  //      用 VPN / 代理时记录的就是代理的 IP 和地区，这是所有纯前端方案共同的局限。
+  //   ④ 记录走 patchRemoteState 增量写（同公告），避免与管理员其他整体保存互相覆盖。
+  const VISIT_MAX = 200;               // 记录上限，超出从头淘汰（控制 data.json 体积）
+  const VISIT_FP_KEY = 'visit_fp';     // 设备指纹缓存：同一设备复用，用于折叠重复访问
+
+  // IP 地理查询：多接口自动降级。
+  // 为什么要多个：这些公开免费接口都有频率限制（实测 ipwho.is 会返回 429 Rate limit exceeded），
+  // 只依赖一个的话，一旦限流就整批记录都拿不到 IP 和地区。
+  // 按顺序尝试，第一个成功的就用；全部失败也不阻断 —— 至少设备信息仍会被记下来。
+  // 三个接口都实测支持 CORS（access-control-allow-origin: *），可浏览器直连。
+  // 每个接口用一个归一化函数转成统一结构，避免下游到处判断字段名差异。
+  const VISIT_GEO_SOURCES = [
+    {
+      name: 'ipwho.is',
+      url: 'https://ipwho.is/',
+      pick: function (j) {
+        if (j.success === false) return null;
+        return {
+          ip: j.ip, country: j.country, countryCode: j.country_code,
+          region: j.region, city: j.city,
+          isp: (j.connection && j.connection.isp) || j.connection && j.connection.org || ''
+        };
+      }
+    },
+    {
+      name: 'ipwhois.app',
+      url: 'https://ipwhois.app/json/',
+      pick: function (j) {
+        if (j.success === false) return null;
+        return {
+          ip: j.ip, country: j.country, countryCode: j.country_code,
+          region: j.region, city: j.city,
+          isp: j.isp || j.org || ''
+        };
+      }
+    },
+    {
+      // ipinfo 免费版没有 isp 字段，但有 org（形如 "AS45090 腾讯云"），
+      // 去掉开头的 ASN 编号就是运营商名，观感和其他接口一致
+      name: 'ipinfo.io',
+      url: 'https://ipinfo.io/json',
+      pick: function (j) {
+        if (!j || !j.ip) return null;
+        return {
+          ip: j.ip, country: (j.country_name || j.country || ''),
+          countryCode: j.country || '',
+          region: j.region, city: j.city,
+          isp: String(j.org || '').replace(/^AS\d+\s*/, '')
+        };
+      }
+    }
+  ];
+
+  // 逐个尝试地理接口，返回归一化结果或 null
+  async function __fetchGeo(timeoutMs) {
+    for (let i = 0; i < VISIT_GEO_SOURCES.length; i++) {
+      const src = VISIT_GEO_SOURCES[i];
+      try {
+        const ctrl = new AbortController();
+        const tid = setTimeout(function () { ctrl.abort(); }, timeoutMs || 6000);
+        const res = await fetch(src.url, { signal: ctrl.signal, cache: 'no-store' });
+        clearTimeout(tid);
+        // 429 = 该接口限流，非 2xx 一律换下一个
+        if (!res.ok) continue;
+        const j = await res.json();
+        const picked = src.pick(j);
+        // 至少要拿到 IP 或国家，才算这次查询有意义
+        if (picked && (picked.ip || picked.country)) {
+          picked.source = src.name;
+          return picked;
+        }
+      } catch (e) {
+        // 超时/网络错误/解析失败：静默换下一个
+      }
+    }
+    return null;
+  }
+
+  // 设备指纹：稳定、不含隐私硬件特征的轻量标识。
+  // 用「屏幕+时区+语言+UA+平台」做一次简单哈希即可，不做 canvas/WebGL 指纹（那属于越权追踪）。
+  function __visitFp() {
+    try {
+      const cached = localStorage.getItem(VISIT_FP_KEY);
+      if (cached) return cached;
+      const raw = [
+        navigator.userAgent || '', navigator.platform || '',
+        screen.width + 'x' + screen.height, screen.colorDepth || '',
+        Intl.DateTimeFormat().resolvedOptions().timeZone || '',
+        navigator.language || '', (navigator.languages || []).join(',')
+      ].join('|');
+      let h = 5381;
+      for (let i = 0; i < raw.length; i++) h = ((h * 33) ^ raw.charCodeAt(i)) >>> 0;
+      const fp = 'f' + h.toString(36);
+      localStorage.setItem(VISIT_FP_KEY, fp);
+      return fp;
+    } catch (e) { return 'f0'; }
+  }
+
+  // 从 UA 里提取设备 / 系统 / 浏览器（不引第三方库，纯正则，覆盖主流即可）
+  function __parseUA(ua) {
+    ua = String(ua || '');
+    const out = { dev: '未知设备', os: '未知系统', browser: '未知浏览器' };
+
+    // 系统
+    if (/Windows NT 10/.test(ua)) out.os = 'Windows 10/11';
+    else if (/Windows NT 6\.3/.test(ua)) out.os = 'Windows 8.1';
+    else if (/Windows/.test(ua)) out.os = 'Windows';
+    else if (/iPhone OS (\d+)_(\d+)/.test(ua)) out.os = 'iOS ' + RegExp.$1 + '.' + RegExp.$2;
+    else if (/iPad.*OS (\d+)_(\d+)/.test(ua)) out.os = 'iPadOS ' + RegExp.$1 + '.' + RegExp.$2;
+    else if (/Mac OS X (\d+)[_.](\d+)/.test(ua)) out.os = 'macOS ' + RegExp.$1 + '.' + RegExp.$2;
+    else if (/Android (\d+(?:\.\d+)?)/.test(ua)) out.os = 'Android ' + RegExp.$1;
+    else if (/Linux/.test(ua)) out.os = 'Linux';
+    else if (/CrOS/.test(ua)) out.os = 'ChromeOS';
+
+    // 设备型号（Android 特有）
+    let model = '';
+    const m = ua.match(/Android[^;]*;\s*([^;)]+?)(?:\s+Build|\))/i);
+    if (m) model = m[1].trim();
+    if (/iPhone/.test(ua)) model = 'iPhone';
+    else if (/iPad/.test(ua)) model = 'iPad';
+    else if (/Macintosh/.test(ua)) model = 'Mac';
+    else if (/Windows/.test(ua)) model = 'PC';
+
+    // 浏览器（顺序重要：Edge/OPR 的 UA 里也含 Chrome/Safari）
+    if (/MicroMessenger/i.test(ua)) out.browser = '微信内置浏览器';
+    else if (/QQBrowser/i.test(ua)) out.browser = 'QQ 浏览器';
+    else if (/UCBrowser/i.test(ua)) out.browser = 'UC 浏览器';
+    else if (/Edg\//.test(ua)) out.browser = 'Edge';
+    else if (/OPR\/|Opera/.test(ua)) out.browser = 'Opera';
+    else if (/Firefox\//.test(ua)) out.browser = 'Firefox';
+    else if (/CriOS\//.test(ua)) out.browser = 'Chrome (iOS)';
+    else if (/Chrome\//.test(ua)) out.browser = 'Chrome';
+    else if (/Safari\//.test(ua)) out.browser = 'Safari';
+
+    // 设备类型
+    const isTablet = /iPad|Tablet/i.test(ua) || (/Android/i.test(ua) && !/Mobile/i.test(ua));
+    if (/iPad|Tablet/i.test(ua) || isTablet) out.dev = '平板' + (model && model !== 'iPad' ? '（' + model + '）' : (model ? '（' + model + '）' : ''));
+    else if (/Mobile|iPhone|Android/i.test(ua)) out.dev = '手机' + (model && model !== 'iPhone' ? '（' + model + '）' : (model ? '（' + model + '）' : ''));
+    else out.dev = '电脑' + (model ? '（' + model + '）' : '');
+    return out;
+  }
+
+  function __newVisitId() {
+    return 'v' + Date.now() + Math.random().toString(36).slice(2, 6);
+  }
+
+  // 主动采集一次访问并上报。
+  // 调用点只在首屏加载后一次（见 __bootVisitRecord），不做心跳、不做定时上报 —— 
+  // 本站没有后端，频繁写 GitHub 既慢又浪费配额。
+  async function recordVisit() {
+    if (__visitRecording) return;
+    __visitRecording = true;
+    try {
+      // ① 拿 IP 地理（多接口降级；全失败也不阻断 —— 至少把设备信息记下来）
+      const geo = await __fetchGeo(6000);
+
+      const ua = navigator.userAgent || '';
+      const parsed = __parseUA(ua);
+      const me = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+      // 站长自己 / 管理员访问不该污染访客统计 —— 但仍记下来并打标，
+      // 这样你能验证「功能是通的」，又在筛选时能一眼排除。
+      const ident = (typeof getCurrentIdentity === 'function') ? getCurrentIdentity() : null;
+      const isAdminVisit = !!(ident && (ident.type === 'super' || ident.type === 'staff'));
+
+      const item = {
+        id: __newVisitId(),
+        time: Date.now(),
+        ip: (geo && geo.ip) || '',
+        country: (geo && geo.country) || '',
+        countryCode: (geo && geo.countryCode) || '',
+        region: (geo && geo.region) || '',
+        city: (geo && geo.city) || '',
+        isp: (geo && geo.isp) || '',
+        // 记录是哪个接口查到的：三个接口的精度不完全一样，
+        // 排查「为什么这个人显示的位置不对」时，得知道数据来自哪里。
+        geoSrc: (geo && geo.source) || '',
+        ua: ua.slice(0, 260),
+        dev: parsed.dev,
+        os: parsed.os,
+        browser: parsed.browser,
+        screen: (screen.width || 0) + 'x' + (screen.height || 0) + '@' + (screen.colorDepth || 0),
+        // 视口尺寸比屏幕更能反映真实浏览环境（有地址栏 / 分屏时两者不同）
+        viewport: (innerWidth || 0) + 'x' + (innerHeight || 0),
+        lang: String(navigator.language || '').slice(0, 20),
+        tz: (function () { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (e) { return ''; } })(),
+        pwa: (typeof isStandalonePWA === 'function') ? isStandalonePWA() : false,
+        wechat: (typeof isWeChatEnv === 'function') ? isWeChatEnv() : false,
+        ref: (function () {
+          try {
+            const r = document.referrer || '';
+            if (!r) return '直接访问';
+            // 不存完整来源 URL（可能含他人隐私参数），只存域名
+            const u = new URL(r);
+            return u.hostname || '直接访问';
+          } catch (e) { return '直接访问'; }
+        })(),
+        fp: __visitFp(),
+        uid: me ? String(me.id) : '',
+        uname: me ? String(me.name || me.nickname || '') : '',
+        admin: isAdminVisit
+      };
+
+      // ② 本地乐观插入（先让自己在管理面板里立刻看到，写失败再回滚）
+      if (!Array.isArray(appState.visits)) appState.visits = [];
+      appState.visits.unshift(item);
+      while (appState.visits.length > VISIT_MAX) appState.visits.pop();
+
+      // ③ 增量写回。这里刻意「不」用 saveToGitHub：
+      //    访问记录是高频追加型数据，走整体保存会和其他字段互相覆盖。
+      const ok = await patchRemoteState(function (base) {
+        if (!Array.isArray(base.visits)) base.visits = [];
+        base.visits.unshift(item);
+        // 服务端那份也可能已超限，一并裁剪，避免 data.json 无限增长
+        while (base.visits.length > VISIT_MAX) base.visits.pop();
+        return base.visits.length;
+      }, '👁 访问记录 +1');
+
+      if (!ok) {
+        // 写失败（网络/权限）：把本地乐观插入的那条撤掉，避免「本机看得见、服务端没有」的假象
+        const i = appState.visits.findIndex(function (x) { return x.id === item.id; });
+        if (i >= 0) appState.visits.splice(i, 1);
+      }
+    } catch (e) {
+      // 采集失败完全静默：浏览记录是运营辅助数据，绝不能影响访客正常使用
+    } finally {
+      __visitRecording = false;
+    }
+  }
+  let __visitRecording = false;
+
+  // 首屏延迟采集：等页面稳定、数据拉取完成后再跑，避免和首屏渲染抢资源。
+  // 延迟 3.5 秒的理由：此时首屏图片/视频已经开始加载，采集不会拖慢首屏。
+  function __bootVisitRecord() {
+    setTimeout(function () {
+      try { recordVisit(); } catch (e) { }
+    }, 3500);
+  }
+
+  // ===== 浏览记录查看（v6.9.55，仅管理员）=====
+  let __visitFilter = { q: '', region: '', onlyReal: true };
+
+  // 把「国家 城市」拼成一行用于筛选与显示
+  function __visitPlace(v) {
+    const parts = [];
+    if (v.country) parts.push(v.country);
+    if (v.region && v.region !== v.country) parts.push(v.region);
+    if (v.city && v.city !== v.region) parts.push(v.city);
+    return parts.join(' · ') || '位置未知';
+  }
+
+  function __visitTime(ts) {
+    try {
+      const d = new Date(Number(ts) || 0);
+      if (!isFinite(d.getTime())) return '—';
+      const p = function (n) { return String(n).padStart(2, '0'); };
+      return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+    } catch (e) { return '—'; }
+  }
+
+  // 相对时间：一眼看出「多久前来过」
+  function __visitAgo(ts) {
+    const diff = Date.now() - (Number(ts) || 0);
+    if (!isFinite(diff) || diff < 0) return '';
+    const m = Math.floor(diff / 60000);
+    if (m < 1) return '刚刚';
+    if (m < 60) return m + ' 分钟前';
+    const h = Math.floor(m / 60);
+    if (h < 24) return h + ' 小时前';
+    const d = Math.floor(h / 24);
+    if (d < 30) return d + ' 天前';
+    return Math.floor(d / 30) + ' 个月前';
+  }
+
+  // 国旗 emoji（用国家二字码转区域指示符，无需外部图片）
+  function __visitFlag(code) {
+    try {
+      const cc = String(code || '').toUpperCase();
+      if (!/^[A-Z]{2}$/.test(cc)) return '🌐';
+      return String.fromCodePoint(0x1F1E6 + cc.charCodeAt(0) - 65, 0x1F1E6 + cc.charCodeAt(1) - 65);
+    } catch (e) { return '🌐'; }
+  }
+
+  // 按设备指纹把同一台设备的重复访问折叠成一条。
+  // 为什么不直接只显示去重后的结果：用户明确要求「每次访问都记一条」，
+  // 原始记录必须逐条可查；折叠只是默认视图，展开(Times)就能看到全部明细。
+  function __visitGroup(list, fold) {
+    if (!fold) return list.map(function (v) { return { head: v, all: [v] }; });
+    const map = {};
+    const order = [];
+    list.forEach(function (v) {
+      const k = v.fp || v.id;
+      if (!map[k]) { map[k] = { head: v, all: [] }; order.push(k); }
+      map[k].all.push(v);
+      // head 始终保留最新一次（list 已按时间倒序）
+    });
+    return order.map(function (k) { return map[k]; });
+  }
+
+  function openVisitAdmin() {
+    if (!(isSuper() || isStaff())) { showAlert('仅管理员可查看'); return; }
+    __visitFilter = { q: '', region: '', onlyReal: true };
+    __renderVisitAdmin();
+  }
+
+  function __renderVisitAdmin() {
+    const all = Array.isArray(appState.visits) ? appState.visits : [];
+    const f = __visitFilter;
+
+    // 筛选：默认排除管理员自己的访问（否则你自己每次进后台都会占榜首，看不清真实访客）
+    let list = all.slice();
+    if (f.onlyReal) list = list.filter(function (v) { return !v.admin; });
+    if (f.region) list = list.filter(function (v) { return __visitPlace(v) === f.region; });
+    if (f.q) {
+      const q = f.q.toLowerCase();
+      list = list.filter(function (v) {
+        return [v.ip, v.country, v.region, v.city, v.isp, v.dev, v.os, v.browser, v.uid, v.uname, v.ref]
+          .join(' ').toLowerCase().indexOf(q) >= 0;
+      });
+    }
+
+    // 统计（基于原始全量，不受搜索影响 —— 否则一搜索数字就变，没法当概览看）
+    const uniqFp = {};
+    let uniqIp = {};
+    let today = 0;
+    const dayStart = new Date(); dayStart.setHours(0, 0, 0, 0);
+    list.forEach(function (v) {
+      uniqFp[v.fp || v.id] = 1;
+      if (v.ip) uniqIp[v.ip] = 1;
+      if ((Number(v.time) || 0) >= dayStart.getTime()) today++;
+    });
+
+    // 地区分布（前 8）
+    const regionCount = {};
+    list.forEach(function (v) { const p = __visitPlace(v); regionCount[p] = (regionCount[p] || 0) + 1; });
+    const topRegions = Object.keys(regionCount).sort(function (a, b) { return regionCount[b] - regionCount[a]; }).slice(0, 8);
+
+    let html = '';
+    html += '<div style="text-align:left;">';
+
+    // 概览
+    html += '<div style="display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-bottom:12px;">';
+    const stat = function (label, val, color) {
+      return '<div style="padding:8px 4px; border-radius:10px; background:rgba(0,0,0,.04); text-align:center;">'
+        + '<div style="font-size:17px; font-weight:800; color:' + (color || 'var(--text)') + ';">' + val + '</div>'
+        + '<div style="font-size:10.5px; color:var(--text-muted); margin-top:2px;">' + label + '</div></div>';
+    };
+    html += stat('总访问', list.length);
+    html += stat('独立设备', Object.keys(uniqFp).length, '#6366f1');
+    html += stat('独立 IP', Object.keys(uniqIp).length, '#0ea5e9');
+    html += stat('今天', today, '#16a34a');
+    html += '</div>';
+
+    // 地区分布
+    if (topRegions.length) {
+      html += '<div style="font-size:11.5px; color:var(--text-muted); margin-bottom:5px;">🌍 地区分布（点击筛选）</div>';
+      html += '<div style="display:flex; flex-wrap:wrap; gap:5px; margin-bottom:10px;">';
+      topRegions.forEach(function (r) {
+        const on = f.region === r;
+        html += '<button class="btn ' + (on ? 'btn-primary' : 'btn-outline') + '" '
+          + 'style="font-size:11px; padding:4px 9px;" onclick="__visitSetRegion(\'' + escapeHtml(r).replace(/'/g, "\\'") + '\')">'
+          + escapeHtml(r) + ' <b>' + regionCount[r] + '</b></button>';
+      });
+      if (f.region) {
+        html += '<button class="btn btn-outline" style="font-size:11px; padding:4px 9px;" onclick="__visitSetRegion(\'\')">✕ 清除筛选</button>';
+      }
+      html += '</div>';
+    }
+
+    // 工具栏：搜索 + 是否包含管理员
+    html += '<div style="display:flex; gap:6px; align-items:center; margin-bottom:10px; flex-wrap:wrap;">'
+      + '<input id="visitSearchInput" type="text" placeholder="搜 IP / 地区 / 设备 / 账号…" '
+      + 'value="' + escapeHtml(f.q) + '" oninput="__visitSetQuery(this.value)" '
+      + 'style="flex:1; min-width:140px; font-size:12.5px; padding:7px 10px; border-radius:9px; '
+      + 'border:1px solid var(--border); background:var(--bg-card); color:var(--text);">'
+      + '<button class="btn ' + (f.onlyReal ? 'btn-primary' : 'btn-outline') + '" '
+      + 'style="font-size:11.5px; padding:7px 11px; flex:0 0 auto;" onclick="__visitToggleAdmin()">'
+      + (f.onlyReal ? '👤 只看访客' : '👁 含管理员') + '</button>'
+      + '</div>';
+
+    // 列表
+    if (!list.length) {
+      html += '<div style="padding:22px 0; text-align:center; color:var(--text-muted); font-size:13px; line-height:1.8;">'
+        + (all.length ? '没有符合筛选条件的记录' : '还没有访问记录<br><span style="font-size:11.5px;">访客打开网站后，「⚡ 性能设置」旁边会自动开始采集</span>')
+        + '</div>';
+    } else {
+      const groups = __visitGroup(list, true);
+      html += '<div style="font-size:11.5px; color:var(--text-muted); margin-bottom:6px;">'
+        + '👥 按设备折叠（同一设备多次访问合并，共 ' + groups.length + ' 台 / ' + list.length + ' 次）</div>';
+      html += '<div style="display:flex; flex-direction:column; gap:7px;">';
+      groups.forEach(function (g, gi) {
+        html += __visitCardHtml(g, gi);
+      });
+      html += '</div>';
+    }
+
+    html += '<div style="font-size:10.5px; color:var(--text-muted); margin-top:12px; line-height:1.7; '
+      + 'padding-top:10px; border-top:1px dashed var(--border);">'
+      + 'IP 与地区由浏览器直连公开接口反查（依次尝试 ipwho.is → ipwhois.app → ipinfo.io，'
+      + '任一成功即用，不经过本站服务器）。访客使用 VPN / 代理时会显示代理的位置。<br>'
+      + '若某条记录 IP 为空，说明当时三个接口都没返回（通常是公共接口临时限流），'
+      + '该次访问的<b>设备信息仍然有效</b>。<br>'
+      + '记录上限 ' + VISIT_MAX + ' 条，超出自动淘汰最早的记录。</div>';
+
+    html += '</div>';
+
+    const hasAny = list.length > 0;
+    showAlertHtml(html, '👁 浏览记录' + (hasAny ? '' : '（暂无）'),
+      '<button class="btn btn-outline" style="flex:1; color:var(--danger); border-color:#fca5a5;" '
+      + 'onclick="clearAllVisits()">🗑 清空记录</button>'
+      + '<button class="btn btn-outline" style="flex:1;" onclick="copyVisitSummary()">📋 复制摘要</button>'
+      + '<button class="btn btn-primary" style="flex:1;" onclick="closeCustomDialog()">关闭</button>'
+    );
+    __widenAlertDialog('500px', '72vh');
+  }
+
+  // 单条记录卡片。折叠视图下带「展开 N 次」开关。
+  function __visitCardHtml(g, gi) {
+    const v = g.head;
+    const n = g.all.length;
+    const flag = __visitFlag(v.countryCode);
+    let h = '<div style="padding:9px 11px; border-radius:11px; background:rgba(0,0,0,.03); '
+      + 'border:1px solid rgba(0,0,0,.07);">';
+
+    // 第一行：国旗 + 地区 + 时间
+    h += '<div style="display:flex; align-items:baseline; justify-content:space-between; gap:8px;">'
+      + '<div style="font-weight:700; font-size:13px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">'
+      + flag + ' ' + escapeHtml(__visitPlace(v)) + '</div>'
+      + '<div style="font-size:10.5px; color:var(--text-muted); flex:0 0 auto;">'
+      + escapeHtml(__visitAgo(v.time)) + '</div></div>';
+
+    // 第二行：IP + ISP
+    h += '<div style="font-size:11.5px; color:var(--text-muted); margin-top:3px; line-height:1.6; '
+      + 'display:flex; gap:8px; flex-wrap:wrap;">'
+      + (v.ip
+        ? '<span>🌐 <b style="color:var(--text); font-weight:600;">' + escapeHtml(v.ip) + '</b></span>'
+        : '<span title="当时所有地理接口都未返回，通常是公共接口临时限流">🌐 <span style="color:#d97706;">IP 未获取到</span></span>')
+      + (v.isp ? '<span>' + escapeHtml(v.isp) + '</span>' : '')
+      + '</div>';
+
+    // 第三行：设备
+    h += '<div style="font-size:11.5px; color:var(--text-muted); margin-top:3px; line-height:1.6; '
+      + 'display:flex; gap:8px; flex-wrap:wrap;">'
+      + '<span>📱 ' + escapeHtml(v.dev || '未知') + '</span>'
+      + '<span>' + escapeHtml(v.os || '') + '</span>'
+      + '<span>' + escapeHtml(v.browser || '') + '</span>'
+      + '</div>';
+
+    // 第四行：环境细节
+    const bits = [];
+    if (v.screen) bits.push('🖥 ' + escapeHtml(v.screen));
+    if (v.lang) bits.push('🗣 ' + escapeHtml(v.lang));
+    if (v.tz) bits.push('🕐 ' + escapeHtml(v.tz));
+    if (v.wechat) bits.push('💬 微信内');
+    if (v.pwa) bits.push('📲 主屏幕');
+    // 来源始终显示：连「直接访问」也是有价值的信息 ——
+    // 它说明这个人不是从外链点进来的，而是自己打开/收藏的，
+    // 和「从某个域名跳来」是完全不同的使用场景，不该被隐掉。
+    if (v.ref) bits.push('↩️ ' + escapeHtml(v.ref));
+    if (bits.length) {
+      h += '<div style="font-size:10.5px; color:var(--text-muted); margin-top:3px; line-height:1.7;">'
+        + bits.join(' · ') + '</div>';
+    }
+
+    // 账号（登录用户才有）
+    if (v.uid) {
+      h += '<div style="font-size:10.5px; color:#6366f1; margin-top:3px;">'
+        + '👤 ' + escapeHtml(v.uname || '已登录用户') + ' <span style="color:var(--text-muted);">#' + escapeHtml(v.uid) + '</span></div>';
+    }
+    if (v.admin) {
+      h += '<div style="font-size:10.5px; color:#d97706; margin-top:3px;">🛡 管理员本人的访问</div>';
+    }
+
+    // 折叠开关
+    if (n > 1) {
+      h += '<button class="btn btn-outline" style="font-size:10.5px; padding:3px 8px; margin-top:6px;" '
+        + 'onclick="__visitToggleGroup(' + gi + ')">▾ 这台设备访问了 ' + n + ' 次（点开看明细）</button>';
+      h += '<div id="visitGroupDetail' + gi + '" style="display:none; margin-top:6px; padding-top:6px; '
+        + 'border-top:1px dashed var(--border);">';
+      g.all.forEach(function (x, i) {
+        h += '<div style="font-size:10.5px; color:var(--text-muted); line-height:1.8;">'
+          + (i === 0 ? '🟢 最近：' : (i === n - 1 ? '⚪ 首次：' : '· '))
+          + escapeHtml(__visitTime(x.time)) + ' <span style="opacity:.7;">(' + escapeHtml(__visitAgo(x.time)) + ')</span>'
+          + (x.ip ? ' · ' + escapeHtml(x.ip) : '')
+          + '</div>';
+      });
+      h += '</div>';
+    }
+
+    // 单条：精确时间
+    h += '<div style="font-size:10px; color:var(--text-muted); margin-top:4px; opacity:.75;">'
+      + '🕘 ' + escapeHtml(__visitTime(v.time)) + ' · 指纹 ' + escapeHtml(String(v.fp || '').slice(0, 8)) + '</div>';
+
+    h += '</div>';
+    return h;
+  }
+
+  function __visitToggleGroup(gi) {
+    const el = document.getElementById('visitGroupDetail' + gi);
+    if (!el) return;
+    el.style.display = el.style.display === 'none' ? 'block' : 'none';
+  }
+  function __visitSetRegion(r) {
+    __visitFilter.region = (__visitFilter.region === r) ? '' : r;
+    __renderVisitAdmin();
+  }
+  // 搜索输入：只重渲染列表，且要保住输入框焦点与光标位置 ——
+  // 整块重绘会让输入框失焦，中文输入法下会直接断字。这里用防抖 + 还原焦点解决。
+  let __visitSearchTimer = null;
+  function __visitSetQuery(q) {
+    __visitFilter.q = q;
+    if (__visitSearchTimer) clearTimeout(__visitSearchTimer);
+    __visitSearchTimer = setTimeout(function () {
+      const active = document.activeElement;
+      const wasSearch = active && active.id === 'visitSearchInput';
+      const pos = wasSearch ? active.selectionStart : null;
+      __renderVisitAdmin();
+      if (wasSearch) {
+        const inp = document.getElementById('visitSearchInput');
+        if (inp) { inp.focus(); try { inp.setSelectionRange(pos, pos); } catch (e) { } }
+      }
+    }, 260);
+  }
+  function __visitToggleAdmin() {
+    __visitFilter.onlyReal = !__visitFilter.onlyReal;
+    __renderVisitAdmin();
+  }
+
+  async function clearAllVisits() {
+    if (!(isSuper() || isStaff())) { showAlert('仅管理员可操作'); return; }
+    // 用 confirmActionHtml 而不是 confirmAction：后者把 msg 当纯文本塞 textContent，
+    // 传进去的 <br> 会原样显示成字符。这里的内容是我们自己写死的静态串，不含用户数据。
+    confirmActionHtml('确定清空全部访问记录？<br><span style="font-size:12px; color:var(--text-muted);">'
+      + '这会删除所有设备的浏览记录，且无法恢复。</span>', async function () {
+        try {
+          const prev = appState.visits ? appState.visits.slice() : [];
+          appState.visits = [];
+          const ok = await patchRemoteState(function (base) {
+            base.visits = [];
+            return 0;
+          }, '🗑 清空访问记录');
+          if (!ok) {
+            appState.visits = prev;   // 写失败回滚，避免「本机清空了、服务端还在」
+            showAlert('清空失败，请检查网络后重试');
+            return;
+          }
+          addAdminLog('清空访问记录', '删除了 ' + prev.length + ' 条');
+          // 重新渲染列表（而不是关掉弹窗）：管理员通常还想继续看着空列表确认
+          __renderVisitAdmin();
+          showToast('🗑 访问记录已清空');
+        } catch (e) {
+          showAlert('清空失败：' + (e && e.message ? e.message : '未知错误'));
+        }
+      }, '🗑 清空访问记录');
+  }
+
+  function copyVisitSummary() {
+    const list = (appState.visits || []).filter(function (v) { return !v.admin; });
+    if (!list.length) { showAlert('还没有访问记录'); return; }
+    const uniqFp = {}; let uniqIp = {};
+    list.forEach(function (v) { uniqFp[v.fp || v.id] = 1; if (v.ip) uniqIp[v.ip] = 1; });
+    const dayStart = new Date(); dayStart.setHours(0, 0, 0, 0);
+    const today = list.filter(function (v) { return (Number(v.time) || 0) >= dayStart.getTime(); }).length;
+    const regionCount = {};
+    list.forEach(function (v) { const p = __visitPlace(v); regionCount[p] = (regionCount[p] || 0) + 1; });
+    const top = Object.keys(regionCount).sort(function (a, b) { return regionCount[b] - regionCount[a]; }).slice(0, 5);
+    const lines = [
+      '📊 网站访问摘要',
+      '─────────────',
+      '总访问：' + list.length + ' 次',
+      '独立设备：' + Object.keys(uniqFp).length + ' 台',
+      '独立 IP：' + Object.keys(uniqIp).length + ' 个',
+      '今日访问：' + today + ' 次',
+      '',
+      '🌍 地区 Top5：'
+    ].concat(top.map(function (r, i) { return (i + 1) + '. ' + r + ' — ' + regionCount[r] + ' 次'; }));
+    copyText(lines.join('\n'));
+    showToast('📋 摘要已复制');
+  }
+
+
   // 为什么写回用 patchRemoteState 而不是 saveToGitHub：
   //   patchRemoteState 会先拉远端最新 data.json，再在「远端基线」上打补丁，
   //   既不受 mergeStateSafe 的白名单限制，也不会有多人并发互相覆盖 / 409 的问题。
@@ -10411,45 +11031,30 @@ window.__glassBootDone = function () {
     );
   }
 
-  // 首次访问的「推荐开启通知」引导条（可一键开启 / 可永久关掉）
-  function noticeBannerHtml() {
-    const info = noticeEnvInfo();
-    return '<div id="noticeBanner" style="display:flex; gap:10px; align-items:flex-start;'
-      + 'padding:12px 14px; margin-bottom:14px; border-radius:14px;'
-      + 'background:linear-gradient(135deg, rgba(79,70,229,.13), rgba(14,165,233,.11));'
-      + 'border:1px solid rgba(79,70,229,.3);">'
-      + '<span style="font-size:22px; line-height:1.1;">🔔</span>'
-      + '<div style="flex:1; min-width:0;">'
-      + '<div style="font-weight:700; font-size:13px; margin-bottom:2px;">别错过新的缘分和更新</div>'
-      + '<div style="font-size:11.5px; color:var(--text-muted); line-height:1.6;">' + escapeHtml(info.short) + '</div>'
-      + '<div style="display:flex; gap:6px; margin-top:9px; flex-wrap:wrap;">'
-      + '<button class="btn btn-primary" style="font-size:12px; padding:6px 12px;" onclick="bannerEnableNotice()">🔔 开启提醒</button>'
-      + '<button class="btn btn-outline" style="font-size:12px; padding:6px 12px;" onclick="switchTab(\'inbox\'); switchInboxTab(\'notice\');">先看看</button>'
-      + '<button class="btn btn-outline" style="font-size:12px; padding:6px 12px; color:var(--text-muted);" onclick="dismissNoticeBanner(true)">不再提示</button>'
-      + '</div></div></div>';
-  }
-
+  // v6.9.55：取消「推荐开启通知」引导条。
+  // 原本首页与收件箱顶部会推一条「别错过新的缘分和更新」的卡片催用户开系统通知，
+  // 用户反馈不要这个干扰，故整条撤掉。相关函数保留为「空实现」而不是直接删除，
+  // 原因：它们在多处被 setTimeout 延迟调用（首屏、切换页签、授权回调后），
+  // 直接删函数会抛 ReferenceError。留空壳最安全，也不会再渲染任何内容。
+  function noticeBannerHtml() { return ''; }
   function renderNoticeBanner() {
-    const host = document.getElementById('noticeBannerHost');
-    if (!host) return;
-    let off = false;
-    try { off = localStorage.getItem(NOTICE_BANNER_KEY) === '1'; } catch (e) { }
-    // 已经开着系统通知、或者用户点名不再提示，就不显示
-    if (off || (noticeOn() && Notification && Notification.permission === 'granted')) {
-      host.innerHTML = '';
-      return;
-    }
-    host.innerHTML = noticeBannerHtml();
+    // 兜底清场：老版本可能已经渲染过引导条，或 localStorage 里还留着旧的关闭标记。
+    // 这里主动把宿主清空一次，保证升级后旧引导条不会残留。
+    try {
+      const host = document.getElementById('noticeBannerHost');
+      if (host) host.innerHTML = '';
+      const legacy = document.getElementById('noticeBanner');
+      if (legacy && legacy.parentNode) legacy.parentNode.removeChild(legacy);
+    } catch (e) { }
   }
-
   function dismissNoticeBanner(persist) {
-    if (persist) { try { localStorage.setItem(NOTICE_BANNER_KEY, '1'); } catch (e) { } }
-    const host = document.getElementById('noticeBannerHost');
-    if (host) host.innerHTML = '';
-    if (persist) showToast('已关闭提示（随时可在「我的 → 🔔 通知设置」里开启）');
+    try { localStorage.removeItem(NOTICE_BANNER_KEY); } catch (e) { }
+    try {
+      const host = document.getElementById('noticeBannerHost');
+      if (host) host.innerHTML = '';
+    } catch (e) { }
   }
-
-  // 引导条上的「开启提醒」：能开就直接开，开不了就给针对性的说明
+  // 引导条上的「开启提醒」保留：通知设置弹窗里可能还引用到它
   function bannerEnableNotice() {
     const info = noticeEnvInfo();
     if (canUseSystemNotice()) {
