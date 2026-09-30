@@ -1249,36 +1249,6 @@
       "likes": [
         1788873979765
       ]
-    },
-    {
-      "id": 1790761057996,
-      "姓名": "dwd",
-      "性别": "男",
-      "性取向": "",
-      "国家/城市": "",
-      "生日": "",
-      "年龄": "",
-      "身高": "",
-      "体重": "",
-      "星座": "",
-      "职业/学生": "",
-      "性格": "",
-      "兴趣爱好": "",
-      "生活习惯": "",
-      "要求": "",
-      "一句话介绍": "",
-      "updatedAt": 1790761057996,
-      "statusUpdatedAt": 1790761057996,
-      "uploadDate": "2026-09-30",
-      "createdAt": 1790761057996,
-      "isPinned": false,
-      "uploaderType": "public",
-      "uploaderName": "网友",
-      "uploaderCode": "",
-      "fromPublic": true,
-      "status": "pending",
-      "profileNo": "A051",
-      "mediaList": []
     }
   ],
   "staffs": [
@@ -1304,6 +1274,12 @@
     "6.1.0"
   ],
   "adminLogs": [
+    {
+      "time": 1790792724929,
+      "actor": "超级管理员",
+      "op": "删除",
+      "desc": "删除档案「dwd」（进入管理员回收站）"
+    },
     {
       "time": 1790247962521,
       "actor": "超级管理员",
@@ -5051,6 +5027,42 @@
         "text": "cpdd",
         "time": 1788638427006
       }
+    },
+    {
+      "id": "tp_1790792724929_1stbrj",
+      "type": "profile",
+      "profile": {
+        "id": 1790761057996,
+        "姓名": "dwd",
+        "性别": "男",
+        "性取向": "",
+        "国家/城市": "",
+        "生日": "",
+        "年龄": "",
+        "身高": "",
+        "体重": "",
+        "星座": "",
+        "职业/学生": "",
+        "性格": "",
+        "兴趣爱好": "",
+        "生活习惯": "",
+        "要求": "",
+        "一句话介绍": "",
+        "updatedAt": 1790761057996,
+        "statusUpdatedAt": 1790761057996,
+        "uploadDate": "2026-09-30",
+        "createdAt": 1790761057996,
+        "isPinned": false,
+        "uploaderType": "public",
+        "uploaderName": "网友",
+        "uploaderCode": "",
+        "fromPublic": true,
+        "status": "pending",
+        "profileNo": "A051",
+        "mediaList": []
+      },
+      "deletedAt": 1790792724929,
+      "expireAt": 1793384724929
     }
   ],
   "photoLibrary": [
