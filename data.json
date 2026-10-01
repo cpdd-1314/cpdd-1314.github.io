@@ -6293,9 +6293,9 @@
   "siteStats": {
     "pages": {
       "首页": {
-        "pv": 3,
-        "dwellSum": 69,
-        "dwellN": 3,
+        "pv": 5,
+        "dwellSum": 149,
+        "dwellN": 5,
         "scrollSum": 162,
         "scrollN": 2,
         "zones": [
@@ -6303,26 +6303,28 @@
           7,
           0,
           1,
-          12,
+          18,
           0,
           0,
-          9,
+          10,
           0
         ],
         "clicks": {
           "button.primary": 5,
-          "span": 3,
-          "button.outline": 12,
+          "span": 6,
+          "button.outline": 13,
           "circle": 1,
-          "div": 9
+          "div": 9,
+          "button": 1,
+          "b": 2
         }
       },
       "发布": {
         "pv": 2,
         "dwellSum": 36,
         "dwellN": 2,
-        "scrollSum": 76,
-        "scrollN": 1,
+        "scrollSum": 145,
+        "scrollN": 2,
         "zones": [
           0,
           0,
@@ -6344,11 +6346,11 @@
     },
     "daily": {
       "2026-10-01": {
-        "pv": 5,
-        "dwellSum": 105,
-        "dwellN": 5
+        "pv": 7,
+        "dwellSum": 185,
+        "dwellN": 7
       }
     },
-    "updated": 1790869426481
+    "updated": 1790875987400
   }
 }
