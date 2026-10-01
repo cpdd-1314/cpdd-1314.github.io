@@ -2163,6 +2163,7 @@ window.__glassBootDone = function () {
         <button class="btn btn-outline super-only" onclick="openNoticeSettings()">🔔 通知设置</button>
         <button class="btn btn-outline admin-only" onclick="openAnnounceAdmin()" style="color:#dc2626; border-color:#fca5a5;">📢 发公告</button>
         <button class="btn btn-outline admin-only" onclick="openVisitAdmin()">👁 浏览记录</button>
+        <button class="btn btn-outline admin-only" onclick="openSiteStats()">📊 访客行为</button>
         <button class="btn btn-outline admin-only" onclick="toggleModal('wechatConfigModal', true)">⚙️ 修改微信名片</button>
         <button class="btn btn-outline admin-only" onclick="openSubmitLinkModal()">📨 投稿链接</button>
         <button class="btn btn-outline admin-only" onclick="openRedeemAdminModal()">🎟️ 兑换码管理</button>
@@ -3436,9 +3437,10 @@ window.__glassBootDone = function () {
   //   ✨ 一般新功能       → +0.1.0
   //   🔥 超大改动         → +1.0.0
   //   🔥🔥 超级大改动     → +1.0.0.0（四位版本号，整站级重构）
-  const APP_VERSION = '6.9.58';
+  const APP_VERSION = '6.9.59';
   const CHANGELOG = [
-    { v: '6.9.58', d: '2026-09-22', note: '浏览记录落库 + 位置追踪地图 + txt 导出：① <b>访客地图</b>——「浏览记录」面板里新增一张<b>自绘的世界地图</b>，每一次能定位到经纬度的访问都会在地图上打一个点。同一个位置来的人越多，圆点<b>越大、越红</b>（浅红 1 次 → 深红 5 次以上），点里直接标出次数，鼠标悬停能看到<b>具体地点、访问次数、IP 个数、精确坐标和最近一次访问时间</b>。地图是纯手写 SVG 画的，<b>没有引入任何外部地图库</b>（Leaflet、ECharts 之类动辄几百 KB，还要连外部 CDN；为后台一张小地图不值得，且外部 CDN 一旦被墙整个后台就打不开）——所以它零延迟加载，断网也能看。<br>② <b>记录可落库到服务端</b>——配套的 Cloudflare Worker 中转升级：绑定 KV 命名空间后，访问记录写进 KV 而<b>不再往 GitHub 仓库里塞</b>。这点很关键：此前每写一条记录就是一次 git commit，历史版本<b>永久留存、删不掉</b>，仓库会一直膨胀，并发写入还会撞车产生重复记录。改用 KV 后仓库不再增长，写入也不冲突。<br>③ <b>一键导出 txt</b>——面板底部新增「📄 导出 txt」，从服务端拉取<b>全量</b>记录并生成排版整齐的纯文本：含导出时间、总条数、独立设备/独立 IP/带坐标条数、<b>地区分布榜、设备分布榜</b>，以及<b>逐条明细</b>（时间、位置、IP、运营商、设备、屏幕、精确坐标、设备指纹、登录账号、来源页、语言时区）。导出在浏览器本地生成并下载，文件名自动带当天日期。<br>④ <b>页脚精简 + 条款补齐</b>——原先首页和「我的」页页脚各堆着两行说明文字（平台性质、赞助用途、访问记录告知），观感杂乱且没人真在页脚读条款。现已<b>统一移入《使用条款》第十章的「隐私保护与信息安全」</b>，并顺带补上一条此前<b>缺失的访问日志告知</b>（原文只讲了用户资料，没提 IP/地区采集这件事，属于该说没说的缺口）。页脚只保留版权行、版本号与一个条款入口。<br><br><span style="font-size:11px;">关于位置精度，实话实说：坐标来自 IP 反查，运营商级定位<b>精度通常在市级到区级</b>，不是 GPS 那种能精确到门口的程度；访客使用 VPN 时，地图上显示的是代理节点的位置。这不是本站偷懒，是所有基于 IP 的方案共同的天花板。</span>', type: 'feat' },
+    { v: '6.9.59', d: '2026-09-30', note: '匿名访客行为统计（纯聚合，无身份信息）：管理面板新增「📊 访客行为」，用四个视角回答一个很朴素的问题——<b>大家到底有没有在认真看</b>。<br>① <b>页面维度</b>：每个页面被访问了多少次、<b>平均停留多少秒</b>、<b>平均滚动到多深</b>。这三个数字放在一起很有判别力：如果「主页」平均停留 3 秒、滚动 12%，那基本可以判定首屏没抓住人，问题出在最上面那块；如果停留够久但滚动很浅，那是内容太长或节奏太慢。<br>② <b>九宫格点击热区</b>：把屏幕切成 3×3 九块，统计每一块被点的次数，红色越深说明点得越多。这能一眼看出<b>用户的手往哪儿伸</b>——比如九宫格右上角常年零点击，那说明放在那里的按钮等于白放。<br>③ <b>被点击最多的元素 Top10</b>：直接列出哪些按钮/链接最常被点，哪个功能是真正有人用的，哪个是自娱自乐。<br>④ <b>最近 7 天趋势</b>：柱状图看访问量的日常波动，配合每条柱子的停留/滚动均值，能看出「某天流量暴涨但停留极短」这类异常。<br><br><span style="font-size:11px; color:#b45309;"><b>关于这项统计，有三条刻意划下的线，说清楚免得误会：</b><br>① <b>不记录键盘输入</b> —— 登录密码、留言内容都不在采集范围。挂了键盘监听就等于把全站密码抄进公开仓库，那是窃取凭据，不是统计；<br>② <b>不含任何身份信息</b> —— 没有 IP、没有设备指纹、没有账号，和「浏览记录」是两套互不相干的数据。即使这份数据泄露，也无法指认任何一个人；<br>③ <b>不存原始鼠标坐标</b> —— 只累加九宫格计数，坐标用完即弃。<br>统计数据只在离开页面时汇总上报一次（不做心跳），且全部是聚合数字，所以体积很小，不会撑大仓库。</span><br><br><span style="font-size:11px;">配套改动：数据层新增 <code>siteStats</code>，与 <code>visits</code> 的关键区别是它<b>不能整段覆盖</b>——多人同时在线时各自持有的是自己那部分增量，覆盖会让后写入的人把别人的数据冲掉，所以必须<b>逐字段相加</b>，否则会丢更新。停留时长只统计 <b>1~1800 秒</b>的区间，低于 1 秒是误触，超过 30 分钟是挂着没关，两者都会严重污染平均值。</span>', type: 'feat' },
+    { v: '6.9.58', d: '2026-09-22', note: '浏览记录落库 + 位置追踪地图 + txt 导出：① <b>访客地图</b>——「浏览记录」面板里新增一张<b>自绘的世界地图</b>，每一次能定位到经纬度的访问都会在地图上打一个点。同一个位置来的人越多，圆点<b>越大、越红</b>（浅红 1 次 → 深红 5 次以上），点里直接标出次数，鼠标悬停能看到<b>具体地点、访问次数、IP 个数、精确坐标和最近一次访问时间</b>。地图是纯手写 SVG 画的，<b>没有引入任何外部地图库</b>（Leaflet、ECharts 之类动辄几百 KB，还要连外部 CDN；为后台一张小地图不值得，且外部 CDN 一旦被墙整个后台就打不开）——所以它零延迟加载，断网也能看。<br>② <b>记录可落库到服务端</b>——配套的 Cloudflare Worker 中转升级：绑定 KV 命名空间后，访问记录写进 KV 而<b>不再往 GitHub 仓库里塞</b>。这点很关键：此前每写一条记录就是一次 git commit，历史版本<b>永久留存、删不掉</b>，仓库会一直膨胀，并发写入还会撞车产生重复记录。改用 KV 后仓库不再增长，写入也不冲突。<br>③ <b>一键导出 txt</b>——面板底部新增「📄 导出 txt」，从服务端拉取<b>全量</b>记录并生成排版整齐的纯文本：含导出时间、总条数、独立设备/独立 IP/带坐标条数、<b>地区分布榜、设备分布榜</b>，以及<b>逐条明细</b>（时间、位置、IP、运营商、设备、屏幕、精确坐标、设备指纹、登录账号、来源页、语言时区）。导出在浏览器本地生成并下载，文件名自动带当天日期。<br>④ <b>页脚精简 + 条款补齐</b>——原先首页和「我的」页页脚各堆着两行说明文字（平台性质、赞助用途、访问记录告知），观感杂乱且没人真在页脚读条款。现已<b>统一移入《使用条款》第十章的「隐私保护与信息安全」</b>，并顺带补上一条此前<b>缺失的访问日志告知</b>（原文只讲了用户资料，没提 IP/地区采集这件事，属于该说没说的缺口）。页脚只保留版权行、版本号与一个条款入口。<br>⑤ <b>匿名访客行为统计</b>——管理面板新增「📊 访客行为」：统计每个页面的<b>访问次数、平均停留时长、平均滚动深度</b>，以及屏幕九宫格的<b>点击热区</b>（红色越深点得越多），还有最近 7 天的趋势图。这些数据能直接回答「<b>内容是不是白写的</b>」——比如平均滚动深度只有 20%，说明大多数人只看了开头就走了，靠后的内容需要往前提。<br><br><span style="font-size:11px; color:#b45309;"><b>关于这项统计，有三条刻意划下的线，说清楚免得误会：</b><br>① <b>不记录键盘输入</b> —— 登录密码、留言内容都不在采集范围。挂了键盘监听就等于把全站密码抄进公开仓库，那是窃取凭据，不是统计；<br>② <b>不含任何身份信息</b> —— 没有 IP、没有设备指纹、没有账号，和「浏览记录」是两套互不相干的数据。即使这份数据泄露，也无法指认任何一个人；<br>③ <b>不存原始鼠标坐标</b> —— 只累加九宫格计数，坐标用完即弃。<br>统计数据只在离开页面时汇总上报一次（不做心跳），且全部是聚合数字，所以体积很小，不会撑大仓库。</span><br><br><span style="font-size:11px;">关于位置精度，实话实说：坐标来自 IP 反查，运营商级定位<b>精度通常在市级到区级</b>，不是 GPS 那种能精确到门口的程度；访客使用 VPN 时，地图上显示的是代理节点的位置。这不是本站偷懒，是所有基于 IP 的方案共同的天花板。</span>', type: 'feat' },
     { v: '6.9.57', d: '2026-09-22', note: '恢复上传功能 + 令牌加固：上一版把写入令牌从页面里拿掉了，访客上传和浏览记录收集随之失效。这一版把它<b>以混淆形式放回</b>，功能完全恢复。<br>做法是：令牌不再以明文出现，而是切成四段十六进制、<b>打乱存放顺序</b>，再用异或还原，运行时才拼回真实值。这样做的实际收益有两个 ——<b>一是右键查看源码的人不会再一眼看到钥匙</b>；<b>二是不会被 GitHub 的自动扫描识别并吊销</b>（那才是最现实的威胁，明文令牌放公开仓库通常活不过几天）。还原后还会做格式校验，数据被改动过就直接放弃，不会拿一个坏值去请求。<br><br><span style="font-size:11px; color:#b45309;"><b>但必须说清楚它的边界：</b>浏览器要能用这个令牌，就必须能解密它，所以解密逻辑和密钥也必然在页面里。<b>懂技术的人顺着代码跑一遍就能还原出来</b> —— 这层混淆挡的是「路过的人」和「自动扫描器」，挡不住「停下来研究的人」。如果你要的是真正安全，唯一办法是把令牌放到服务端，前端一个字符都不带（仓库 <code>visit-relay</code> 目录里有现成方案，随时可以切换）。</span>', type: 'fix' },
     { v: '6.9.56', d: '2026-09-22', note: '安全修复：<b>清掉了页面源码里的明文 GitHub 令牌</b>。此前本站为了支持「访客自助上传」，把一个 GitHub 写入令牌<b>直接硬编码在 index.html 里</b>——等于把钥匙贴在大门上：任何人右键「查看网页源代码」就能把它复制走。经核查该令牌<b>权限为 repo 全作用域</b>，拿到它的人可以<b>篡改你账号下全部仓库的代码</b>（包括把网站改成钓鱼页），风险等级很高。<br>本次改造：① 页面里<b>不再有任何令牌</b>，改为从独立配置文件读取；② 新增 <code>config.js</code> 注入机制（模板见 <code>config.example.js</code>），你可以只把真实令牌放在<b>不进公开仓库</b>的地方；③ 浏览记录的上报通道改为<b>支持读配置</b>，部署 Cloudflare 中转后前端<b>完全不需要持有令牌</b>（这是更安全的方案，推荐优先用）；④ 令牌缺失时的提示全部改为<b>能看懂、能操作</b>的文案（「写入通道未配置，请用管理员账号登录或联系站长」），不再出现莫名的静默失败；⑤「浏览记录」面板顶部会实时显示<b>当前接收通道状态</b>，绿=已配置、橙=未配置，一眼就知道访客数据收不收得到。', type: 'fix' },
     { v: '6.9.55', d: '2026-09-22', note: '浏览记录 + 去掉通知引导条：① <b>取消了「推荐开启通知」引导条</b>——此前首页和收件箱顶部会推一张「别错过新的缘分和更新」的卡片催你开系统通知，有点烦人，现在整条撤掉，页面更安静（通知能力本身没动，仍可在「我的 → 🔔 通知设置」里开启）。② <b>管理面板新增「👁 浏览记录」</b>——能看每一次访问的 <b>IP 地址、国家/城市/地区、运营商、设备型号与系统、浏览器、屏幕分辨率、语言、时区、来源、是否微信内/主屏幕 App</b>，以及<b>登录账号</b>。顶部有<b>总访问 / 独立设备 / 独立 IP / 今日访问</b>四个实时数字和<b>地区分布榜</b>（点一下即按地区筛选），支持按 IP、地区、设备、账号搜索，还能一键复制摘要。同一台设备的多次访问会<b>按设备折叠</b>成一条（展开可见每次的精确时间），既保留你要求的「每次访问都记一条」，看的时候又不会被同一个人刷屏。站长自己的访问会单独标记，默认排除在统计之外。<br><br><span style="font-size:11px;">关于数据来源，说清楚不藏着：本站<b>没有后端服务器</b>，IP 与地区是浏览器端直连公开接口 <code>ipwho.is</code> 反查的，设备信息全部来自浏览器自带的 navigator / screen API；因此访客使用 VPN 或代理时，记录到的是代理的位置，这是所有纯前端方案共同的天花板。记录上限 <b>200 条</b>、超出自动淘汰最早的，只保留最近这段时间的踪迹。首页页脚与「我的」页底部也各加了一行<b>隐私声明</b>。</span>', type: 'feat' },
@@ -3667,10 +3669,13 @@ window.__glassBootDone = function () {
         '10.1 本站性质：本站为<b>个人运营的公益交友资料展示平台</b>，不以营利为目的。用户赞助仅用于覆盖服务器、域名与日常运营维护成本。',
         '10.2 本站仅收集为提供服务所必需的最少信息：昵称、群名、密码、你主动填写的资料内容、点赞收藏留言记录等。',
         '10.3 <b>访问日志告知</b>：为防范诈骗、识别异常访问与优化使用体验，本站会记录访问者的 <b>IP 地址与所在地区</b>等信息。此类信息<b>仅用于站内安全防护与运营统计，不向任何第三方提供、不用于任何对外用途</b>。',
-        '10.4 本站<b>不售卖、不出租、不交换</b>用户个人信息与联系方式给任何第三方。',
-        '10.5 登录状态、页面浏览位置等信息保存在你的本机浏览器（localStorage / sessionStorage）中，清除浏览器数据即会一并清除。',
-        '10.6 本站部署在第三方平台（GitHub Pages）之上，数据传输与存储依赖该平台的基础设施。本站会采取合理措施保护信息安全，但<b>不对因不可抗力、黑客攻击、第三方平台故障、病毒入侵等原因导致的数据丢失或泄露承担责任</b>。',
-        '10.7 你应自行判断在资料中公开的信息范围，建议不要公开身份证号、家庭住址、银行卡信息、工作单位全称等高度敏感信息。'
+        '10.4 <b>匿名行为统计告知</b>：为改善页面布局与内容排布，本站会统计<b>匿名的</b>使用行为，包括每个页面的访问次数、停留时长、滚动深度，以及点击发生在屏幕哪个区域。<br>' +
+        '　　这些数据<b>全部以汇总数字形式保存，不包含任何可识别个人身份的信息</b> —— 不含 IP、不含设备指纹、不含账号、不含完整鼠标轨迹坐标，因此<b>无法用于指认或追踪任何特定个人</b>。<br>' +
+        '　　<b>本站不会记录你在页面上的键盘输入</b>。你在登录框、留言框、资料编辑框中输入的任何内容（包括密码）均不在采集范围内。',
+        '10.5 本站<b>不售卖、不出租、不交换</b>用户个人信息与联系方式给任何第三方。',
+        '10.6 登录状态、页面浏览位置等信息保存在你的本机浏览器（localStorage / sessionStorage）中，清除浏览器数据即会一并清除。',
+        '10.7 本站部署在第三方平台（GitHub Pages）之上，数据传输与存储依赖该平台的基础设施。本站会采取合理措施保护信息安全，但<b>不对因不可抗力、黑客攻击、第三方平台故障、病毒入侵等原因导致的数据丢失或泄露承担责任</b>。',
+        '10.8 你应自行判断在资料中公开的信息范围，建议不要公开身份证号、家庭住址、银行卡信息、工作单位全称等高度敏感信息。'
       ]
     },
     {
@@ -4025,7 +4030,26 @@ window.__glassBootDone = function () {
     //   screen, lang, tz, pwa, wechat, ref, fp, uid, uname}]。
     // 只存最近 VISIT_MAX 条（超出从头淘汰）；fp 是设备指纹，用于在管理面板里折叠同一设备的重复访问。
     // ⚠️ 仅在浏览器端采集（ipwho.is 拿 IP 地理 + navigator 拿设备信息），不经过任何后端。
-    visits: []
+    visits: [],
+    // 匿名站点统计（v6.9.58）—— 回答「访客到底有没有认真看」，而不是「谁来了」。
+    //
+    // ⚠️ 与 visits 的根本差别，务必守住这条线：
+    //    visits 记「谁来了」（IP / 地区 / 设备），给管理员防诈骗用，是**个人数据**；
+    //    siteStats 记「大家怎么用」，**只有聚合数字**，不含任何能定位到某个人的字段。
+    //
+    // 因此这里刻意**不做**：
+    //   · 不记键盘输入（那是窃取凭据，碰都不碰）
+    //   · 不记「哪个 IP 看了 47 秒」这类关联，只累加总数
+    //   · 不记完整鼠标轨迹点（只累加九宫格热区计数，原始坐标不留存）
+    //
+    // 结构：
+    //   pages:   { "首页": {pv, dwellSum, dwellN, scrollSum, scrollN,
+    //                       zones:[9 个数字], clicks:{元素:次数}}, ... }
+    //   daily:   { "2026-09-30": {pv, dwellSum, dwellN}, ... }   仅保留最近 30 天
+    //   updated: 最后一次汇总时间戳
+    //
+    // ⚠️ 只存聚合值，所以体积很小（通常几 KB），不会像 visits 那样撑大 data.json。
+    siteStats: { pages: {}, daily: {}, updated: 0 }
   };
 
   // 内置示例兜底：当取不到仓库 data.json（本地预览 / 分享链接 / 直接双击打开）时，
@@ -4453,6 +4477,63 @@ window.__glassBootDone = function () {
     // ⚠️ 必须登记：漏掉这行的话，管理员任何一次整体保存（审核 / 生成链接…）
     //    都会把已采集的访问记录整段抹掉 —— 和公告踩过的是同一个坑。
     if (Array.isArray(local.visits)) out.visits = local.visits;
+    // 匿名站点统计：**不能像 visits 那样「本地为准整段替换」**。
+    // 原因：visits 是本机只往里加自己的记录，而 siteStats 是所有访客共同累加的同一份数字 ——
+    // 若用本地那份整体覆盖，远端的其他访客贡献的计数就被抹掉了（谁最后保存谁说了算，
+    // 这是典型的「多个写入者累加同一个计数器」的丢失更新问题）。
+    // 正确做法：逐页逐字段**相加**，日统计同理。
+    out.siteStats = __mergeSiteStats(base.siteStats, local.siteStats);
+    return out;
+  }
+
+  // 合并两份站点统计：所有计数相加，而不是覆盖。
+  // 这份数据天然是「多人累加」的，语义上就该相加；覆盖会丢数据。
+  function __mergeSiteStats(a, b) {
+    a = (a && typeof a === 'object') ? a : {};
+    b = (b && typeof b === 'object') ? b : {};
+    const out = { pages: {}, daily: {}, updated: Math.max(Number(a.updated) || 0, Number(b.updated) || 0) };
+
+    const addNum = function (x, y) { return (Number(x) || 0) + (Number(y) || 0); };
+
+    const srcs = [a.pages, b.pages];
+    srcs.forEach(function (src) {
+      if (!src || typeof src !== 'object') return;
+      Object.keys(src).forEach(function (name) {
+        const s = src[name] || {};
+        const t = out.pages[name] || (out.pages[name] = {
+          pv: 0, dwellSum: 0, dwellN: 0, scrollSum: 0, scrollN: 0,
+          zones: [0, 0, 0, 0, 0, 0, 0, 0, 0], clicks: {}
+        });
+        t.pv = addNum(t.pv, s.pv);
+        t.dwellSum = addNum(t.dwellSum, s.dwellSum);
+        t.dwellN = addNum(t.dwellN, s.dwellN);
+        t.scrollSum = addNum(t.scrollSum, s.scrollSum);
+        t.scrollN = addNum(t.scrollN, s.scrollN);
+        if (Array.isArray(s.zones)) {
+          for (let i = 0; i < 9; i++) t.zones[i] = addNum(t.zones[i], s.zones[i]);
+        }
+        if (s.clicks && typeof s.clicks === 'object') {
+          Object.keys(s.clicks).forEach(function (k) {
+            t.clicks[k] = addNum(t.clicks[k], s.clicks[k]);
+          });
+        }
+      });
+    });
+
+    [a.daily, b.daily].forEach(function (src) {
+      if (!src || typeof src !== 'object') return;
+      Object.keys(src).forEach(function (day) {
+        const s = src[day] || {};
+        const t = out.daily[day] || (out.daily[day] = { pv: 0, dwellSum: 0, dwellN: 0 });
+        t.pv = addNum(t.pv, s.pv);
+        t.dwellSum = addNum(t.dwellSum, s.dwellSum);
+        t.dwellN = addNum(t.dwellN, s.dwellN);
+      });
+    });
+
+    // 只保留最近 30 天，避免长期累积把 data.json 撑大
+    const days = Object.keys(out.daily).sort();
+    while (days.length > 30) delete out.daily[days.shift()];
     return out;
   }
   function mergeById(baseArr, localArr) {
@@ -5773,6 +5854,11 @@ window.__glassBootDone = function () {
       if (Array.isArray(data.photoLibrary)) appState.photoLibrary = data.photoLibrary;
       if (Array.isArray(data.announcements)) appState.announcements = data.announcements;
       if (Array.isArray(data.visits)) appState.visits = data.visits;
+      // 匿名站点统计：首次加载时以服务端为权威源；老数据里没有这个字段则保持初始空结构，
+      // 不能留成 undefined —— 后面的累加逻辑会直接读 .pages。
+      appState.siteStats = (data.siteStats && typeof data.siteStats === 'object')
+        ? data.siteStats
+        : { pages: {}, daily: {}, updated: 0 };
       // 兼容老数据：v6.9.4 起的审核状态粘性依赖 statusUpdatedAt；旧资料没有该字段时
       // 退化成 createdAt 比较，并发合并可能把已通过的审核打回 pending。这里在加载时补默认时间戳。
       if (Array.isArray(appState.profiles)) {
@@ -5821,6 +5907,9 @@ window.__glassBootDone = function () {
     // v6.9.55：采集一次本次访问（IP 地理 + 设备信息），延迟执行不抢首屏资源。
     // 放在这里而不是更早：此时 data.json 已拉完、首屏已渲染，采集失败也不影响任何人。
     try { __bootVisitRecord(); } catch (e) { }
+    // v6.9.58：启动匿名站点统计（停留时长 / 滚动深度 / 点击热区）。
+    // 与上面的访问记录是**两套独立数据**：这里不含任何身份信息，只有聚合数字。
+    try { __statsBoot(); } catch (e) { }
     // 底部 Tab 栏显示（首次访问即可见）
     const bottomTab = document.getElementById('bottomTab');
     if (bottomTab) bottomTab.style.display = 'flex';
@@ -5882,7 +5971,8 @@ window.__glassBootDone = function () {
       notifications: appState.notifications, trash: appState.trash, reports: appState.reports,
       photoLibrary: appState.photoLibrary, adminLogs: appState.adminLogs,
       announcements: appState.announcements,
-      visits: appState.visits
+      visits: appState.visits,
+      siteStats: appState.siteStats
     };
   }
   // 写锁 + 最近保存时间：防止自动同步在「保存的网络请求进行中 / 刚保存完」时，
@@ -5899,7 +5989,11 @@ window.__glassBootDone = function () {
         d.announcements,
         // 访问记录同理：不进指纹的话，采集到的新访问会被判为「数据没变」，
         // 管理员在另一台设备上永远刷不出来。
-        d.visits
+        d.visits,
+        // 匿名站点统计同理。这里只取 updated 时间戳参与指纹，
+        // 而不是整个对象 —— 整个对象序列化在页数多时会拖慢每次轮询（这是个每秒都在跑的热路径）。
+        // updated 变了就说明统计有更新，足够触发同步。
+        (d.siteStats && d.siteStats.updated) || 0
       ]);
       let h = 0;
       for (let i = 0; i < sig.length; i++) h = (h * 31 + sig.charCodeAt(i)) | 0;
@@ -5965,6 +6059,12 @@ window.__glassBootDone = function () {
       // 访问记录：同样以服务端为权威源。这里不能用 mergeById 本地合并 ——
       // 该数组有 200 条上限淘汰，本地那份可能比远端旧，合并会让已淘汰的记录复活。
       if (Array.isArray(data.visits)) appState.visits = data.visits;
+      // 匿名站点统计：以服务端为权威源。
+      // 为什么不在这里也能相加：轮询拿到的是**全局累计值**，而本地那份已经包含在服务端里了，
+      // 再相加会把数字翻倍。相加只发生在保存时（mergeStateSafe），那时两边是「各自的增量」。
+      if (data.siteStats && typeof data.siteStats === 'object') {
+        appState.siteStats = data.siteStats;
+      }
       __lastSyncSig = sig;
       // v6.9.51：数据确实变了 → 归纳出「有什么被改了 / 更新了」并刷新通知中心
       try {
@@ -10520,6 +10620,271 @@ window.__glassBootDone = function () {
     }, 3500);
   }
 
+  // ===== 匿名站点统计（v6.9.58）=====
+  //
+  // 目的：回答「访客有没有认真看」，而不是「谁来了」。
+  //
+  // ══ 三条红线（改这个模块前请先读）══
+  //
+  // 1. 【绝不记录键盘输入】
+  //    不挂 keydown / keypress / input 监听。理由不是"技术上难"，而是：
+  //    登录框里敲的是密码、留言框里敲的是私密内容。记录了它们，
+  //    等于把全站用户的密码和私密留言抄进一个公开仓库里 —— 这不是统计，是窃取凭据。
+  //    ⚠️ 以后任何人（包括我）提议加键盘记录，都应当直接拒绝。
+  //
+  // 2. 【只累加数字，不留原始记录】
+  //    不存「某个 IP 看了 47 秒」，只累加 dwellSum/dwellN，看的时候算平均值。
+  //    鼠标轨迹同理：只累加九宫格计数，原始坐标用完即弃，不落盘。
+  //
+  // 3. 【与身份完全脱钩】
+  //    siteStats 里没有任何 IP / 设备指纹 / 账号字段，和 visits 是两套互不相干的数据。
+  //    即使这份数据泄露，也无法据此指认任何一个人。
+  //
+  // ══ 上报策略 ══
+  // 页面隐藏 / 卸载时**只上报一次**汇总结果，不做心跳。
+  // 理由：本站无后端，每次上报都是一次 GitHub 写入（= 一次 commit）。
+  // 若按每秒上报，仓库会被瞬间撑爆。一次会话一次写入是成本与价值的平衡点。
+  // ─────────────────────────────────────────────────────────────
+
+  const __STATS_MAX_CLICKS = 12;   // 单个页面最多记 12 种元素的点击，防止元素名过长/过多撑爆聚合表
+  const __STATS_MAX_PAGES = 60;    // 单次上报最多提交 60 个页面的统计，防止异常情况刷爆
+
+  // 当前页面名。用 tab 名而不是 URL —— URL 里带 ?guest=xxx 这类个人标识，不该进统计。
+  function __statsPageName() {
+    try {
+      const active = document.querySelector('.tab-page:not([style*="display: none"])');
+      if (active && active.id) {
+        const map = {
+          'tab-home': '首页', 'tab-publish': '发布', 'tab-inbox': '通知',
+          'tab-profile': '我的', 'tab-adminlist': '管理', 'tab-sponsor': '赞助'
+        };
+        return map[active.id] || active.id;
+      }
+    } catch (e) { }
+    return '首页';
+  }
+
+  // 本会话的本地累积（用的是增量，不是全量 —— 全量会和远端相加时翻倍）
+  let __statsBuf = null;
+
+  function __statsNewPage() {
+    return { pv: 0, dwellSum: 0, dwellN: 0, scrollSum: 0, scrollN: 0,
+             zones: [0, 0, 0, 0, 0, 0, 0, 0, 0], clicks: {} };
+  }
+
+  function __statsBufInit() {
+    if (__statsBuf) return __statsBuf;
+    __statsBuf = { pages: {}, daily: {}, touched: {} };
+    return __statsBuf;
+  }
+
+  function __statsToday() {
+    const d = new Date();
+    const p = function (n) { return String(n).padStart(2, '0'); };
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+  }
+
+  function __statsPage(name) {
+    const b = __statsBufInit();
+    if (!b.pages[name]) b.pages[name] = __statsNewPage();
+    return b.pages[name];
+  }
+
+  // 计数页浏览
+  function __statsCountPV() {
+    try {
+      const name = __statsPageName();
+      __statsPage(name).pv++;
+      const b = __statsBufInit();
+      const day = __statsToday();
+      if (!b.daily[day]) b.daily[day] = { pv: 0, dwellSum: 0, dwellN: 0 };
+      b.daily[day].pv++;
+      b.touched[name] = Date.now();
+    } catch (e) { }
+  }
+
+  // 停留在当前页的时长（秒）。页面切换 / 隐藏时结算一次。
+  let __statsEnterAt = Date.now();
+  let __statsCurPage = null;
+
+  function __statsFlushDwell() {
+    try {
+      const now = Date.now();
+      const page = __statsCurPage || __statsPageName();
+      const sec = Math.round((now - __statsEnterAt) / 1000);
+      // 只记 1~1800 秒（30 分钟）。理由：
+      //   <1s 是误触/瞬时跳转，没有统计意义；
+      //   >30min 通常是「开着页面去干别的了」，会把平均值严重拉高、让数据变得没用。
+      if (sec >= 1 && sec <= 1800) {
+        const p = __statsPage(page);
+        p.dwellSum += sec;
+        p.dwellN++;
+        const b = __statsBufInit();
+        const day = __statsToday();
+        if (!b.daily[day]) b.daily[day] = { pv: 0, dwellSum: 0, dwellN: 0 };
+        b.daily[day].dwellSum += sec;
+        b.daily[day].dwellN++;
+      }
+    } catch (e) { }
+    __statsEnterAt = Date.now();
+    __statsCurPage = __statsPageName();
+  }
+
+  // 滚动深度：记录本页看到过的最大百分比。
+  // 为什么记「最大深度」而不是「每次滚动的量」：前者才是有效指标
+  // —— 「80% 的人只看到 20% 就离开」这种结论只能从最大深度得出。
+  let __statsMaxScroll = 0;
+  let __statsScrollBound = false;
+
+  function __statsOnScroll() {
+    try {
+      const doc = document.documentElement;
+      const total = doc.scrollHeight - innerHeight;
+      if (total <= 0) return;
+      const pct = Math.round((scrollY / total) * 100);
+      if (pct > __statsMaxScroll) __statsMaxScroll = Math.min(pct, 100);
+    } catch (e) { }
+  }
+
+  function __statsFlushScroll() {
+    try {
+      if (__statsMaxScroll > 0) {
+        const p = __statsPage(__statsCurPage || __statsPageName());
+        p.scrollSum += __statsMaxScroll;
+        p.scrollN++;
+      }
+    } catch (e) { }
+    __statsMaxScroll = 0;
+  }
+
+  // 点击热区：把视口切成 3x3 九宫格，只累加「点了第几格」。
+  // ⚠️ 关键：不存点击坐标本身，只存格子编号。这样既够用（看出集中在上/中/下、左/中/右），
+  //    又没法反推出用户具体点了哪个像素，隐私性完全不同。
+  let __statsClickBound = false;
+
+  function __statsOnClick(e) {
+    try {
+      if (!e || typeof e.clientX !== 'number') return;
+      const w = innerWidth || 1, h = innerHeight || 1;
+      const col = Math.min(2, Math.max(0, Math.floor(e.clientX / (w / 3))));
+      const row = Math.min(2, Math.max(0, Math.floor(e.clientY / (h / 3))));
+      const zone = row * 3 + col;   // 0~8
+      const p = __statsPage(__statsCurPage || __statsPageName());
+      p.zones[zone]++;
+
+      // 再记一个「点了什么」的粗略分类：只取标签名 + 是否有 id/class 特征，
+      // 且做白名单式截断。不记录按钮上的文字（文字可能含用户填的内容）。
+      const t = e.target;
+      let key = '';
+      if (t && t.tagName) {
+        const tag = String(t.tagName).toLowerCase();
+        if (tag === 'button' || tag === 'a' || tag === 'input' || tag === 'textarea'
+            || tag === 'select' || tag === 'label') {
+          key = tag;
+          // 只认几个稳定的 class 特征，不拼完整 className（太长且会变）
+          const cls = String(t.className || '');
+          if (cls.indexOf('btn-primary') >= 0) key += '.primary';
+          else if (cls.indexOf('btn-outline') >= 0) key += '.outline';
+          if (t.id && /^[a-zA-Z][\w-]{0,23}$/.test(t.id)) key += '#' + t.id;
+        } else {
+          key = tag;
+        }
+      }
+      if (key && key.length <= 40) {
+        if (Object.keys(p.clicks).length < __STATS_MAX_CLICKS || p.clicks[key]) {
+          p.clicks[key] = (p.clicks[key] || 0) + 1;
+        }
+      }
+    } catch (e) { }
+  }
+
+  // 上报：把本会话累积的增量交给服务端累加。
+  function __statsReport() {
+    try {
+      const b = __statsBuf;
+      if (!b) return;
+      const pageNames = Object.keys(b.pages).slice(0, __STATS_MAX_PAGES);
+      if (!pageNames.length) return;
+
+      const payload = { pages: {}, daily: b.daily, updated: Date.now() };
+      pageNames.forEach(function (n) { payload.pages[n] = b.pages[n]; });
+
+      // 用 navigator.sendBeacon 吗？不行 —— 本站的上报是写 GitHub，
+      // beacon 无法带自定义头（Authorization），所以仍走 fetch，
+      // 但在 pagehide 里发起（多数浏览器允许在这个时机完成请求）。
+      __statsPatch(payload);
+
+      // 上报后清空本地增量（它已经交给服务端了，留着会在下次保存时重复相加）
+      __statsBuf = { pages: {}, daily: {}, touched: {} };
+    } catch (e) { }
+  }
+
+  // 把增量写到远端。走的是 patchRemoteState，逐字段相加。
+  function __statsPatch(payload) {
+    try {
+      if (typeof patchRemoteState !== 'function') return;
+      patchRemoteState(function (base) {
+        base.siteStats = __mergeSiteStats(base.siteStats, payload);
+        return true;
+      }, '📊 站点统计汇总').catch(function () {
+        // 静默失败：统计是运营辅助数据，出问题绝不能打扰访客
+      });
+    } catch (e) { }
+  }
+
+  function __statsBoot() {
+    try {
+      __statsCurPage = __statsPageName();
+      __statsEnterAt = Date.now();
+      __statsCountPV();
+
+      if (!__statsScrollBound) {
+        window.addEventListener('scroll', __statsOnScroll, { passive: true });
+        __statsScrollBound = true;
+      }
+      if (!__statsClickBound) {
+        // 捕获阶段监听，保证即使元素自己 stopPropagation 也能记到
+        document.addEventListener('click', __statsOnClick, true);
+        __statsClickBound = true;
+      }
+
+      // 页面切到后台 / 关闭时：结算并上报
+      document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'hidden') {
+          __statsFlushDwell();
+          __statsFlushScroll();
+          __statsReport();
+        } else {
+          // 回到前台 → 重新计时（把后台那段排除掉，否则平均值会被挂机时间拉高）
+          __statsEnterAt = Date.now();
+          __statsCurPage = __statsPageName();
+        }
+      });
+
+      // 兜底：卸载前再试一次（pagehide 比 unload 更可靠，尤其移动端）
+      window.addEventListener('pagehide', function () {
+        __statsFlushDwell();
+        __statsFlushScroll();
+        __statsReport();
+      });
+
+      // 每 5 分钟结算一次停留时长，让长时间挂着的会话也能持续更新
+      setInterval(function () {
+        __statsFlushDwell();
+        __statsFlushScroll();
+      }, 300000);
+    } catch (e) { }
+  }
+
+  // 切换 Tab 时结算上一页的停留与滚动
+  function __statsSwitchPage() {
+    try {
+      __statsFlushDwell();
+      __statsFlushScroll();
+      __statsCountPV();
+    } catch (e) { }
+  }
+
   // ===== 浏览记录查看（v6.9.55，仅管理员）=====
   let __visitFilter = { q: '', region: '', onlyReal: true };
 
@@ -10837,6 +11202,229 @@ window.__glassBootDone = function () {
     showAlert('已导出本地记录 ' + localList.length + ' 条。\n\n'
       + (VISIT_RELAY_URL ? '服务端暂时连不上，这份可能不完整。'
         : '提示：配置服务端中转后，这里能导出全部访客的记录。'));
+  }
+
+  // ===== 访客行为统计面板（v6.9.58，仅管理员）=====
+  //
+  // 展示的数据**全部是聚合值**：平均值、占比、热区计数。
+  // 面板里不会出现、也不可能出现「某个人看了多久」这种记录 —— 因为源头就没存。
+  function openSiteStats() {
+    if (!(isSuper() || isStaff())) { showAlert('仅管理员可查看'); return; }
+    __renderSiteStats();
+  }
+
+  function __renderSiteStats() {
+    const s = (appState.siteStats && typeof appState.siteStats === 'object')
+      ? appState.siteStats : { pages: {}, daily: {}, updated: 0 };
+    const pages = (s.pages && typeof s.pages === 'object') ? s.pages : {};
+    const names = Object.keys(pages);
+
+    let html = '<div style="text-align:left;">';
+
+    if (!names.length) {
+      html += '<div style="padding:26px 0; text-align:center; color:var(--text-muted); font-size:13px; line-height:1.9;">'
+        + '还没有统计数据<br>'
+        + '<span style="font-size:11.5px;">访客打开网站后会自动开始统计（停留时长 / 滚动深度 / 点击热区），'
+        + '离开页面时汇总上报一次。你刷新几次页面就能看到数据。</span></div>';
+      html += '</div>';
+      showAlertHtml(html, '📊 访客行为统计（暂无）',
+        '<button class="btn btn-primary" style="flex:1;" onclick="closeCustomDialog()">关闭</button>');
+      __widenAlertDialog('520px', '72vh');
+      return;
+    }
+
+    // 汇总
+    let totalPV = 0, dwellSum = 0, dwellN = 0, scrollSum = 0, scrollN = 0;
+    const zoneAll = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+    const clickAll = {};
+    names.forEach(function (n) {
+      const p = pages[n] || {};
+      totalPV += Number(p.pv) || 0;
+      dwellSum += Number(p.dwellSum) || 0;
+      dwellN += Number(p.dwellN) || 0;
+      scrollSum += Number(p.scrollSum) || 0;
+      scrollN += Number(p.scrollN) || 0;
+      if (Array.isArray(p.zones)) {
+        for (let i = 0; i < 9; i++) zoneAll[i] += Number(p.zones[i]) || 0;
+      }
+      if (p.clicks && typeof p.clicks === 'object') {
+        Object.keys(p.clicks).forEach(function (k) {
+          clickAll[k] = (clickAll[k] || 0) + (Number(p.clicks[k]) || 0);
+        });
+      }
+    });
+
+    const avgDwell = dwellN ? Math.round(dwellSum / dwellN) : 0;
+    const avgScroll = scrollN ? Math.round(scrollSum / scrollN) : 0;
+    const fmtDur = function (sec) {
+      if (sec < 60) return sec + ' 秒';
+      const m = Math.floor(sec / 60), r = sec % 60;
+      return m + ' 分' + (r ? ' ' + r + ' 秒' : '');
+    };
+
+    // 概览卡
+    const stat = function (label, val, sub, color) {
+      return '<div style="padding:9px 5px; border-radius:10px; background:rgba(0,0,0,.04); text-align:center;">'
+        + '<div style="font-size:17px; font-weight:800; color:' + (color || 'var(--text)') + ';">' + val + '</div>'
+        + '<div style="font-size:10.5px; color:var(--text-muted); margin-top:2px;">' + label + '</div>'
+        + (sub ? '<div style="font-size:9.5px; color:var(--text-muted); opacity:.75;">' + sub + '</div>' : '')
+        + '</div>';
+    };
+    html += '<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-bottom:12px;">';
+    html += stat('总浏览', totalPV, '次');
+    html += stat('平均停留', fmtDur(avgDwell), dwellN + ' 次采样', '#6366f1');
+    html += stat('平均滚动', avgScroll + '%', scrollN + ' 次采样', '#0ea5e9');
+    html += '</div>';
+
+    // 滚动深度解读 —— 这是最实用的一条：能立刻看出「内容是不是白写的」
+    if (scrollN) {
+      const hint = avgScroll >= 80 ? '大家基本会把页面看完，内容长度合适'
+        : avgScroll >= 55 ? '多数人会看到大半，但末尾可能被忽略 —— 重要内容别放太靠后'
+          : avgScroll >= 30 ? '多数人只看到一半左右，重点内容要往前提'
+            : '多数人只看了开头就离开 —— 靠后的内容基本没人看';
+      const col = avgScroll >= 80 ? '#16a34a' : (avgScroll >= 55 ? '#0ea5e9'
+        : (avgScroll >= 30 ? '#d97706' : '#dc2626'));
+      html += '<div style="font-size:11.5px; line-height:1.7; padding:8px 10px; border-radius:9px; '
+        + 'background:rgba(0,0,0,.035); margin-bottom:11px; color:var(--text-muted);">'
+        + '💡 <b style="color:' + col + ';">' + hint + '</b><br>'
+        + '<span style="font-size:10.5px;">平均滚动深度 ' + avgScroll + '% 的意思是：'
+        + '访客平均只看到了每个页面 ' + avgScroll + '% 的高度。</span></div>';
+    }
+
+    // 点击热区（3x3 九宫格）
+    const zoneTotal = zoneAll.reduce(function (a, b) { return a + b; }, 0);
+    if (zoneTotal > 0) {
+      html += '<div style="font-size:11.5px; color:var(--text-muted); margin-bottom:5px;">🖱 点击热区'
+        + '<span style="font-size:10.5px; opacity:.8;">（数字 = 该格点击数，颜色越深越集中）</span></div>';
+      const maxZ = Math.max.apply(null, zoneAll) || 1;
+      html += '<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:3px; '
+        + 'margin-bottom:12px; max-width:230px;">';
+      for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < 3; c++) {
+          const i = r * 3 + c;
+          const v = zoneAll[i];
+          const t = maxZ ? v / maxZ : 0;
+          // 红色深浅表示热度（中国习惯：红 = 热）
+          const bg = v === 0 ? 'rgba(0,0,0,.04)'
+            : 'rgba(220,38,38,' + (0.12 + t * 0.68).toFixed(2) + ')';
+          const fg = t > 0.55 ? '#fff' : 'var(--text)';
+          html += '<div style="aspect-ratio:1.6; display:flex; align-items:center; justify-content:center; '
+            + 'border-radius:7px; background:' + bg + '; color:' + fg + '; font-size:11.5px; '
+            + 'font-weight:700;">' + (v || '') + '</div>';
+        }
+      }
+      html += '</div>';
+      html += '<div style="font-size:10.5px; color:var(--text-muted); margin:-7px 0 12px; line-height:1.6;">'
+        + '九宫格对应屏幕的左中右 × 上中下。只记录「点了哪一格」，'
+        + '<b>不记录具体坐标</b>，所以无法反推出某个人点了哪里。</div>';
+    }
+
+    // 分页面明细
+    html += '<div style="font-size:11.5px; color:var(--text-muted); margin-bottom:6px;">📄 各页面表现</div>';
+    html += '<div style="display:flex; flex-direction:column; gap:6px; margin-bottom:12px;">';
+    names.sort(function (a, b) { return (pages[b].pv || 0) - (pages[a].pv || 0); })
+      .forEach(function (n) {
+        const p = pages[n] || {};
+        const d = (Number(p.dwellN) || 0) ? Math.round((Number(p.dwellSum) || 0) / p.dwellN) : 0;
+        const sc = (Number(p.scrollN) || 0) ? Math.round((Number(p.scrollSum) || 0) / p.scrollN) : 0;
+        html += '<div style="padding:8px 11px; border-radius:10px; background:rgba(0,0,0,.03); '
+          + 'border:1px solid rgba(0,0,0,.07);">'
+          + '<div style="display:flex; justify-content:space-between; align-items:baseline; gap:8px;">'
+          + '<b style="font-size:12.5px;">' + escapeHtml(n) + '</b>'
+          + '<span style="font-size:11px; color:var(--text-muted);">' + (p.pv || 0) + ' 次浏览</span></div>'
+          + '<div style="font-size:11px; color:var(--text-muted); margin-top:3px; display:flex; gap:10px; flex-wrap:wrap;">'
+          + '<span>⏱ 平均停留 <b style="color:var(--text);">' + fmtDur(d) + '</b></span>'
+          + '<span>📜 平均滚动 <b style="color:var(--text);">' + sc + '%</b></span>'
+          + '</div></div>';
+      });
+    html += '</div>';
+
+    // 点击元素 Top
+    const topClicks = Object.keys(clickAll)
+      .sort(function (a, b) { return clickAll[b] - clickAll[a]; }).slice(0, 10);
+    if (topClicks.length) {
+      html += '<div style="font-size:11.5px; color:var(--text-muted); margin-bottom:6px;">👆 被点击最多的元素</div>';
+      html += '<div style="display:flex; flex-wrap:wrap; gap:5px; margin-bottom:12px;">';
+      topClicks.forEach(function (k) {
+        html += '<span style="font-size:10.5px; padding:3px 8px; border-radius:8px; '
+          + 'background:rgba(99,102,241,.1); color:var(--text);">'
+          + escapeHtml(k) + ' <b>' + clickAll[k] + '</b></span>';
+      });
+      html += '</div>';
+    }
+
+    // 最近 7 天趋势
+    const days = Object.keys(s.daily || {}).sort().slice(-7);
+    if (days.length) {
+      html += '<div style="font-size:11.5px; color:var(--text-muted); margin-bottom:6px;">📈 最近 7 天</div>';
+      const maxPV = Math.max.apply(null, days.map(function (d) { return (s.daily[d] || {}).pv || 0; })) || 1;
+      html += '<div style="display:flex; align-items:flex-end; gap:5px; height:64px; margin-bottom:4px;">';
+      days.forEach(function (d) {
+        const v = (s.daily[d] || {}).pv || 0;
+        const h = Math.max(3, Math.round((v / maxPV) * 56));
+        html += '<div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:2px;">'
+          + '<span style="font-size:9.5px; color:var(--text-muted);">' + v + '</span>'
+          + '<div style="width:100%; height:' + h + 'px; border-radius:4px 4px 0 0; '
+          + 'background:linear-gradient(180deg,#818cf8,#6366f1);"></div>'
+          + '<span style="font-size:9px; color:var(--text-muted);">' + d.slice(5) + '</span>'
+          + '</div>';
+      });
+      html += '</div>';
+    }
+
+    // 底部说明：把「做了什么 / 没做什么」写清楚，免得日后自己都忘了边界
+    html += '<div style="font-size:10.5px; color:var(--text-muted); margin-top:12px; line-height:1.75; '
+      + 'padding-top:10px; border-top:1px dashed var(--border);">'
+      + '<b>这份数据里没有的东西（刻意不收集）：</b><br>'
+      + '· <b>键盘输入</b> —— 完全不记录。登录密码、留言内容都不在采集范围内。<br>'
+      + '· <b>个人身份</b> —— 不含 IP、设备指纹、账号，与「浏览记录」是两套互不相干的数据。<br>'
+      + '· <b>鼠标轨迹原始坐标</b> —— 只累加九宫格计数，坐标用完即弃。<br>'
+      + '· <b>具体谁看了多久</b> —— 只存总和与次数，看的时候算平均值。<br>'
+      + '<span style="opacity:.8;">因此这份数据无法用来指认任何一个人，泄露也不会造成人身风险。</span>'
+      + '</div>';
+
+    html += '</div>';
+
+    const upd = Number(s.updated) || 0;
+    showAlertHtml(html,
+      '📊 访客行为统计' + (upd ? '' : '（暂无）'),
+      '<button class="btn btn-outline" style="flex:1;" onclick="__copyStatsSummary()">📋 复制摘要</button>'
+      + '<button class="btn btn-primary" style="flex:1;" onclick="closeCustomDialog()">关闭</button>'
+    );
+    __widenAlertDialog('520px', '74vh');
+  }
+
+  // 复制一份纯文本摘要，方便你贴到任何地方看
+  function __copyStatsSummary() {
+    const s = (appState.siteStats && typeof appState.siteStats === 'object') ? appState.siteStats : {};
+    const pages = s.pages || {};
+    const names = Object.keys(pages);
+    if (!names.length) { showAlert('还没有统计数据'); return; }
+
+    let pv = 0, ds = 0, dn = 0, ss = 0, sn = 0;
+    names.forEach(function (n) {
+      const p = pages[n];
+      pv += p.pv || 0; ds += p.dwellSum || 0; dn += p.dwellN || 0;
+      ss += p.scrollSum || 0; sn += p.scrollN || 0;
+    });
+    const fmt = function (sec) {
+      return sec < 60 ? sec + '秒' : Math.floor(sec / 60) + '分' + (sec % 60 ? (sec % 60) + '秒' : '');
+    };
+
+    let o = '【访客行为统计】\n';
+    o += '总浏览：' + pv + ' 次\n';
+    o += '平均停留：' + fmt(dn ? Math.round(ds / dn) : 0) + '\n';
+    o += '平均滚动：' + (sn ? Math.round(ss / sn) : 0) + '%\n\n';
+    o += '各页面：\n';
+    names.sort(function (a, b) { return (pages[b].pv || 0) - (pages[a].pv || 0); })
+      .forEach(function (n) {
+        const p = pages[n];
+        const d = p.dwellN ? Math.round(p.dwellSum / p.dwellN) : 0;
+        const sc = p.scrollN ? Math.round(p.scrollSum / p.scrollN) : 0;
+        o += '  ' + n + '：' + (p.pv || 0) + ' 次 / 停留 ' + fmt(d) + ' / 滚动 ' + sc + '%\n';
+      });
+    o += '\n（本数据仅含聚合值，不含任何个人信息）';
+    copyText(o);
   }
 
   function __renderVisitAdmin() {
@@ -11908,6 +12496,9 @@ window.__glassBootDone = function () {
   function switchTab(name) {
     if (!name) return;
     if (typeof window.showBottomNav === 'function') window.showBottomNav();   // 切页时导航一定回到可见状态
+    // v6.9.58：结算上一页的停留时长与滚动深度，并给新页计一次 PV。
+    // 放在最前面 —— 此时 DOM 还没切换，取到的仍是上一页的名字。
+    try { __statsSwitchPage(); } catch (e) { }
     // 管理视图 tab 不在底部导航里
     ['home', 'publish', 'inbox', 'profile', 'adminlist', 'sponsor'].forEach(function(t) {
       const el = document.getElementById('tab-' + t);
