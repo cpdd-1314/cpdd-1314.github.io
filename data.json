@@ -6261,5 +6261,66 @@
       "uname": "群主18未婚",
       "admin": true
     }
-  ]
+  ],
+  "siteStats": {
+    "pages": {
+      "首页": {
+        "pv": 3,
+        "dwellSum": 69,
+        "dwellN": 3,
+        "scrollSum": 162,
+        "scrollN": 2,
+        "zones": [
+          1,
+          7,
+          0,
+          1,
+          12,
+          0,
+          0,
+          9,
+          0
+        ],
+        "clicks": {
+          "button.primary": 5,
+          "span": 3,
+          "button.outline": 12,
+          "circle": 1,
+          "div": 9
+        }
+      },
+      "发布": {
+        "pv": 2,
+        "dwellSum": 36,
+        "dwellN": 2,
+        "scrollSum": 76,
+        "scrollN": 1,
+        "zones": [
+          0,
+          0,
+          1,
+          1,
+          3,
+          2,
+          0,
+          1,
+          0
+        ],
+        "clicks": {
+          "button": 3,
+          "select#sortSelect": 2,
+          "input#searchInput": 2,
+          "body": 1
+        }
+      }
+    },
+    "daily": {
+      "2026-10-01": {
+        "pv": 5,
+        "dwellSum": 105,
+        "dwellN": 5
+      }
+    },
+    "updated": 1790869426481
+  }
 }
