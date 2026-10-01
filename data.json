@@ -6321,19 +6321,19 @@
       },
       "发布": {
         "pv": 2,
-        "dwellSum": 2251,
-        "dwellN": 11,
-        "scrollSum": 145,
-        "scrollN": 2,
+        "dwellSum": 2314,
+        "dwellN": 12,
+        "scrollSum": 214,
+        "scrollN": 3,
         "zones": [
           0,
           1,
           1,
           1,
-          4,
+          18,
           2,
           0,
-          1,
+          5,
           0
         ],
         "clicks": {
@@ -6341,17 +6341,19 @@
           "select#sortSelect": 2,
           "input#searchInput": 2,
           "body": 1,
-          "div": 2
+          "div": 7,
+          "button.outline": 10,
+          "span": 3
         }
       }
     },
     "daily": {
       "2026-10-01": {
         "pv": 7,
-        "dwellSum": 2400,
-        "dwellN": 16
+        "dwellSum": 2463,
+        "dwellN": 17
       }
     },
-    "updated": 1790878209675
+    "updated": 1790878272869
   }
 }
