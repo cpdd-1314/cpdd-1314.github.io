@@ -6405,9 +6405,9 @@
   "siteStats": {
     "pages": {
       "首页": {
-        "pv": 7,
-        "dwellSum": 449,
-        "dwellN": 6,
+        "pv": 8,
+        "dwellSum": 460,
+        "dwellN": 7,
         "scrollSum": 162,
         "scrollN": 2,
         "zones": [
@@ -6417,12 +6417,12 @@
           1,
           18,
           0,
-          0,
+          1,
           10,
           0
         ],
         "clicks": {
-          "button.primary": 5,
+          "button.primary": 6,
           "span": 6,
           "button.outline": 13,
           "circle": 1,
@@ -6464,8 +6464,13 @@
         "pv": 9,
         "dwellSum": 3294,
         "dwellN": 20
+      },
+      "2026-10-02": {
+        "pv": 1,
+        "dwellSum": 11,
+        "dwellN": 1
       }
     },
-    "updated": 1790883278804
+    "updated": 1790929273432
   }
 }
