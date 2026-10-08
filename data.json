@@ -5019,22 +5019,7 @@
       "status": "resolved"
     }
   ],
-  "trash": [
-    {
-      "id": "t_1788638570569_okyz2i",
-      "type": "comment",
-      "profileId": 1787911216010,
-      "deletedAt": 1788638570569,
-      "expireAt": 1791230570569,
-      "comment": {
-        "id": 1788638426873,
-        "uid": 1788638416053,
-        "name": "Ava🍀",
-        "text": "cpdd",
-        "time": 1788638427006
-      }
-    }
-  ],
+  "trash": [],
   "photoLibrary": [
     {
       "id": "ph_1790247961825_usq6p",
