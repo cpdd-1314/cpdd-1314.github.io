@@ -7202,29 +7202,29 @@
   "siteStats": {
     "pages": {
       "首页": {
-        "pv": 12,
-        "dwellSum": 580,
-        "dwellN": 11,
-        "scrollSum": 362,
-        "scrollN": 4,
+        "pv": 14,
+        "dwellSum": 640,
+        "dwellN": 13,
+        "scrollSum": 462,
+        "scrollN": 5,
         "zones": [
           2,
           8,
-          7,
-          1,
-          18,
+          10,
+          2,
+          24,
           1,
           3,
-          11,
+          13,
           4
         ],
         "clicks": {
           "button.primary": 7,
-          "span": 6,
-          "button.outline": 14,
+          "span": 8,
+          "button.outline": 17,
           "circle": 1,
-          "div": 11,
-          "button": 6,
+          "div": 16,
+          "button": 8,
           "b": 2,
           "video": 5,
           "button#floatCollapseBtn": 1,
@@ -7232,18 +7232,18 @@
         }
       },
       "发布": {
-        "pv": 2,
-        "dwellSum": 2860,
-        "dwellN": 16,
-        "scrollSum": 362,
-        "scrollN": 5,
+        "pv": 3,
+        "dwellSum": 2883,
+        "dwellN": 17,
+        "scrollSum": 462,
+        "scrollN": 6,
         "zones": [
           0,
           1,
           1,
           1,
           18,
-          2,
+          3,
           0,
           5,
           0
@@ -7252,7 +7252,7 @@
           "button": 3,
           "select#sortSelect": 2,
           "input#searchInput": 2,
-          "body": 1,
+          "body": 2,
           "div": 7,
           "button.outline": 10,
           "span": 3
@@ -7279,8 +7279,13 @@
         "pv": 1,
         "dwellSum": 48,
         "dwellN": 1
+      },
+      "2026-11-02": {
+        "pv": 3,
+        "dwellSum": 83,
+        "dwellN": 3
       }
     },
-    "updated": 1792065093139
+    "updated": 1793622553371
   }
 }
