@@ -7258,29 +7258,29 @@
   "siteStats": {
     "pages": {
       "首页": {
-        "pv": 14,
-        "dwellSum": 640,
-        "dwellN": 13,
-        "scrollSum": 462,
-        "scrollN": 5,
+        "pv": 15,
+        "dwellSum": 665,
+        "dwellN": 14,
+        "scrollSum": 562,
+        "scrollN": 6,
         "zones": [
           2,
-          8,
-          10,
+          9,
+          11,
           2,
           24,
-          1,
+          2,
           3,
-          13,
+          14,
           4
         ],
         "clicks": {
-          "button.primary": 7,
+          "button.primary": 8,
           "span": 8,
           "button.outline": 17,
           "circle": 1,
-          "div": 16,
-          "button": 8,
+          "div": 17,
+          "button": 10,
           "b": 2,
           "video": 5,
           "button#floatCollapseBtn": 1,
@@ -7340,8 +7340,13 @@
         "pv": 3,
         "dwellSum": 83,
         "dwellN": 3
+      },
+      "2026-11-14": {
+        "pv": 1,
+        "dwellSum": 25,
+        "dwellN": 1
       }
     },
-    "updated": 1793622553371
+    "updated": 1794694313320
   }
 }
