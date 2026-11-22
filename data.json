@@ -7380,30 +7380,32 @@
         }
       },
       "发布": {
-        "pv": 5,
-        "dwellSum": 2927,
-        "dwellN": 19,
-        "scrollSum": 597,
-        "scrollN": 9,
+        "pv": 6,
+        "dwellSum": 3013,
+        "dwellN": 21,
+        "scrollSum": 783,
+        "scrollN": 11,
         "zones": [
           0,
           2,
-          3,
+          5,
           1,
-          19,
-          3,
+          22,
+          4,
           0,
-          6,
+          7,
           1
         ],
         "clicks": {
-          "button": 3,
+          "button": 4,
           "select#sortSelect": 2,
           "input#searchInput": 2,
           "body": 2,
-          "div": 10,
-          "button.outline": 12,
-          "span": 4
+          "div": 11,
+          "button.outline": 15,
+          "span": 4,
+          "h2": 1,
+          "button.outline#showHiddenBtn": 1
         }
       }
     },
@@ -7439,11 +7441,11 @@
         "dwellN": 1
       },
       "2026-11-22": {
-        "pv": 4,
-        "dwellSum": 53,
-        "dwellN": 4
+        "pv": 5,
+        "dwellSum": 139,
+        "dwellN": 6
       }
     },
-    "updated": 1795353711404
+    "updated": 1795353799702
   }
 }
