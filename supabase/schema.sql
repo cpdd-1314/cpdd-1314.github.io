@@ -102,11 +102,13 @@ on conflict (name) do nothing;
 -- 或者直接在 Supabase 的 SQL Editor 里：
 --
 --     update public.app_admins
---        set pass_hash = encode(sha256('cpdd-admin-v1:admin:你的新密码'::bytea), 'hex'),
+--        set pass_hash = encode(sha256(convert_to('cpdd-admin-v1:admin:你的新密码', 'UTF8')), 'hex'),
 --            updated_at = now()
 --      where username = 'admin';
 --
 -- 要求 pgcrypto。Supabase 项目自带，这里仍显式声明一次，重复执行不会报错。
+-- 先建 schema，是为了兼容自己装的 Postgres —— Supabase 里它本来就有。
+create schema if not exists extensions;
 create extension if not exists pgcrypto with schema extensions;
 
 create table if not exists public.app_admins (
@@ -337,7 +339,12 @@ begin
 
   -- 用户名不存在时也照算一次哈希。否则「不存在」立刻返回、「密码错」要多算一次，
   -- 这个时间差足够把站长的用户名试出来。
-  got_hash := encode(sha256(('cpdd-admin-v1:' || p_user || ':' || p_pass)::bytea), 'hex');
+  --
+  -- 用 convert_to 而不是 ::bytea：text 到 bytea 没有直接转换，
+  -- 而且 ::bytea 会把反斜杠当转义符，密码里有 \ 就会算错。
+  got_hash := encode(
+    sha256(convert_to('cpdd-admin-v1:' || p_user || ':' || p_pass, 'UTF8')),
+    'hex');
 
   if want_hash is null or got_hash <> want_hash then
     return jsonb_build_object('ok', false);
