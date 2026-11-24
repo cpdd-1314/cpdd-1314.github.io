@@ -7521,8 +7521,8 @@
       },
       "我的": {
         "pv": 2,
-        "dwellSum": 35,
-        "dwellN": 3,
+        "dwellSum": 36,
+        "dwellN": 4,
         "scrollSum": 100,
         "scrollN": 1,
         "zones": [
@@ -7603,10 +7603,10 @@
       },
       "2026-11-24": {
         "pv": 15,
-        "dwellSum": 78,
-        "dwellN": 17
+        "dwellSum": 79,
+        "dwellN": 18
       }
     },
-    "updated": 1795516452215
+    "updated": 1795516489745
   }
 }
