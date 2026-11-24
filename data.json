@@ -1267,7 +1267,7 @@
   ],
   "nextProfileNo": 52,
   "version": "",
-  "hideVersionInfo": true,
+  "hideVersionInfo": false,
   "hiddenVersions": [
     "4.3.3",
     "4.3.2",
@@ -1276,6 +1276,12 @@
     "6.1.0"
   ],
   "adminLogs": [
+    {
+      "time": 1795516688947,
+      "actor": "超级管理员",
+      "op": "版本",
+      "desc": "更新版本设置（恢复自动版本）"
+    },
     {
       "time": 1795516682931,
       "actor": "超级管理员",
@@ -7524,119 +7530,119 @@
   "siteStats": {
     "pages": {
       "首页": {
-        "pv": 42,
-        "dwellSum": 1374,
-        "dwellN": 42,
-        "scrollSum": 1466,
-        "scrollN": 18,
+        "pv": 84,
+        "dwellSum": 2748,
+        "dwellN": 84,
+        "scrollSum": 2932,
+        "scrollN": 36,
         "zones": [
-          4,
-          18,
-          24,
-          4,
-          48,
-          4,
           8,
-          42,
-          10
+          36,
+          48,
+          8,
+          96,
+          8,
+          16,
+          84,
+          20
         ],
         "clicks": {
-          "button.primary": 16,
-          "span": 20,
-          "button.outline": 34,
-          "circle": 2,
-          "div": 40,
-          "button": 26,
-          "b": 4,
-          "video": 10,
-          "button#floatCollapseBtn": 4,
-          "button.outline#pageNext": 4,
-          "nav": 2
+          "button.primary": 32,
+          "span": 40,
+          "button.outline": 68,
+          "circle": 4,
+          "div": 80,
+          "button": 52,
+          "b": 8,
+          "video": 20,
+          "button#floatCollapseBtn": 8,
+          "button.outline#pageNext": 8,
+          "nav": 4
         }
       },
       "发布": {
-        "pv": 20,
-        "dwellSum": 6038,
-        "dwellN": 50,
-        "scrollSum": 1766,
-        "scrollN": 24,
+        "pv": 40,
+        "dwellSum": 12076,
+        "dwellN": 100,
+        "scrollSum": 3532,
+        "scrollN": 48,
         "zones": [
           0,
-          4,
-          10,
-          2,
-          44,
           8,
-          0,
-          22,
-          2
-        ],
-        "clicks": {
-          "button": 12,
-          "select#sortSelect": 4,
-          "input#searchInput": 4,
-          "body": 4,
-          "div": 22,
-          "button.outline": 30,
-          "span": 10,
-          "h2": 2,
-          "button.outline#showHiddenBtn": 2,
-          "svg": 2
-        }
-      },
-      "通知": {
-        "pv": 6,
-        "dwellSum": 40,
-        "dwellN": 6,
-        "scrollSum": 0,
-        "scrollN": 0,
-        "zones": [
-          0,
+          20,
           4,
-          0,
-          4,
-          0,
-          0,
-          6,
-          6,
-          0
-        ],
-        "clicks": {
-          "button#floatCollapseBtn": 4,
-          "div": 4,
-          "span": 4,
-          "button": 6,
-          "path": 2
-        }
-      },
-      "我的": {
-        "pv": 4,
-        "dwellSum": 78,
-        "dwellN": 14,
-        "scrollSum": 200,
-        "scrollN": 2,
-        "zones": [
-          4,
-          6,
-          0,
-          0,
-          0,
-          0,
-          0,
+          88,
           16,
-          0
+          0,
+          44,
+          4
         ],
         "clicks": {
-          "div": 4,
-          "button": 16,
-          "span": 2,
+          "button": 24,
+          "select#sortSelect": 8,
+          "input#searchInput": 8,
+          "body": 8,
+          "div": 44,
+          "button.outline": 60,
+          "span": 20,
+          "h2": 4,
+          "button.outline#showHiddenBtn": 4,
           "svg": 4
         }
       },
+      "通知": {
+        "pv": 12,
+        "dwellSum": 80,
+        "dwellN": 12,
+        "scrollSum": 0,
+        "scrollN": 0,
+        "zones": [
+          0,
+          8,
+          0,
+          8,
+          0,
+          0,
+          12,
+          12,
+          0
+        ],
+        "clicks": {
+          "button#floatCollapseBtn": 8,
+          "div": 8,
+          "span": 8,
+          "button": 12,
+          "path": 4
+        }
+      },
+      "我的": {
+        "pv": 8,
+        "dwellSum": 156,
+        "dwellN": 28,
+        "scrollSum": 400,
+        "scrollN": 4,
+        "zones": [
+          8,
+          12,
+          0,
+          0,
+          0,
+          0,
+          0,
+          32,
+          0
+        ],
+        "clicks": {
+          "div": 8,
+          "button": 32,
+          "span": 4,
+          "svg": 8
+        }
+      },
       "赞助": {
-        "pv": 4,
-        "dwellSum": 8,
-        "dwellN": 4,
+        "pv": 8,
+        "dwellSum": 16,
+        "dwellN": 8,
         "scrollSum": 0,
         "scrollN": 0,
         "zones": [
@@ -7647,54 +7653,54 @@
           0,
           0,
           0,
-          2,
+          4,
           0
         ],
         "clicks": {
-          "span": 2
+          "span": 4
         }
       }
     },
     "daily": {
       "2026-10-01": {
-        "pv": 18,
-        "dwellSum": 6588,
-        "dwellN": 40
+        "pv": 36,
+        "dwellSum": 13176,
+        "dwellN": 80
       },
       "2026-10-02": {
-        "pv": 4,
-        "dwellSum": 146,
-        "dwellN": 4
-      },
-      "2026-10-09": {
-        "pv": 4,
-        "dwellSum": 50,
+        "pv": 8,
+        "dwellSum": 292,
         "dwellN": 8
       },
+      "2026-10-09": {
+        "pv": 8,
+        "dwellSum": 100,
+        "dwellN": 16
+      },
       "2026-10-15": {
-        "pv": 2,
-        "dwellSum": 96,
-        "dwellN": 2
+        "pv": 4,
+        "dwellSum": 192,
+        "dwellN": 4
       },
       "2026-11-02": {
-        "pv": 6,
-        "dwellSum": 166,
-        "dwellN": 6
-      },
-      "2026-11-14": {
-        "pv": 2,
-        "dwellSum": 50,
-        "dwellN": 2
-      },
-      "2026-11-22": {
-        "pv": 10,
-        "dwellSum": 278,
+        "pv": 12,
+        "dwellSum": 332,
         "dwellN": 12
       },
+      "2026-11-14": {
+        "pv": 4,
+        "dwellSum": 100,
+        "dwellN": 4
+      },
+      "2026-11-22": {
+        "pv": 20,
+        "dwellSum": 556,
+        "dwellN": 24
+      },
       "2026-11-24": {
-        "pv": 30,
-        "dwellSum": 164,
-        "dwellN": 42
+        "pv": 60,
+        "dwellSum": 328,
+        "dwellN": 84
       }
     },
     "updated": 1795516500153
