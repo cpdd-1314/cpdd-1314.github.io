@@ -13,15 +13,38 @@
  *    · supabaseAnonKey  —— anon key 本来就是给浏览器用的，公开是设计如此，
  *                          它受行级权限（RLS）约束，只能做允许它做的事。
  *
- *    · supabaseWriteKey —— 这个**不要**写在这里。它是写数据的钥匙，
- *                          登录 admin.html 时手工输入，只存在你自己的浏览器里。
- *                          写在文件里等于把它交出去。
+ *    · supabaseWriteKey —— 平时**不用填**。它由后台登录时向 Supabase 换取
+ *                          （见 schema.sql 里的 admin_login），前端不保存。
+ *                          只有在 RPC 还没建的情况下，才会读这里的值当兜底。
  *
  *    · 更不要把 Supabase 的 service_role key 放到任何前端文件里。
  *      那把钥匙绕过所有权限检查，泄露等于整个数据库被人接管。
  * ========================================================================== */
 
 window.__SITE_CONFIG__ = {
+
+  /* ── 后台账号 ──────────────────────────────────────────────────────────
+   * 默认账号 admin，密码 admin123。改密码两种办法，推荐第一种。
+   *
+   * ① 在 Supabase 里改（推荐）。跑完 schema.sql 之后，SQL Editor 执行：
+   *
+   *      update public.app_admins
+   *         set pass_hash = encode(sha256(convert_to('cpdd-admin-v1:admin:你的新密码', 'UTF8')), 'hex')
+   *       where username = 'admin';
+   *
+   *    密码哈希存在数据库里，前端拿不到，改完立刻生效，不用重新发版。
+   *    想加第二个管理员就再插一行，username 不同即可。
+   *
+   * ② 在这份文件里改（只在没配 Supabase 时有意义）。哈希自己算：
+   *
+   *      printf 'cpdd-admin-v1:%s:%s' admin 你的新密码 | sha256sum
+   *
+   *    把输出的 64 位十六进制填到 adminPassHash。注意这条路是前端比对，
+   *    源码公开，挡不住存心翻的人 —— 但也没有写入密钥可偷，
+   *    因为没配 Supabase 时后台本来就改不了数据。
+   */
+  // adminUser: 'admin',
+  // adminPassHash: 'eaebd81c8c8d3e71c8fd6fcf1b78a8b271a174a922858fe30dd0ac820286b852',
 
   /* ── Supabase ──────────────────────────────────────────────────────────
    * 在 https://supabase.com 建项目后，Dashboard → Settings → API 里能拿到这两个：
