@@ -7674,8 +7674,8 @@
       },
       "发布": {
         "pv": 40,
-        "dwellSum": 12076,
-        "dwellN": 100,
+        "dwellSum": 12375,
+        "dwellN": 102,
         "scrollSum": 3532,
         "scrollN": 48,
         "zones": [
@@ -7811,10 +7811,10 @@
       },
       "2026-11-24": {
         "pv": 62,
-        "dwellSum": 330,
-        "dwellN": 85
+        "dwellSum": 629,
+        "dwellN": 87
       }
     },
-    "updated": 1795520476481
+    "updated": 1795520903857
   }
 }
