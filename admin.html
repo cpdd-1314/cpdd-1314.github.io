@@ -480,19 +480,23 @@ td.actions .btn { margin-left: 4px; }
   <div class="gate-box">
     <div class="gate-mark">Admin Console</div>
     <h1 class="gate-title">管理后台</h1>
-    <p class="gate-sub">输入管理密钥以继续。密钥即 Supabase 中的 <code class="mono">write_key</code>，它同时决定了你能改动哪些数据。</p>
+    <p class="gate-sub">用管理员账号登录。</p>
     <div class="gate-err" id="gateErr"></div>
     <div class="field">
-      <label for="keyInput">管理密钥</label>
-      <input type="password" id="keyInput" placeholder="粘贴密钥" autocomplete="current-password">
+      <label for="userInput">用户名</label>
+      <input type="text" id="userInput" placeholder="admin" autocomplete="username" spellcheck="false">
+    </div>
+    <div class="field">
+      <label for="keyInput">密码</label>
+      <input type="password" id="keyInput" placeholder="密码" autocomplete="current-password">
     </div>
     <div class="field" style="display:flex; align-items:center; gap:7px;">
       <input type="checkbox" id="rememberKey" style="width:auto; height:auto;">
       <label for="rememberKey" style="margin:0; font-size:12px; color:var(--text-2); cursor:pointer;">在这台设备上记住</label>
     </div>
-    <button class="btn btn-primary" id="gateBtn" style="width:100%; justify-content:center; height:32px;">进入后台</button>
+    <button class="btn btn-primary" id="gateBtn" style="width:100%; justify-content:center; height:32px;">登录</button>
     <p style="font-size:11px; color:var(--text-3); margin:16px 0 0; line-height:1.65;">
-      密钥只保存在这台设备的浏览器里，不会写进页面代码。公共电脑上请不要勾选「记住」。
+      登录状态只保存在这台设备的浏览器里。公共电脑上请不要勾选「记住」。
     </p>
   </div>
 </div>
@@ -542,9 +546,14 @@ td.actions .btn { margin-left: 4px; }
    管理入口和后台代码 —— 访客下载到的就只有前台，看不到管理接口长什么样。
    两边共用的只有 sync.js（读写通道）和同一份数据。
 
-   登录方式：管理密钥。它等同于 Supabase 里 app_secrets.write_key 的值，
-   服务端每次写入都会校验。所以「能登录」本身就等于「有写权限」，
-   不存在「登进来了但改不动」这种半吊子状态，也不需要另存一份密码哈希。
+   登录方式：用户名 + 密码。默认 admin / admin123，进去之后请尽快改掉。
+
+   密码怎么校验，取决于 Supabase 有没有建好：
+     · 建好了 → 走 RPC admin_login，哈希存在数据库里，前端看不到密码，
+                改密码不用重新发版。
+     · 没建好 → 退到前端比对加盐哈希。这条路挡得住顺手点进来的人，
+                挡不住存心翻源码的人。但它也就只能进个界面：没有
+                写入密钥的话，所有保存都会被服务端拒绝，界面自动转只读。
    ========================================================================== */
 
 // ---------------------------------------------------------------------------
@@ -572,6 +581,104 @@ function icon(name) {
 // 基础状态
 // ---------------------------------------------------------------------------
 const KEY_STORE = 'admin_write_key';
+const SESSION_STORE = 'admin_session';
+
+// 默认账号 admin / admin123。这里存的是加盐哈希，不是明文 ——
+// 源码是公开可下载的，写明文等于把密码印在门上。
+// 改密码有两种办法，见 config.example.js 里的说明。
+const ADMIN_SALT = 'cpdd-admin-v1';
+const DEFAULT_ADMIN_USER = 'admin';
+const DEFAULT_ADMIN_HASH = 'eaebd81c8c8d3e71c8fd6fcf1b78a8b271a174a922858fe30dd0ac820286b852';
+
+const SBOX = [
+  0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+  0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+  0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+  0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+  0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+  0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+  0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+  0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
+];
+
+function rotr(x, n) { return (x >>> n) | (x << (32 - n)); }
+
+function utf8Bytes(s) {
+  const out = [];
+  for (let i = 0; i < s.length; i++) {
+    let c = s.charCodeAt(i);
+    if (c < 0x80) out.push(c);
+    else if (c < 0x800) out.push(0xc0 | c >> 6, 0x80 | c & 63);
+    else if (c >= 0xd800 && c <= 0xdbff) {
+      const c2 = s.charCodeAt(++i);
+      c = 0x10000 + ((c - 0xd800) << 10) + (c2 - 0xdc00);
+      out.push(0xf0 | c >> 18, 0x80 | c >> 12 & 63, 0x80 | c >> 6 & 63, 0x80 | c & 63);
+    } else out.push(0xe0 | c >> 12, 0x80 | c >> 6 & 63, 0x80 | c & 63);
+  }
+  return out;
+}
+
+function sha256Hex(str) {
+  const H = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
+             0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19];
+  const bytes = utf8Bytes(str);
+  const bitLen = bytes.length * 8;
+  bytes.push(0x80);
+  while (bytes.length % 64 !== 56) bytes.push(0);
+  const hi = Math.floor(bitLen / 0x100000000);
+  const lo = bitLen >>> 0;
+  bytes.push(hi >>> 24 & 255, hi >>> 16 & 255, hi >>> 8 & 255, hi & 255,
+             lo >>> 24 & 255, lo >>> 16 & 255, lo >>> 8 & 255, lo & 255);
+
+  const w = new Array(64);
+  for (let i = 0; i < bytes.length; i += 64) {
+    for (let j = 0; j < 16; j++) {
+      w[j] = (bytes[i + j * 4] << 24) | (bytes[i + j * 4 + 1] << 16)
+           | (bytes[i + j * 4 + 2] << 8) | bytes[i + j * 4 + 3];
+    }
+    for (let j = 16; j < 64; j++) {
+      const x = w[j - 15], y = w[j - 2];
+      const s0 = rotr(x, 7) ^ rotr(x, 18) ^ (x >>> 3);
+      const s1 = rotr(y, 17) ^ rotr(y, 19) ^ (y >>> 10);
+      w[j] = (w[j - 16] + s0 + w[j - 7] + s1) | 0;
+    }
+    let a = H[0], b = H[1], c = H[2], d = H[3];
+    let e = H[4], f = H[5], g = H[6], h = H[7];
+    for (let j = 0; j < 64; j++) {
+      const S1 = rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25);
+      const ch = (e & f) ^ (~e & g);
+      const t1 = (h + S1 + ch + SBOX[j] + w[j]) | 0;
+      const S0 = rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22);
+      const maj = (a & b) ^ (a & c) ^ (b & c);
+      const t2 = (S0 + maj) | 0;
+      h = g; g = f; f = e; e = (d + t1) | 0;
+      d = c; c = b; b = a; a = (t1 + t2) | 0;
+    }
+    H[0] = (H[0] + a) | 0; H[1] = (H[1] + b) | 0;
+    H[2] = (H[2] + c) | 0; H[3] = (H[3] + d) | 0;
+    H[4] = (H[4] + e) | 0; H[5] = (H[5] + f) | 0;
+    H[6] = (H[6] + g) | 0; H[7] = (H[7] + h) | 0;
+  }
+  return H.map(x => (x >>> 0).toString(16).padStart(8, '0')).join('');
+}
+
+function adminHash(user, pass) {
+  return sha256Hex(ADMIN_SALT + ':' + user + ':' + pass);
+}
+
+function getSession() {
+  return sessionStorage.getItem(SESSION_STORE) || localStorage.getItem(SESSION_STORE) || '';
+}
+function setSession(user, remember) {
+  const v = user + '|' + Date.now();
+  sessionStorage.setItem(SESSION_STORE, v);
+  if (remember) localStorage.setItem(SESSION_STORE, v);
+  else localStorage.removeItem(SESSION_STORE);
+}
+function clearSession() {
+  sessionStorage.removeItem(SESSION_STORE);
+  localStorage.removeItem(SESSION_STORE);
+}
 
 let STATE = {
   data: null,
@@ -580,7 +687,9 @@ let STATE = {
   saving: false,
   query: '',
   filterStatus: 'all',
-  loaded: false
+  loaded: false,
+  writeKey: '',
+  readonly: false
 };
 
 function getKey() {
@@ -671,6 +780,10 @@ async function load(force) {
 
 // 改数据并保存。冲突自动重读重试。
 async function mutate(fn, successMsg) {
+  if (STATE.readonly) {
+    toast('当前是只读模式，没有写入密钥，改不了数据', 'bad');
+    return false;
+  }
   if (STATE.saving) { toast('上一次保存还没完成', 'bad'); return false; }
   STATE.saving = true;
   try {
@@ -1774,78 +1887,144 @@ function download(filename, text) {
 // ---------------------------------------------------------------------------
 // 登录
 // ---------------------------------------------------------------------------
-async function tryLogin(key) {
+
+// 校验账号密码。两条路，优先走服务端：
+//
+//  1) Supabase 配好了 → 调 RPC admin_login。密码哈希存在数据库里，
+//     前端既没有密码也没有写入密钥，改密码不用重新发版。
+//  2) 没配 Supabase，或 RPC 没建 → 退到本地哈希比对（默认 admin / admin123）。
+//
+// 第 2 条路是弱校验：源码能改，localStorage 能改，谁都能绕过它进界面。
+// 但「进得了界面」不等于「改得动数据」—— 没有 write_key，所有写操作都会被
+// Supabase 拒掉，界面会自动切成只读。真正的门是那把钥匙，不是这道密码。
+async function verifyAdmin(user, pass) {
+  const cfg = window.__SITE_CONFIG__ || {};
+
+  if (window.SyncLayer && SyncLayer.enabled) {
+    try {
+      const res = await fetch(SyncLayerBase() + '/rest/v1/rpc/admin_login', {
+        method: 'POST',
+        headers: {
+          'apikey': anonKey(),
+          'Authorization': 'Bearer ' + anonKey(),
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ p_user: user, p_pass: pass })
+      });
+
+      if (res.ok) {
+        const j = await res.json();
+        if (j && typeof j === 'object' && 'ok' in j) {
+          if (!j.ok) {
+            if (j.reason === 'write_key_not_set') {
+              return {
+                ok: false,
+                msg: '密码对了，但 Supabase 里的写入密钥还是初始占位值。先在 SQL Editor 里把 app_secrets 的 write_key 换成你自己的密钥，再登录。'
+              };
+            }
+            return { ok: false, msg: '用户名或密码不正确' };
+          }
+          return { ok: true, writeKey: j.write_key || '', via: 'rpc' };
+        }
+      } else if (res.status === 401 || res.status === 403) {
+        return {
+          ok: false,
+          msg: 'Supabase 拒绝了这次调用。检查 schema.sql 里 admin_login 的授权设置。'
+        };
+      }
+      // 404 / 400 说明函数还没建，落到下面的本地校验
+    } catch (e) {
+      // 网络抖动也落到本地校验 —— 至少让人进得去看一眼数据
+      console.warn('admin_login 调用失败，改用本地校验：', e);
+    }
+  }
+
+  const wantUser = cfg.adminUser || DEFAULT_ADMIN_USER;
+  const wantHash = cfg.adminPassHash || DEFAULT_ADMIN_HASH;
+  if (user !== wantUser || adminHash(user, pass) !== wantHash) {
+    return { ok: false, msg: '用户名或密码不正确' };
+  }
+  return { ok: true, writeKey: cfg.supabaseWriteKey || '', via: 'local' };
+}
+
+async function tryLogin(user, pass, resume) {
   const errBox = document.getElementById('gateErr');
   const btn = document.getElementById('gateBtn');
   errBox.classList.remove('on');
   btn.disabled = true;
-  btn.textContent = '验证中…';
+  btn.textContent = resume ? '恢复登录…' : '验证中…';
 
   try {
     if (!window.SyncLayer) throw new Error('sync.js 没有加载成功，检查文件是否上传完整');
 
-    // 必须先用「用户输入的这把钥匙」重新初始化同步层，再做验证。
-    // 否则验证的会是 config.js 里可能残留的旧密钥 —— 那样输错也能进，
-    // 而真正的写入却会在后面某个操作上莫名失败，排查起来非常费劲。
+    let v;
+    if (resume) {
+      // 刷新页面后恢复：密码不在任何地方存着，所以这里不再校验，
+      // 只用之前留下的写入密钥接着干活。
+      v = { ok: true, writeKey: getKey() || ((window.__SITE_CONFIG__ || {}).supabaseWriteKey || '') };
+    } else {
+      v = await verifyAdmin(user, pass);
+      if (!v.ok) throw new Error(v.msg);
+    }
+
+    STATE.writeKey = v.writeKey || '';
+
+    // 用刚拿到的凭据初始化同步层，再做一次读，确认网络与权限都通
     SyncLayer.init({
       url: SyncLayerBase(),
       anonKey: anonKey(),
-      writeKey: key
+      writeKey: STATE.writeKey
     });
 
     if (!SyncLayer.enabled) {
       throw new Error('还没有配置 Supabase。请先在 config.js 里填写 supabaseUrl 和 supabaseAnonKey');
     }
 
-    // 先读一下，确认密钥与网络都通
     const r = await SyncLayer.readRemote();
     if (!r || !r.data || Object.keys(r.data).length === 0) {
       throw new Error('Supabase 里没有数据。请先运行 supabase/migrate.py 导入现有 data.json');
     }
 
-    // 真正的验证：用这个密钥写一次「原样数据」。
-    // 写成功 = 密钥正确；version_conflict 说明密钥也是对的（只是版本撞了，正常）；
-    // unauthorized 才是密钥错。
-    try {
-      const nv = await SyncLayer.writeRemote(r.data, r.version, 'admin login check');
-      STATE.version = nv;
-    } catch (e) {
-      if (e.code === 'UNAUTHORIZED') {
-        throw new Error('密钥不正确。它应当与 Supabase 的 app_secrets 表里 write_key 一致');
-      }
-      if (e.code === 'VERSION_CONFLICT') {
-        // 密钥没问题，只是恰好有人同时在写。可以继续。
-      } else {
-        throw new Error('写入验证失败：' + e.message);
-      }
-    }
-
     STATE.data = r.data;
     STATE.version = r.version;
 
+    // 没有写入密钥时，进来也是只读。明确告诉人，而不是让他点了保存才报错。
+    STATE.readonly = !STATE.writeKey;
+    if (STATE.readonly) {
+      // 本地校验通过但 config 里没有密钥：可能是没配，也可能是服务端 RPC 还在用旧表。
+      // 不阻断登录，先让人看到数据。
+      console.warn('没有写入密钥，后台以只读方式运行');
+    }
+
     const remember = document.getElementById('rememberKey').checked;
-    setKey(key, remember);
+    setSession(user, remember);
+    if (STATE.writeKey) setKey(STATE.writeKey, remember);
+    else clearKey();
 
     document.getElementById('gate').style.display = 'none';
     document.getElementById('app').classList.add('on');
     await afterLogin();
+
+    if (STATE.readonly) {
+      toast('已登录，但缺少写入密钥，当前为只读', 'bad');
+    }
 
   } catch (e) {
     errBox.textContent = e.message || String(e);
     errBox.classList.add('on');
   } finally {
     btn.disabled = false;
-    btn.textContent = '进入后台';
+    btn.textContent = '登录';
   }
 }
 
 async function afterLogin() {
-  // 同步层需要带着密钥才能写。这里把 key 注入到 SyncLayer 的配置里。
+  // 同步层需要带着密钥才能写。这里把登录时拿到的凭据注入回去。
   try {
     SyncLayer.init({
       url: anonKey() ? SyncLayerBase() : '',
       anonKey: anonKey(),
-      writeKey: getKey()
+      writeKey: STATE.writeKey || getKey()
     });
   } catch (e) { }
 
@@ -1897,7 +2076,10 @@ function updateSyncBadge() {
 
   const st = (window.SyncLayer && SyncLayer.status()) || {};
   dot.className = 'dot';
-  if (!st.enabled) {
+  if (STATE.readonly) {
+    dot.classList.add('warn');
+    txt.textContent = '只读';
+  } else if (!st.enabled) {
     dot.classList.add('bad');
     txt.textContent = '未配置';
   } else if (st.connected) {
@@ -1917,21 +2099,25 @@ function updateSyncBadge() {
 // 启动
 // ---------------------------------------------------------------------------
 document.getElementById('gateBtn').onclick = () => {
-  const k = document.getElementById('keyInput').value.trim();
-  if (!k) {
+  const u = document.getElementById('userInput').value.trim() || DEFAULT_ADMIN_USER;
+  const p = document.getElementById('keyInput').value;
+  if (!p) {
     const b = document.getElementById('gateErr');
-    b.textContent = '请输入密钥';
+    b.textContent = '请输入密码';
     b.classList.add('on');
     return;
   }
-  tryLogin(k);
+  tryLogin(u, p);
 };
-document.getElementById('keyInput').addEventListener('keydown', e => {
-  if (e.key === 'Enter') document.getElementById('gateBtn').click();
+['userInput', 'keyInput'].forEach(id => {
+  document.getElementById(id).addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('gateBtn').click();
+  });
 });
 
 document.getElementById('logoutBtn').onclick = () => {
   clearKey();
+  clearSession();
   try { SyncLayer.destroy(); } catch (e) { }
   location.reload();
 };
@@ -1950,7 +2136,7 @@ document.getElementById('refreshBtn').onclick = async () => {
   }
 };
 
-// 有存过的密钥就自动登录
+// 有过登录记录就自动恢复，否则停在登录页
 (function boot() {
   if (!window.SyncLayer) {
     document.getElementById('gateErr').textContent = 'sync.js 没有加载成功，请确认它和本页在同一个目录';
@@ -1958,10 +2144,15 @@ document.getElementById('refreshBtn').onclick = async () => {
     return;
   }
   SyncLayer.init({});
-  const saved = getKey();
-  if (saved) {
-    document.getElementById('keyInput').value = saved;
-    tryLogin(saved);
+
+  const s = getSession();
+  if (s) {
+    const u = s.split('|')[0] || DEFAULT_ADMIN_USER;
+    document.getElementById('userInput').value = u;
+    tryLogin(u, '', true);
+  } else {
+    document.getElementById('userInput').value = DEFAULT_ADMIN_USER;
+    document.getElementById('keyInput').focus();
   }
 })();
 </script>
