@@ -7671,8 +7671,8 @@
     "pages": {
       "首页": {
         "pv": 87,
-        "dwellSum": 2906,
-        "dwellN": 86,
+        "dwellSum": 4552,
+        "dwellN": 93,
         "scrollSum": 2932,
         "scrollN": 36,
         "zones": [
@@ -7839,10 +7839,10 @@
       },
       "2026-11-24": {
         "pv": 63,
-        "dwellSum": 785,
-        "dwellN": 88
+        "dwellSum": 2431,
+        "dwellN": 95
       }
     },
-    "updated": 1795522182662
+    "updated": 1795523851106
   }
 }
