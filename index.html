@@ -5063,7 +5063,7 @@ window.__glassBootDone = function () {
     const btn = document.getElementById('glassModeBtn');
     if (btn) {
       btn.classList.toggle('on', on);
-      btn.textContent = on ? '🪟 玻璃拟态：开' : '🪟 玻璃拟态：关';
+      btn.textContent = on ? '玻璃拟态：开' : '玻璃拟态：关';
     }
     // 真实状态已确定：解除首屏遮罩，页面淡入（首次访问无缓存时用；有缓存时早已是正确样式）
     if (typeof window.__glassBootDone === 'function') window.__glassBootDone();
@@ -5077,7 +5077,7 @@ window.__glassBootDone = function () {
     const on = appState.updateMode === true;
     document.body.classList.toggle('update-mode-on', on);
     const btn = document.getElementById('updateModeBtn');
-    if (btn) { btn.classList.toggle('on', on); btn.textContent = on ? '🚀 更新模式：开' : '🚀 更新模式：关'; }
+    if (btn) { btn.classList.toggle('on', on); btn.textContent = on ? '更新模式：开' : '更新模式：关'; }
     let ov = document.getElementById('updateOverlay');
     if (!on) {
       if (ov) { ov.classList.add('closing'); const o = ov; setTimeout(function () { if (o && o.parentNode) o.parentNode.removeChild(o); }, 520); }
@@ -5102,18 +5102,12 @@ window.__glassBootDone = function () {
           '<button class="update-admin-btn ghost" type="button" onclick="toggleUpdatePreview()">预览网站（绕过维护页）</button>' +
         '</div>' +
         '<div class="update-card">' +
-          '<div class="update-orbit">' +
-            '<span class="update-ring r1"></span>' +
-            '<span class="update-ring r2"></span>' +
-            '<span class="update-ring r3"></span>' +
-            '<span class="update-rocket">🚀</span>' +
-          '</div>' +
-          '<h1 class="update-title">网站正在焕新升级</h1>' +
-          '<p class="update-sub">我们正在为您准备更棒的体验<br>稍作片刻，精彩即将重新上线</p>' +
+          '<h1 class="update-title">站点维护中</h1>' +
+          '<p class="update-sub">正在更新内容，稍后回来。</p>' +
           '<div class="update-progress"><div class="update-progress-bar"></div></div>' +
-          '<div class="update-status">系统升级中<span class="update-dots"></span></div>' +
+          '<div class="update-status">更新中<span class="update-dots"></span></div>' +
         '</div>' +
-        '<div class="update-foot">感谢您的耐心等待 · 给您带来不便，敬请谅解</div>';
+        '<div class="update-foot">如有急事，可以加作者微信联系</div>';
       document.body.appendChild(ov);
       requestAnimationFrame(function () { ov.classList.add('show'); });
     } else {
@@ -5158,7 +5152,7 @@ window.__glassBootDone = function () {
       }, 'update mode ' + (target ? 'on' : 'off'));
       appState.updateMode = target;
       applyUpdateMode();
-      toast(target ? '🚀 更新模式已开启' : '更新模式已关闭');
+      toast(target ? '更新模式已开启' : '更新模式已关闭');
     } catch (err) {
       showAlert('切换失败：' + err.message);
       applyUpdateMode();
@@ -5217,7 +5211,7 @@ window.__glassBootDone = function () {
       }, 'glass mode ' + (target ? 'on' : 'off'));
       // 写成功后本地已同步为最新，把主题正式套上
       applyGlassMode();
-      toast(target ? '🪟 玻璃拟态已开启' : '玻璃拟态已关闭');
+      toast(target ? '玻璃拟态已开启' : '玻璃拟态已关闭');
     } catch (err) {
       showAlert('切换失败：' + err.message);
       applyGlassMode();
@@ -6404,7 +6398,7 @@ window.__glassBootDone = function () {
           // Pages 已发布我们的修改：强制同步一次（绕过 45s 守卫、刷新基准指纹），让本机立刻对齐
           clearInterval(__publishWatchTimer); __publishWatchTimer = null; __publishWatchSig = '';
           if (typeof __syncTick === 'function') __syncTick(true);
-          showToast('🚀 已发布：你的修改已同步到所有设备');
+          showToast('已发布，你的修改已同步到所有设备');
         } else if (Date.now() > __publishWatchDeadline) {
           clearInterval(__publishWatchTimer); __publishWatchTimer = null; __publishWatchSig = '';
           showToast('⏳ 仍在发布中（GitHub Pages 较慢），稍后自动同步');
@@ -8065,7 +8059,7 @@ window.__glassBootDone = function () {
         toggleModal('reportModal', false);
         return;
       }
-      toast('🚩 举报已提交，管理员会尽快核实');
+      toast('举报已提交，管理员会尽快核实');
       toggleModal('reportModal', false);
     } catch (err) {
       showAlert('举报提交失败：' + err.message + '\n请检查网络后重试');
@@ -8147,7 +8141,7 @@ window.__glassBootDone = function () {
     const btn = document.getElementById('reportManageBtn');
     if (!btn) return;
     const count = (appState.reports || []).filter(function (r) { return r.status === 'pending'; }).length;
-    btn.textContent = '🚩 举报管理 (' + count + ')';
+    btn.textContent = '举报管理 (' + count + ')';
     btn.style.borderColor = count > 0 ? '#fca5a5' : '';
     btn.style.color = count > 0 ? '#dc2626' : '';
   }
