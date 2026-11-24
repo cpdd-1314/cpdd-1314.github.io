@@ -546,7 +546,8 @@ td.actions .btn { margin-left: 4px; }
    管理入口和后台代码 —— 访客下载到的就只有前台，看不到管理接口长什么样。
    两边共用的只有 sync.js（读写通道）和同一份数据。
 
-   登录方式：用户名 + 密码。默认 admin / admin123，进去之后请尽快改掉。
+   登录方式：用户名 + 密码。默认账号 admin，初始密码在 supabase/schema.sql
+   里预置，进去之后请立刻改掉（改法见该文件第 4b 节）。
 
    密码怎么校验，取决于 Supabase 有没有建好：
      · 建好了 → 走 RPC admin_login，哈希存在数据库里，前端看不到密码，
@@ -583,8 +584,8 @@ function icon(name) {
 const KEY_STORE = 'admin_write_key';
 const SESSION_STORE = 'admin_session';
 
-// 默认账号 admin / admin123。这里存的是加盐哈希，不是明文 ——
-// 源码是公开可下载的，写明文等于把密码印在门上。
+// 默认账号的密码哈希。源码是公开可下载的，所以这里只有哈希，没有明文 ——
+// 写明文等于把密码印在门上。
 // 改密码有两种办法，见 config.example.js 里的说明。
 const ADMIN_SALT = 'cpdd-admin-v1';
 const DEFAULT_ADMIN_USER = 'admin';
@@ -1892,7 +1893,7 @@ function download(filename, text) {
 //
 //  1) Supabase 配好了 → 调 RPC admin_login。密码哈希存在数据库里，
 //     前端既没有密码也没有写入密钥，改密码不用重新发版。
-//  2) 没配 Supabase，或 RPC 没建 → 退到本地哈希比对（默认 admin / admin123）。
+//  2) 没配 Supabase，或 RPC 没建 → 退到本地哈希比对（账号 admin，密码见 schema.sql）。
 //
 // 第 2 条路是弱校验：源码能改，localStorage 能改，谁都能绕过它进界面。
 // 但「进得了界面」不等于「改得动数据」—— 没有 write_key，所有写操作都会被
