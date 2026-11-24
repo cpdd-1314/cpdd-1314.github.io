@@ -7434,11 +7434,11 @@
   "siteStats": {
     "pages": {
       "首页": {
-        "pv": 17,
-        "dwellSum": 674,
-        "dwellN": 16,
-        "scrollSum": 595,
-        "scrollN": 7,
+        "pv": 20,
+        "dwellSum": 684,
+        "dwellN": 19,
+        "scrollSum": 733,
+        "scrollN": 9,
         "zones": [
           2,
           9,
@@ -7447,16 +7447,16 @@
           24,
           2,
           4,
-          14,
+          19,
           5
         ],
         "clicks": {
           "button.primary": 8,
-          "span": 9,
+          "span": 10,
           "button.outline": 17,
           "circle": 1,
-          "div": 18,
-          "button": 10,
+          "div": 20,
+          "button": 12,
           "b": 2,
           "video": 5,
           "button#floatCollapseBtn": 2,
@@ -7464,11 +7464,11 @@
         }
       },
       "发布": {
-        "pv": 6,
-        "dwellSum": 3013,
-        "dwellN": 21,
-        "scrollSum": 783,
-        "scrollN": 11,
+        "pv": 10,
+        "dwellSum": 3019,
+        "dwellN": 25,
+        "scrollSum": 883,
+        "scrollN": 12,
         "zones": [
           0,
           2,
@@ -7477,19 +7477,90 @@
           22,
           4,
           0,
-          7,
+          11,
           1
         ],
         "clicks": {
-          "button": 4,
+          "button": 6,
           "select#sortSelect": 2,
           "input#searchInput": 2,
           "body": 2,
           "div": 11,
           "button.outline": 15,
-          "span": 4,
+          "span": 5,
           "h2": 1,
-          "button.outline#showHiddenBtn": 1
+          "button.outline#showHiddenBtn": 1,
+          "svg": 1
+        }
+      },
+      "通知": {
+        "pv": 3,
+        "dwellSum": 20,
+        "dwellN": 3,
+        "scrollSum": 0,
+        "scrollN": 0,
+        "zones": [
+          0,
+          2,
+          0,
+          2,
+          0,
+          0,
+          3,
+          3,
+          0
+        ],
+        "clicks": {
+          "button#floatCollapseBtn": 2,
+          "div": 2,
+          "span": 2,
+          "button": 3,
+          "path": 1
+        }
+      },
+      "我的": {
+        "pv": 2,
+        "dwellSum": 34,
+        "dwellN": 2,
+        "scrollSum": 100,
+        "scrollN": 1,
+        "zones": [
+          2,
+          3,
+          0,
+          0,
+          0,
+          0,
+          0,
+          8,
+          0
+        ],
+        "clicks": {
+          "div": 2,
+          "button": 8,
+          "span": 1,
+          "svg": 2
+        }
+      },
+      "赞助": {
+        "pv": 2,
+        "dwellSum": 4,
+        "dwellN": 2,
+        "scrollSum": 0,
+        "scrollN": 0,
+        "zones": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0
+        ],
+        "clicks": {
+          "span": 1
         }
       }
     },
@@ -7528,8 +7599,13 @@
         "pv": 5,
         "dwellSum": 139,
         "dwellN": 6
+      },
+      "2026-11-24": {
+        "pv": 14,
+        "dwellSum": 74,
+        "dwellN": 14
       }
     },
-    "updated": 1795353799702
+    "updated": 1795516440162
   }
 }
